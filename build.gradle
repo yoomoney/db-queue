@@ -1,0 +1,136 @@
+plugins {
+    id "net.ltgt.errorprone" version "0.0.11"
+    id 'net.researchgate.release' version '2.4.0'
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+apply plugin: 'java'
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+repositories {
+    mavenCentral()
+}
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.25',
+            'org.springframework:spring-jdbc:4.2.5.RELEASE',
+            'org.springframework:spring-tx:4.2.5.RELEASE',
+            'org.springframework:spring-context:4.2.5.RELEASE'
+
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.1',
+            'com.google.code.findbugs:annotations:3.0.1'
+
+    testCompile 'org.springframework:spring-test:4.2.5.RELEASE',
+            'com.opentable.components:otj-pg-embedded:0.9.0',
+            'org.postgresql:postgresql:9.4.1208',
+            'junit:junit:4.12',
+            'org.apache.logging.log4j:log4j-core:2.2',
+            'org.apache.logging.log4j:log4j-slf4j-impl:2.2',
+            'org.mockito:mockito-core:1.10.19',
+            'com.tngtech.archunit:archunit-junit:0.4.0'
+
+    testCompileOnly 'com.google.code.findbugs:jsr305:3.0.1',
+            'com.google.code.findbugs:annotations:3.0.1'
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+import java.text.SimpleDateFormat
+
+jar {
+    def buildDate = new SimpleDateFormat('yyyy-MM-dd', Locale.ENGLISH).format(new Date())
+    manifest {
+        attributes(
+                'Implementation-Version': "$project.version",
+                'Bundle-SymbolicName': "$project.name",
+                'Built-By': java.lang.System.getProperty('user.name'),
+                'Built-Date': "$buildDate",
+        )
+    }
+
+    from(projectDir.absolutePath) {
+        include "CHANGELOG.md", "README.md"
+        into "META-INF"
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+release {
+    git {
+        requireBranch = 'master'
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+apply plugin: 'findbugs'
+dependencies {
+    findbugsPlugins 'com.mebigfatguy.fb-contrib:fb-contrib:7.0.3',
+            'com.h3xstream.findsecbugs:findsecbugs-plugin:1.7.0'
+}
+findbugs {
+    toolVersion = "3.0.1"
+    sourceSets = [sourceSets.main]
+    effort = "max"
+    reportLevel = "medium"
+    ignoreFailures = false
+}
+tasks.withType(FindBugs) {
+    reports {
+        html.enabled = true
+        xml.enabled = false
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+apply plugin: 'checkstyle'
+checkstyle {
+    toolVersion = "8.1"
+    sourceSets = [sourceSets.main]
+    ignoreFailures = false
+    configFile = file("checkstyle.xml")
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+apply plugin: 'idea'
+idea {
+    project {
+        jdkName = '1.8'
+        languageLevel = '1.8'
+        vcs = 'Git'
+    }
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+test {
+    systemProperty "file.encoding", "UTF-8"
+    include '**/*Test.class'
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+apply plugin: "jacoco"
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = 'INSTRUCTION'
+                minimum = 0.66
+            }
+            limit {
+                counter = 'BRANCH'
+                minimum = 0.46
+            }
+            limit {
+                counter = 'CLASS'
+                minimum = 0.87
+            }
+        }
+    }
+}
+jacocoTestReport {
+    reports {
+        html.enabled = true
+    }
+}
+check.dependsOn jacocoTestCoverageVerification
+check.dependsOn jacocoTestReport
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+javadoc {
+    exclude "**/internal/**"
+}
