@@ -6,4 +6,5 @@ env:
   - TERM=dumb
 
 script:
+  - chmod +x gradlew
   - ./gradlew build -i
