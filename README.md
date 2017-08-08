@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/yandex-money/db-queue.svg?branch=master)](https://travis-ci.org/yandex-money/db-queue)
+
+
 # Описание
 
 Реализация очередей поверх базы данных.
