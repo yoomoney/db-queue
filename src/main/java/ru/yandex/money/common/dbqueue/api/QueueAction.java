@@ -13,7 +13,7 @@ import java.util.Optional;
  * @author Oleg Kandaurov
  * @since 09.07.2017
  */
-public class QueueAction {
+public final class QueueAction {
 
     /**
      * Действие, выполняемое после обработки задачи
@@ -98,6 +98,7 @@ public class QueueAction {
 
     /**
      * Указание повторить задачу позже
+     *
      * @return действие
      */
     @Nonnull
@@ -107,6 +108,7 @@ public class QueueAction {
 
     /**
      * Указание повторить задачу позже через фиксированное время
+     *
      * @param delay значение задержки
      * @return действие
      */
@@ -118,6 +120,7 @@ public class QueueAction {
 
     /**
      * Указание завершить обработку задачи
+     *
      * @return действие
      */
     @Nonnull

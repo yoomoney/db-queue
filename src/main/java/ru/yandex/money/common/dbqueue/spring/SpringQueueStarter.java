@@ -7,7 +7,7 @@ import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 
 /**
  * Класс, обеспечивающий запуск обработки задач в очереди, в spring конфигурации.
- *
+ * <p>
  * Очереди стартуют после построения spring контекста и останавливаются при закрытии контекста.
  * Для использования достаточно создать bean в spring контексте.
  *
@@ -29,6 +29,7 @@ public class SpringQueueStarter implements ApplicationListener<ContextRefreshedE
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
+        queueExecutionPool.init();
         queueExecutionPool.start();
     }
 

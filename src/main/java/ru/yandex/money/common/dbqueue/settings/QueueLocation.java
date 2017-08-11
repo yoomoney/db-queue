@@ -9,7 +9,7 @@ import java.util.Objects;
  * @author Oleg Kandaurov
  * @since 10.07.2017
  */
-public class QueueLocation {
+public final class QueueLocation {
     @Nonnull
     private final String tableName;
     @Nonnull

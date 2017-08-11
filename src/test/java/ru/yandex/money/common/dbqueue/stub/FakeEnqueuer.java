@@ -1,10 +1,10 @@
 package ru.yandex.money.common.dbqueue.stub;
 
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
+import ru.yandex.money.common.dbqueue.api.Enqueuer;
 import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.ShardRouter;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
-import ru.yandex.money.common.dbqueue.api.Enqueuer;
 
 import javax.annotation.Nonnull;
 import java.util.function.Function;
@@ -21,7 +21,7 @@ public class FakeEnqueuer implements Enqueuer<String> {
     private final Function<EnqueueParams<String>, Long> execFunc;
 
     public FakeEnqueuer(QueueConfig queueConfig, PayloadTransformer<String> transformer,
-                     ShardRouter<String> shardRouter, Function<EnqueueParams<String>, Long> execFunc) {
+                        ShardRouter<String> shardRouter, Function<EnqueueParams<String>, Long> execFunc) {
         this.queueConfig = queueConfig;
         this.transformer = transformer;
         this.shardRouter = shardRouter;

@@ -18,8 +18,6 @@ import java.util.function.Supplier;
  */
 public class BaseDaoTest {
 
-    protected static final String TABLE_NAME = "queue_test";
-
     private static final AtomicLong queueCounter = new AtomicLong();
 
 
@@ -34,7 +32,11 @@ public class BaseDaoTest {
     }
 
     protected static QueueLocation generateUniqueLocation() {
-        return new QueueLocation(TABLE_NAME, "test-queue-" + queueCounter.incrementAndGet());
+        return new QueueLocation(QueueDatabaseInitializer.DEFAULT_TABLE_NAME, "test-queue-" + queueCounter.incrementAndGet());
+    }
+
+    protected static String generateUniqueTable() {
+        return QueueDatabaseInitializer.DEFAULT_TABLE_NAME + "_" + queueCounter.incrementAndGet();
     }
 
     protected static void executeInTransaction(Runnable runnable) {

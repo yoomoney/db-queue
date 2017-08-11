@@ -1,9 +1,9 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
 import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
-import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,10 +31,10 @@ class TaskPicker {
     /**
      * Конструктор
      *
-     * @param pickTaskDao поставщик задач из очереди
+     * @param pickTaskDao           поставщик задач из очереди
      * @param taskLifecycleListener слушатель жизненного цикла задачи в очереди
-     * @param millisTimeProvider поставщик текущего времени
-     * @param retryTaskStrategy стратегия откладывания задачи при повторном выполнении
+     * @param millisTimeProvider    поставщик текущего времени
+     * @param retryTaskStrategy     стратегия откладывания задачи при повторном выполнении
      */
     TaskPicker(PickTaskDao pickTaskDao,
                TaskLifecycleListener taskLifecycleListener,

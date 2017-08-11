@@ -1,11 +1,11 @@
 package ru.yandex.money.common.dbqueue.stub;
 
+import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.Queue;
 import ru.yandex.money.common.dbqueue.api.QueueAction;
 import ru.yandex.money.common.dbqueue.api.ShardRouter;
 import ru.yandex.money.common.dbqueue.api.Task;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
 
 import javax.annotation.Nonnull;
 import java.util.function.Function;

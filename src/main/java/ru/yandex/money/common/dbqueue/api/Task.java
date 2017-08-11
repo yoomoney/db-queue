@@ -10,12 +10,12 @@ import java.util.Optional;
  * Параметры типизированной задачи, поставляемые в обработчик очереди.
  *
  * @param <T> тип данных задачи
- *
  * @author Oleg Kandaurov
  * @since 10.07.2017
  */
-public class Task<T> {
+public final class Task<T> {
 
+    @Nonnull
     private final QueueShardId shardId;
     @Nullable
     private final T payload;
@@ -143,6 +143,7 @@ public class Task<T> {
      *
      * @return идентификатор шарда
      */
+    @Nonnull
     public QueueShardId getShardId() {
         return shardId;
     }

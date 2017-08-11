@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.api;
 
-import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
+import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueInitializer;
 
 import java.util.concurrent.Executor;

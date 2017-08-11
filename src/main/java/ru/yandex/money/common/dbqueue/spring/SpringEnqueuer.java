@@ -1,10 +1,10 @@
 package ru.yandex.money.common.dbqueue.spring;
 
+import ru.yandex.money.common.dbqueue.api.Enqueuer;
+import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.ShardRouter;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
-import ru.yandex.money.common.dbqueue.api.Enqueuer;
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 
@@ -81,6 +81,7 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
 
     /**
      * Установить конфигурацию очереди, к которой принадлежит текущий постановщик задач
+     *
      * @param queueConfig конфигурация очереди
      */
     void setQueueConfig(@Nonnull QueueConfig queueConfig) {
@@ -89,6 +90,7 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
 
     /**
      * Установить преобразователь данных очереди
+     *
      * @param payloadTransformer преобразователь данных
      */
     void setPayloadTransformer(@Nonnull PayloadTransformer<T> payloadTransformer) {
@@ -97,6 +99,7 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
 
     /**
      * Установить список шардов, которые могут быть использованы при роутинге задачи на шард
+     *
      * @param shards Map: key - идентификатор шарда, value - dao для работы с шардом
      */
     void setShards(@Nonnull Map<QueueShardId, QueueDao> shards) {
@@ -105,6 +108,7 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
 
     /**
      * Получить список шардов участвующих роутинге задач
+     *
      * @return список шардов
      */
     @Nonnull
@@ -114,6 +118,7 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
 
     /**
      * Установить роутер для диспатчинг задач на шарды
+     *
      * @param shardRouter роутер
      */
     void setShardRouter(@Nonnull ShardRouter<T> shardRouter) {

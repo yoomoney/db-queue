@@ -2,10 +2,10 @@ package ru.yandex.money.common.dbqueue.spring;
 
 import org.junit.Test;
 import org.springframework.transaction.support.TransactionOperations;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
 import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
+import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;

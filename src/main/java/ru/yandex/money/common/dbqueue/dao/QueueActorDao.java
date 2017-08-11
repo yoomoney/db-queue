@@ -12,7 +12,7 @@ import java.util.Objects;
 
 /**
  * Управление и получение информации о задачах по полю actor.
- *
+ * <p>
  * ВНИМАНИЕ: Для использования этой функциональности необходимо добавить
  * составной индекс по полям (actor, queue_name)
  *
@@ -37,39 +37,41 @@ public class QueueActorDao {
 
     /**
      * Удалить задачи в очереди по заданному actor.
-     *
+     * <p>
      * Может применяться в том случае, когда стало известно, что поставленная задача уже не актуальна.
      * Удаление позволит уменьшить количество задач в очереди, что приведет к уменьшению затрат на выборку,
      * а также будет видно количество актуальных задач в очереди.
-     *
+     * <p>
      * Альтернативный подход заключается в том, чтобы при постановке задачи, сохранять её идентификатор (sequence id)
      * и производить удаление по заданному идентификатору. Подобный способ решения является более низкоуровневым
      * требует отдельно хранить идентификаторы задач.
      * Однако такой подход является более производительным поскольку исключает создание дополнительного индекса.
      *
      * @param location местоположение очереди
-     * @param actor бизнесовый идентификатор
+     * @param actor    бизнесовый идентификатор
+     * @return признак, что хотя бы одна задача была удалена
      */
-    public void deleteTasksByActor(@Nonnull QueueLocation location, @Nonnull String actor) {
+    public boolean deleteTasksByActor(@Nonnull QueueLocation location, @Nonnull String actor) {
         Objects.requireNonNull(location);
         Objects.requireNonNull(actor);
-        jdbcTemplate.update(
+        int updatedRows = jdbcTemplate.update(
                 String.format("DELETE FROM %s WHERE actor = :actor " +
                         "AND queue_name = :queue_name", location.getTableName()),
                 new MapSqlParameterSource()
                         .addValue("queue_name", location.getQueueName())
                         .addValue("actor", actor));
+        return updatedRows != 0;
     }
 
     /**
      * Проверить, что в очереди есть задачи по заданному actor.
-     *
+     * <p>
      * Может применяться, чтобы исключить повторную вставку задачи на обработку.
      * При подобном использовании не гарантирует, что задача не вставится дважды.
      * Для использования в подобном ключе, внешний код должен использовать блокировки.
      *
      * @param location местоположение очереди
-     * @param actor бизнесовый идентификатор
+     * @param actor    бизнесовый идентификатор
      * @return признак, что задачи найдены по actor
      */
     public boolean isTasksExist(@Nonnull QueueLocation location, @Nonnull String actor) {
@@ -87,6 +89,7 @@ public class QueueActorDao {
 
     /**
      * Получить transaction template
+     *
      * @return spring transaction template
      */
     public TransactionOperations getTransactionTemplate() {

@@ -1,8 +1,8 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
+import ru.yandex.money.common.dbqueue.api.Queue;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
-import ru.yandex.money.common.dbqueue.api.Queue;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 
 import javax.annotation.Nonnull;
@@ -27,7 +27,7 @@ class QueueRunnerInSeparateTransactions implements QueueRunner {
     /**
      * Конструктор
      *
-     * @param taskPicker выборщик задачи
+     * @param taskPicker    выборщик задачи
      * @param taskProcessor обработчик задачи
      */
     QueueRunnerInSeparateTransactions(@Nonnull TaskPicker taskPicker,

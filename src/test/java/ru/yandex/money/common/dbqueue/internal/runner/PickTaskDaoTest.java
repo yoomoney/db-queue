@@ -2,13 +2,14 @@ package ru.yandex.money.common.dbqueue.internal.runner;
 
 import org.junit.Assert;
 import org.junit.Test;
-import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
+import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.BaseDaoTest;
+import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
+import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
 import java.math.BigInteger;
 import java.time.Duration;
@@ -141,7 +142,7 @@ public class PickTaskDaoTest extends BaseDaoTest {
 
     private TaskRecord resetProcessTimeAndPick(QueueLocation location, RetryTaskStrategy retryTaskStrategy, Long enqueueId) {
         executeInTransaction(() -> {
-            jdbcTemplate.update("update " + TABLE_NAME + " set process_time=now() where id=" + enqueueId);
+            jdbcTemplate.update("update " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " set process_time=now() where id=" + enqueueId);
         });
         return executeInTransaction(
                 () -> pickTaskDao.pickTask(location, retryTaskStrategy));

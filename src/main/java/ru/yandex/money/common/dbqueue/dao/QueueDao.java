@@ -15,7 +15,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Управление задачами в очереди.
- *
+ * <p>
  * Каждый экземпляр данного класса привязан к физическому шарду БД.
  *
  * @author Oleg Kandaurov
@@ -44,7 +44,8 @@ public class QueueDao {
 
     /**
      * Поставить задачу в очередь на выполнение
-     * @param location местоположение очереди
+     *
+     * @param location      местоположение очереди
      * @param enqueueParams данные вставляемой задачи
      * @return идентфикатор (sequence id) вставленной задачи
      */
@@ -69,7 +70,7 @@ public class QueueDao {
      * Удалить задачу из очереди.
      *
      * @param location местоположение очеред
-     * @param taskId идентификатор (sequence id) задачи
+     * @param taskId   идентификатор (sequence id) задачи
      * @return true, если задача была удалена, false, если задача не найдена.
      */
     public boolean deleteTask(@Nonnull QueueLocation location, long taskId) {
@@ -85,10 +86,10 @@ public class QueueDao {
     /**
      * Переставить выполнение задачи на заданный промежуток времени
      *
-     * @param location местоположение очереди
-     * @param taskId идентификатор (sequence id) задами
+     * @param location       местоположение очереди
+     * @param taskId         идентификатор (sequence id) задами
      * @param executionDelay промежуток времени
-     * @param resetAttempts признак, что следует сбросить попытки выполнения задачи
+     * @param resetAttempts  признак, что следует сбросить попытки выполнения задачи
      * @return true, если задача была переставлена, false, если задача не найдена.
      */
     public boolean reenqueue(@Nonnull QueueLocation location, long taskId, @Nonnull Duration executionDelay,

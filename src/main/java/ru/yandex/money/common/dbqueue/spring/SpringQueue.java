@@ -74,6 +74,7 @@ public abstract class SpringQueue<T> implements Queue<T>, SpringQueueIdentifiabl
 
     /**
      * Установить роутер для диспатчинг задач на шарды
+     *
      * @param shardRouter роутер
      */
     void setShardRouter(@Nonnull ShardRouter<T> shardRouter) {
@@ -82,6 +83,7 @@ public abstract class SpringQueue<T> implements Queue<T>, SpringQueueIdentifiabl
 
     /**
      * Установить преобразователь данных очереди
+     *
      * @param payloadTransformer преобразователь данных
      */
     void setPayloadTransformer(@Nonnull PayloadTransformer<T> payloadTransformer) {
@@ -90,6 +92,7 @@ public abstract class SpringQueue<T> implements Queue<T>, SpringQueueIdentifiabl
 
     /**
      * Установить конфигурацию очереди
+     *
      * @param queueConfig конфигурация очереди
      */
     void setQueueConfig(@Nonnull QueueConfig queueConfig) {

@@ -11,7 +11,7 @@ import java.util.Objects;
  * @author Oleg Kandaurov
  * @since 09.07.2017
  */
-public class TaskRecord {
+public final class TaskRecord {
     private final long id;
     @Nullable
     private final String payload;
@@ -28,13 +28,13 @@ public class TaskRecord {
     /**
      * Конструктор
      *
-     * @param id идентификатор (sequence id) задачи
-     * @param payload сырые данные задачи
+     * @param id            идентификатор (sequence id) задачи
+     * @param payload       сырые данные задачи
      * @param attemptsCount количество попыток исполнения задачи
-     * @param createDate дата постановки задачи
-     * @param processTime время очередной обработки задачи
+     * @param createDate    дата постановки задачи
+     * @param processTime   время очередной обработки задачи
      * @param correlationId технический идентификатор
-     * @param actor бизнесовый идентификатор
+     * @param actor         бизнесовый идентификатор
      */
     public TaskRecord(long id, @Nullable String payload, long attemptsCount, @Nonnull ZonedDateTime createDate,
                       @Nonnull ZonedDateTime processTime, @Nullable String correlationId, @Nullable String actor) {
@@ -49,6 +49,7 @@ public class TaskRecord {
 
     /**
      * Получить идентификатор (sequence id) задачи
+     *
      * @return идентификатор задачи
      */
     public long getId() {
@@ -57,6 +58,7 @@ public class TaskRecord {
 
     /**
      * Получить сырые данные задачи
+     *
      * @return данные задачи
      */
     @Nullable

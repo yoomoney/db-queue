@@ -30,8 +30,8 @@ class QueueRunnerInExternalExecutor implements QueueRunner {
     /**
      * Конструктор
      *
-     * @param taskPicker выборщик задачи
-     * @param taskProcessor обработчик задачи
+     * @param taskPicker       выборщик задачи
+     * @param taskProcessor    обработчик задачи
      * @param externalExecutor исполнитель задачи
      */
     QueueRunnerInExternalExecutor(@Nonnull TaskPicker taskPicker,

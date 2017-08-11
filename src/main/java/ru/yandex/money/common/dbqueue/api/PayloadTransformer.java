@@ -6,7 +6,6 @@ import javax.annotation.Nullable;
  * Сериализатор/десериализатор данных в очереди.
  *
  * @param <T> тип данных задачи
- *
  * @author Oleg Kandaurov
  * @since 10.07.2017
  */

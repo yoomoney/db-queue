@@ -10,7 +10,6 @@ import javax.annotation.Nonnull;
  * Постановщик задач в очередь, используемый в spring конфигурации.
  *
  * @param <T> тип данных задачи
- *
  * @author Oleg Kandaurov
  * @since 05.08.2017
  */

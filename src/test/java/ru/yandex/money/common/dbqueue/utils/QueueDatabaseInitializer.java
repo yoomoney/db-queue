@@ -1,7 +1,6 @@
 package ru.yandex.money.common.dbqueue.utils;
 
 import com.opentable.db.postgres.embedded.EmbeddedPostgres;
-import org.apache.commons.io.IOUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -15,6 +14,24 @@ import java.io.IOException;
  * @since 10.07.2017
  */
 public class QueueDatabaseInitializer {
+
+    public static final String DEFAULT_TABLE_NAME = "queue_test";
+
+    private static final String QUEUE_TABLE_DDL = "CREATE TABLE %s (\n" +
+            "  id            BIGSERIAL PRIMARY KEY,\n" +
+            "  queue_name    VARCHAR(128) NOT NULL,\n" +
+            "  task          TEXT,\n" +
+            "  create_time   TIMESTAMP WITH TIME ZONE DEFAULT now(),\n" +
+            "  process_time  TIMESTAMP WITH TIME ZONE DEFAULT now(),\n" +
+            "  attempt       INTEGER                  DEFAULT 0,\n" +
+            "  actor         VARCHAR(128),\n" +
+            "  log_timestamp VARCHAR(128)\n" +
+            ");" +
+            "CREATE INDEX %s_name_time_desc_idx\n" +
+            "  ON queue_test (queue_name, process_time, id DESC);\n" +
+            "\n" +
+            "CREATE INDEX %s_name_actor_desc_idx\n" +
+            "  ON queue_test (actor, queue_name);";
 
     private static JdbcTemplate jdbcTemplate;
     private static TransactionTemplate transactionTemplate;
@@ -40,15 +57,13 @@ public class QueueDatabaseInitializer {
         transactionTemplate.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
         transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 
-        String initSql;
-        try {
-            initSql = IOUtils.toString(QueueDatabaseInitializer.class.getResourceAsStream("/queue-ddl.sql"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        createTable(DEFAULT_TABLE_NAME);
+    }
 
+    public static void createTable(String tableName) {
+        String tableDDl = String.format(QUEUE_TABLE_DDL, tableName, tableName, tableName);
         transactionTemplate.execute(status -> {
-            jdbcTemplate.execute(initSql);
+            jdbcTemplate.execute(tableDDl);
             return new Object();
         });
     }

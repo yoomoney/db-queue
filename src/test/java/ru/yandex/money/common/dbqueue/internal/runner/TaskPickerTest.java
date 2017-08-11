@@ -1,15 +1,18 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
 import org.junit.Test;
-import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.TaskRecord;
-import ru.yandex.money.common.dbqueue.stub.FakeTransactionTemplate;
 import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
+import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.stub.FakeMillisTimeProvider;
+import ru.yandex.money.common.dbqueue.stub.FakeTransactionTemplate;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -35,10 +38,12 @@ public class TaskPickerTest {
         FakeTransactionTemplate transactionTemplate = spy(new FakeTransactionTemplate());
         Queue queue = mock(Queue.class);
         when(queue.getQueueConfig()).thenReturn(new QueueConfig(location,
-                mock(QueueSettings.class)));
+                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
+                        .withNoTaskTimeout(Duration.ZERO).build()));
         PickTaskDao pickTaskDao = mock(PickTaskDao.class);
         when(pickTaskDao.getTransactionTemplate()).thenReturn(transactionTemplate);
-        TaskRecord taskRecord = mock(TaskRecord.class);
+        TaskRecord taskRecord = new TaskRecord(0, null, 0, ZonedDateTime.now(),
+                ZonedDateTime.now(), null, null);
         when(pickTaskDao.pickTask(location, retryTaskStrategy)).thenReturn(taskRecord);
         when(pickTaskDao.getShardId()).thenReturn(shardId);
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
@@ -62,7 +67,8 @@ public class TaskPickerTest {
         FakeTransactionTemplate transactionTemplate = spy(new FakeTransactionTemplate());
         Queue queue = mock(Queue.class);
         when(queue.getQueueConfig()).thenReturn(new QueueConfig(location,
-                mock(QueueSettings.class)));
+                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
+                        .withNoTaskTimeout(Duration.ZERO).build()));
         PickTaskDao pickTaskDao = mock(PickTaskDao.class);
         when(pickTaskDao.getTransactionTemplate()).thenReturn(transactionTemplate);
         when(pickTaskDao.pickTask(location, retryTaskStrategy)).thenReturn(null);
@@ -87,7 +93,8 @@ public class TaskPickerTest {
         FakeTransactionTemplate transactionTemplate = spy(new FakeTransactionTemplate());
         Queue queue = mock(Queue.class);
         when(queue.getQueueConfig()).thenReturn(new QueueConfig(location,
-                mock(QueueSettings.class)));
+                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
+                        .withNoTaskTimeout(Duration.ZERO).build()));
         PickTaskDao pickTaskDao = mock(PickTaskDao.class);
         when(pickTaskDao.getTransactionTemplate()).thenReturn(transactionTemplate);
         when(pickTaskDao.pickTask(location, retryTaskStrategy)).thenThrow(new IllegalStateException("fail"));

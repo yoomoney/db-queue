@@ -9,7 +9,6 @@ import javax.annotation.Nonnull;
  * Класс, описывающий правила шардирования задачи и исползуемый в spring конфигурации
  *
  * @param <T> тип данных задачи
- *
  * @author Oleg Kandaurov
  * @since 30.07.2017
  */
@@ -20,8 +19,9 @@ public abstract class SpringShardRouter<T> implements ShardRouter<T>, SpringQueu
 
     /**
      * Конструктор
+     *
      * @param queueLocation местоположение очереди
-     * @param payloadClass класс данных задачи
+     * @param payloadClass  класс данных задачи
      */
     protected SpringShardRouter(QueueLocation queueLocation, Class<T> payloadClass) {
         this.queueLocation = queueLocation;

@@ -3,12 +3,11 @@ package ru.yandex.money.common.dbqueue.init;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
-import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.QueueThreadLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
+import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.internal.LoopPolicy;
 import ru.yandex.money.common.dbqueue.internal.QueueLoop;
 import ru.yandex.money.common.dbqueue.internal.runner.QueueRunner;
@@ -16,16 +15,19 @@ import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Класс обеспечивающий запуск и остановку очередей, полученных из хранилища {@link QueueRegistry}
@@ -37,48 +39,138 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class QueueExecutionPool {
     private static final Logger log = LoggerFactory.getLogger(QueueExecutionPool.class);
 
-    private final Map<QueueLocation, Map<QueueShardId, ExecutorService>> queueThreadPools = new HashMap<>();
+    @Nonnull
+    private final Collection<ShardPoolInstance> poolInstances = new ArrayList<>();
     @Nonnull
     private final QueueRegistry queueRegistry;
     @Nonnull
     private final TaskLifecycleListener defaultTaskLifecycleListener;
     @Nonnull
     private final QueueThreadLifecycleListener queueThreadLifecycleListener;
+    @Nonnull
+    private final BiFunction<QueueLocation, QueueShardId, ThreadFactory> threadFactoryProvider;
+    @Nonnull
+    private final BiFunction<Integer, ThreadFactory, ExecutorService> queueThreadPoolFactory;
+    @Nonnull
+    private final Function<QueueThreadLifecycleListener, QueueLoop> queueLoopFactory;
+    @Nonnull
+    private final Function<ShardPoolInstance, QueueRunner> queueRunnerFactory;
 
     private volatile boolean started;
+    private volatile boolean initialized;
     private static final Duration TERMINATION_TIMEOUT = Duration.ofSeconds(30L);
 
     /**
      * Конструктор
      *
-     * @param queueRegistry хранилище очередей
+     * @param queueRegistry                хранилище очередей
      * @param defaultTaskLifecycleListener слушатель жизненного цикла задачи
      * @param queueThreadLifecycleListener слушатель жизненного цикла потока очереди
      */
     public QueueExecutionPool(@Nonnull QueueRegistry queueRegistry,
                               @Nonnull TaskLifecycleListener defaultTaskLifecycleListener,
                               @Nonnull QueueThreadLifecycleListener queueThreadLifecycleListener) {
-        this.queueRegistry = queueRegistry;
-        this.defaultTaskLifecycleListener = defaultTaskLifecycleListener;
-        this.queueThreadLifecycleListener = queueThreadLifecycleListener;
+        this(queueRegistry, defaultTaskLifecycleListener, queueThreadLifecycleListener,
+                QueueThreadFactory::new,
+                (threadCount, factory) -> new ThreadPoolExecutor(threadCount, threadCount,
+                        0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(threadCount), factory),
+                listener -> new QueueLoop(new LoopPolicy.ThreadLoopPolicy(), listener),
+                poolInstance -> QueueRunner.Factory.createQueueRunner(poolInstance.queue,
+                        poolInstance.queueDao, poolInstance.taskListener, poolInstance.externalExecutor));
+    }
+
+    /**
+     * Конструктор для тестирования
+     *
+     * @param queueRegistry                хранилище очередей
+     * @param defaultTaskLifecycleListener слушатель жизненного цикла задачи
+     * @param queueThreadLifecycleListener слушатель жизненного цикла потока очереди
+     * @param threadFactoryProvider        фабрика фабрик создания потоков
+     * @param queueThreadPoolFactory       фабрика для создания пула обработки очередей
+     * @param queueLoopFactory             фабрика для создания {@link QueueLoop}
+     * @param queueRunnerFactory           фабрика для создания {@link QueueRunner}
+     */
+    QueueExecutionPool(@Nonnull QueueRegistry queueRegistry,
+                       @Nonnull TaskLifecycleListener defaultTaskLifecycleListener,
+                       @Nonnull QueueThreadLifecycleListener queueThreadLifecycleListener,
+                       @Nonnull BiFunction<QueueLocation, QueueShardId, ThreadFactory> threadFactoryProvider,
+                       @Nonnull BiFunction<Integer, ThreadFactory, ExecutorService> queueThreadPoolFactory,
+                       @Nonnull Function<QueueThreadLifecycleListener, QueueLoop> queueLoopFactory,
+                       @Nonnull Function<ShardPoolInstance, QueueRunner> queueRunnerFactory) {
+        this.queueRegistry = Objects.requireNonNull(queueRegistry);
+        this.defaultTaskLifecycleListener = Objects.requireNonNull(defaultTaskLifecycleListener);
+        this.queueThreadLifecycleListener = Objects.requireNonNull(queueThreadLifecycleListener);
+        this.queueThreadPoolFactory = Objects.requireNonNull(queueThreadPoolFactory);
+        this.threadFactoryProvider = Objects.requireNonNull(threadFactoryProvider);
+        this.queueLoopFactory = Objects.requireNonNull(queueLoopFactory);
+        this.queueRunnerFactory = Objects.requireNonNull(queueRunnerFactory);
+    }
+
+
+    /**
+     * Инициализировать пул очередей
+     *
+     * @return инстанс текущего объекта
+     */
+    public synchronized QueueExecutionPool init() {
+        if (initialized) {
+            throw new IllegalStateException("pool already initialized");
+        }
+        queueRegistry.getQueues().forEach(this::initQueue);
+        initialized = true;
+        return this;
+    }
+
+    private synchronized void initQueue(@Nonnull Queue queue) {
+        Objects.requireNonNull(queue);
+        TaskLifecycleListener taskListener = queueRegistry.getTaskListeners()
+                .getOrDefault(queue.getQueueConfig().getLocation(), defaultTaskLifecycleListener);
+        Executor externalExecutor = queueRegistry.getExternalExecutors().get(queue.getQueueConfig().getLocation());
+        Collection<QueueShardId> shards = queue.getShardRouter().getShardsId();
+        for (QueueShardId shardId : shards) {
+            QueueDao queueDao = queueRegistry.getShards().get(shardId);
+            poolInstances.add(new ShardPoolInstance(queue, queueDao, taskListener, externalExecutor));
+        }
     }
 
     /**
      * Запустить обработку очередей
      */
     public synchronized void start() {
+        if (!initialized) {
+            throw new IllegalStateException("pool is not initialized");
+        }
         if (started) {
             throw new IllegalStateException("queues already started");
         }
         started = true;
         log.info("starting queues");
-        queueRegistry.getQueues().forEach(this::createAndStartThreads);
+
+        queueRegistry.getQueues().forEach(queue -> {
+            if (queue.getQueueConfig().getSettings().getThreadCount() <= 0) {
+                log.info("queue is turned off: location={}", queue.getQueueConfig().getLocation());
+            }
+        });
+        poolInstances.forEach(poolInstance -> {
+            ThreadFactory threadFactory = threadFactoryProvider.apply(poolInstance.queue.getQueueConfig().getLocation(),
+                    poolInstance.queueDao.getShardId());
+            int threadCount = poolInstance.queue.getQueueConfig().getSettings().getThreadCount();
+            poolInstance.queueShardThreadPool = queueThreadPoolFactory.apply(threadCount, threadFactory);
+
+            QueueLoop queueLoop = queueLoopFactory.apply(queueThreadLifecycleListener);
+            QueueRunner queueRunner = queueRunnerFactory.apply(poolInstance);
+            poolInstance.queueShardThreadPool.execute(() -> queueLoop.start(poolInstance.queueDao.getShardId(),
+                    poolInstance.queue, queueRunner));
+        });
     }
 
     /**
      * Остановить обработку очередей
      */
     public synchronized void shutdown() {
+        if (!initialized) {
+            throw new IllegalStateException("pool is not initialized");
+        }
         if (!started) {
             throw new IllegalStateException("queues already stopped");
         }
@@ -88,12 +180,9 @@ public class QueueExecutionPool {
         // Необходимо сначала остановить очереди выборки задач
         // В противном случае будут поступать задачи в executor,
         // который не сможет их принять.
-        queueThreadPools.entrySet().parallelStream().forEach(queuePools -> {
-            log.info("shutting down queue: location={}", queuePools.getKey());
-            Map<QueueShardId, ExecutorService> shardThreadPools = queuePools.getValue();
-            shardThreadPools.entrySet().parallelStream().forEach(shardPools ->
-                    shutdownThreadPool(shardPools.getKey(), shardPools.getValue())
-            );
+        poolInstances.parallelStream().forEach(poolInstance -> {
+            log.info("shutting down queue: location={}", poolInstance.queue.getQueueConfig().getLocation());
+            shutdownThreadPool(poolInstance);
         });
         queueRegistry.getExternalExecutors().entrySet().parallelStream().forEach(entry -> {
             log.info("shutting down external executor: location={}", entry.getKey());
@@ -102,56 +191,51 @@ public class QueueExecutionPool {
         log.info("all queue threads stopped");
     }
 
-    private synchronized void createAndStartThreads(@Nonnull Queue queue) {
-        Objects.requireNonNull(queue);
-        QueueConfig config = queue.getQueueConfig();
-        if (config.getSettings().getThreadCount() <= 0) {
-            log.info("queue is turned off: location={}", config.getLocation());
-            return;
-        }
-
-        TaskLifecycleListener taskListener = queueRegistry.getTaskListeners()
-                .getOrDefault(queue.getQueueConfig().getLocation(), defaultTaskLifecycleListener);
-        Executor externalExecutor = queueRegistry.getExternalExecutors().get(queue.getQueueConfig().getLocation());
-
-        Map<QueueShardId, ExecutorService> shardThreadPools = new HashMap<>();
-        queueThreadPools.put(config.getLocation(), shardThreadPools);
-        Collection<QueueShardId> shards = queue.getShardRouter().getShardsId();
-        for (QueueShardId shardId : shards) {
-
-            ExecutorService queueThreadPool = Executors.newFixedThreadPool(
-                    config.getSettings().getThreadCount(),
-                    new QueueThreadFactory(config.getLocation(), shardId));
-
-            QueueLoop queueLoop = new QueueLoop(new LoopPolicy.ThreadLoopPolicy(), queueThreadLifecycleListener);
-
-            QueueDao queueDao = queueRegistry.getShards().get(shardId);
-
-            QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queue,
-                    queueDao, taskListener, externalExecutor);
-
-            shardThreadPools.put(shardId, queueThreadPool);
-            for (int i = 0; i < config.getSettings().getThreadCount(); i++) {
-                queueThreadPool.execute(() -> queueLoop.start(shardId, queue, queueRunner));
-            }
-        }
-
-    }
-
-
-    private static void shutdownThreadPool(@Nonnull QueueShardId shardId, @Nonnull ExecutorService executorService) {
-        Objects.requireNonNull(shardId);
-        Objects.requireNonNull(executorService);
+    private static void shutdownThreadPool(@Nonnull ShardPoolInstance poolInstance) {
+        Objects.requireNonNull(poolInstance);
         log.info("waiting queue threads to respond to interrupt request: shardId={}, timeout={}",
-                shardId, TERMINATION_TIMEOUT);
+                poolInstance.queueDao.getShardId(), TERMINATION_TIMEOUT);
         try {
-            executorService.shutdownNow();
-            if (!executorService.awaitTermination(TERMINATION_TIMEOUT.getSeconds(), TimeUnit.SECONDS)) {
-                log.error("several queue threads are still not terminated: shardId={}", shardId);
+            poolInstance.queueShardThreadPool.shutdownNow();
+            if (!poolInstance.queueShardThreadPool.awaitTermination(
+                    TERMINATION_TIMEOUT.getSeconds(), TimeUnit.SECONDS)) {
+                log.error("several queue threads are still not terminated: shardId={}",
+                        poolInstance.queueDao.getShardId());
             }
         } catch (InterruptedException ignored) {
             log.error("queue shutdown is unexpectedly terminated");
             Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * Данные запускаемого обработчика очереди
+     */
+    static class ShardPoolInstance {
+        /**
+         * Очередь
+         */
+        final Queue queue;
+        /**
+         * Шард
+         */
+        final QueueDao queueDao;
+        /**
+         * Слушатель
+         */
+        final TaskLifecycleListener taskListener;
+        /**
+         * Внешний исполнитель
+         */
+        final Executor externalExecutor;
+        private ExecutorService queueShardThreadPool;
+
+        private ShardPoolInstance(Queue queue, QueueDao queueDao, TaskLifecycleListener taskListener,
+                                  Executor externalExecutor) {
+            this.queue = queue;
+            this.queueDao = queueDao;
+            this.taskListener = taskListener;
+            this.externalExecutor = externalExecutor;
         }
     }
 

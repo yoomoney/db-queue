@@ -2,12 +2,12 @@ package ru.yandex.money.common.dbqueue.example;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.api.Enqueuer;
 import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueShardId;
+import ru.yandex.money.common.dbqueue.api.ShardRouter;
+import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
@@ -27,6 +27,7 @@ import java.util.Collections;
 public class ExampleQueueConfiguration {
     private static final QueueLocation EXAMPLE_QUEUE_LOCATION =
             new QueueLocation("queue_test", "example_queue");
+
     @Bean
     SpringQueueConfigContainer springQueueConfigContainer() {
         return new SpringQueueConfigContainer(Collections.singletonList(new QueueConfig(

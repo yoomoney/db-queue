@@ -9,7 +9,7 @@ import java.util.Objects;
  * @author Oleg Kandaurov
  * @since 09.07.2017
  */
-public class QueueConfig {
+public final class QueueConfig {
 
     @Nonnull
     private final QueueLocation location;
@@ -54,5 +54,23 @@ public class QueueConfig {
                 "location=" + location +
                 ", settings=" + settings +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        QueueConfig that = (QueueConfig) obj;
+        return Objects.equals(location, that.location) &&
+                Objects.equals(settings, that.settings);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(location, settings);
     }
 }

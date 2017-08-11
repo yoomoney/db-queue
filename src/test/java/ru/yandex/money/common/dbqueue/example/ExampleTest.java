@@ -20,8 +20,8 @@ public class ExampleTest {
     @Autowired
     private Enqueuer<CustomPayload> enqueuer;
 
-    @Ignore
     @Test
+    @Ignore
     public void run_example_queue() throws Exception {
         enqueuer.enqueue(EnqueueParams.create(new CustomPayload("happy", "hello")));
         Thread.sleep(500L);

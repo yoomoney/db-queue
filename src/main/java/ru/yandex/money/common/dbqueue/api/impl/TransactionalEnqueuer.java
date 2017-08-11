@@ -1,11 +1,11 @@
 package ru.yandex.money.common.dbqueue.api.impl;
 
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
+import ru.yandex.money.common.dbqueue.api.Enqueuer;
+import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.ShardRouter;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
-import ru.yandex.money.common.dbqueue.api.Enqueuer;
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 
 import javax.annotation.Nonnull;
@@ -17,11 +17,10 @@ import java.util.stream.Collectors;
 
 /**
  * Реализация постановщика задач в очередь.
- *
+ * <p>
  * Предоставляет логику роутинга и сохранение задачи в соответствующий шард.
  *
  * @param <T> тип данных задачи
- *
  * @author Oleg Kandaurov
  * @since 05.08.2017
  */
@@ -35,10 +34,10 @@ public class TransactionalEnqueuer<T> implements Enqueuer<T> {
     /**
      * Конструктор
      *
-     * @param queueConfig конфигурация очереди
+     * @param queueConfig        конфигурация очереди
      * @param payloadTransformer преобразователь данных задачи
-     * @param shards шарды, доступные для роутинга
-     * @param shardRouter правила роутинга задачи на шарды
+     * @param shards             шарды, доступные для роутинга
+     * @param shardRouter        правила роутинга задачи на шарды
      */
     public TransactionalEnqueuer(QueueConfig queueConfig, PayloadTransformer<T> payloadTransformer,
                                  Collection<QueueDao> shards, ShardRouter<T> shardRouter) {

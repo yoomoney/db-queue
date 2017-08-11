@@ -45,7 +45,8 @@ public class BaseSpringQueueConfiguration {
 
     @Bean
     QueueExecutionPool queueExecutionPool() {
-        return new QueueExecutionPool(queueRegistry(), defaultTaskLifecycleListener(), queueThreadLifecycleListener());
+        return new QueueExecutionPool(queueRegistry(), defaultTaskLifecycleListener(),
+                queueThreadLifecycleListener());
     }
 
     @Bean

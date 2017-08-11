@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.example;
 
-import ru.yandex.money.common.dbqueue.spring.SpringPayloadTransformer;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.spring.SpringPayloadTransformer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

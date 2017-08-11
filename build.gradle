@@ -28,7 +28,8 @@ dependencies {
             'org.apache.logging.log4j:log4j-core:2.2',
             'org.apache.logging.log4j:log4j-slf4j-impl:2.2',
             'org.mockito:mockito-core:1.10.19',
-            'com.tngtech.archunit:archunit-junit:0.4.0'
+            'com.tngtech.archunit:archunit-junit:0.4.0',
+            'nl.jqno.equalsverifier:equalsverifier:2.3.2'
 
     testCompileOnly 'com.google.code.findbugs:jsr305:3.0.1',
             'com.google.code.findbugs:annotations:3.0.1'
@@ -110,15 +111,15 @@ jacocoTestCoverageVerification {
         rule {
             limit {
                 counter = 'INSTRUCTION'
-                minimum = 0.66
+                minimum = 0.85
             }
             limit {
                 counter = 'BRANCH'
-                minimum = 0.46
+                minimum = 0.81
             }
             limit {
                 counter = 'CLASS'
-                minimum = 0.87
+                minimum = 0.90
             }
         }
     }

@@ -36,6 +36,7 @@ public class SpringQueueConfigContainer {
 
     /**
      * Получить конфигурацию требуемой очереди
+     *
      * @param queueLocation местоположение очереди
      * @return настройки очереди
      */
@@ -47,6 +48,7 @@ public class SpringQueueConfigContainer {
 
     /**
      * Получить конфигурацию всех очередей
+     *
      * @return Map: key - местоположение очереди, value - конфигурация данной очереди
      */
     @Nonnull

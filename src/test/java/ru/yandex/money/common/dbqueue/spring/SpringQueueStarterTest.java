@@ -21,6 +21,7 @@ public class SpringQueueStarterTest {
     @Test
     public void should_start_queues() throws Exception {
         new AnnotationConfigApplicationContext(StartContext.class);
+        verify(poolForStart).init();
         verify(poolForStart).start();
     }
 

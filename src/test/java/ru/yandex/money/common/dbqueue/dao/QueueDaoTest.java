@@ -5,6 +5,7 @@ import org.junit.Test;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
 import java.time.Duration;
 import java.time.ZoneId;
@@ -38,7 +39,7 @@ public class QueueDaoTest extends BaseDaoTest {
         ZonedDateTime beforeExecution = ZonedDateTime.now();
         long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, EnqueueParams.create(payload)
                 .withExecutionDelay(executionDelay).withCorrelationId(correlationId).withActor(actor)));
-        jdbcTemplate.query("select * from " + TABLE_NAME + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
             ZonedDateTime afterExecution = ZonedDateTime.now();
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getString("task"), equalTo(payload));
@@ -70,7 +71,7 @@ public class QueueDaoTest extends BaseDaoTest {
 
         Boolean deleteResult = executeInTransaction(() -> queueDao.deleteTask(location, enqueueId));
         Assert.assertThat(deleteResult, equalTo(true));
-        jdbcTemplate.query("select * from " + TABLE_NAME + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
             Assert.assertThat(rs.next(), equalTo(false));
             return new Object();
         });
@@ -86,7 +87,7 @@ public class QueueDaoTest extends BaseDaoTest {
         Duration executionDelay = Duration.ofHours(1L);
         Boolean reenqueueResult = executeInTransaction(() -> queueDao.reenqueue(location, enqueueId, executionDelay, true));
         Assert.assertThat(reenqueueResult, equalTo(true));
-        jdbcTemplate.query("select * from " + TABLE_NAME + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
             ZonedDateTime afterExecution = ZonedDateTime.now();
             Assert.assertThat(rs.next(), equalTo(true));
             ZonedDateTime processTime = ZonedDateTime.ofInstant(rs.getTimestamp("process_time").toInstant(),
@@ -104,10 +105,10 @@ public class QueueDaoTest extends BaseDaoTest {
         Long enqueueId = executeInTransaction(() ->
                 queueDao.enqueue(location, new EnqueueParams<>()));
         executeInTransaction(() -> {
-            jdbcTemplate.update("update " + TABLE_NAME + " set attempt=10 where id=" + enqueueId);
+            jdbcTemplate.update("update " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " set attempt=10 where id=" + enqueueId);
         });
 
-        jdbcTemplate.query("select * from " + TABLE_NAME + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getLong("attempt"), equalTo(10L));
             return new Object();
@@ -117,7 +118,7 @@ public class QueueDaoTest extends BaseDaoTest {
                 queueDao.reenqueue(location, enqueueId, Duration.ofHours(1L), true));
 
         Assert.assertThat(reenqueueResult, equalTo(true));
-        jdbcTemplate.query("select * from " + TABLE_NAME + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getLong("attempt"), equalTo(0L));
             return new Object();
@@ -130,10 +131,10 @@ public class QueueDaoTest extends BaseDaoTest {
         Long enqueueId = executeInTransaction(() ->
                 queueDao.enqueue(location, new EnqueueParams<>()));
         executeInTransaction(() -> {
-            jdbcTemplate.update("update " + TABLE_NAME + " set attempt=10 where id=" + enqueueId);
+            jdbcTemplate.update("update " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " set attempt=10 where id=" + enqueueId);
         });
 
-        jdbcTemplate.query("select * from " + TABLE_NAME + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getLong("attempt"), equalTo(10L));
             return new Object();
@@ -143,7 +144,7 @@ public class QueueDaoTest extends BaseDaoTest {
                 queueDao.reenqueue(location, enqueueId, Duration.ofHours(1L), false));
 
         Assert.assertThat(reenqueueResult, equalTo(true));
-        jdbcTemplate.query("select * from " + TABLE_NAME + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getLong("attempt"), equalTo(10L));
             return new Object();

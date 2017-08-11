@@ -10,6 +10,7 @@ import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.concurrent.Executor;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -26,6 +27,9 @@ import static org.mockito.Mockito.when;
  */
 public class QueueRunnerInExternalExecutorTest {
 
+    private static final QueueLocation testLocation1 =
+            new QueueLocation("queue_test", "test_queue1");
+
     @Test
     public void should_wait_notasktimeout_when_no_task_found() throws Exception {
         Duration betweenTaskTimeout = Duration.ofHours(1L);
@@ -37,7 +41,7 @@ public class QueueRunnerInExternalExecutorTest {
         when(taskPicker.pickTask(queue)).thenReturn(null);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);
 
-        when(queue.getQueueConfig()).thenReturn(new QueueConfig(mock(QueueLocation.class),
+        when(queue.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
         Duration waitTimeout = new QueueRunnerInExternalExecutor(taskPicker, taskProcessor, executor).runQueue(queue);
 
@@ -56,12 +60,13 @@ public class QueueRunnerInExternalExecutorTest {
         FakeExecutor executor = spy(new FakeExecutor());
         Queue queue = mock(Queue.class);
         TaskPicker taskPicker = mock(TaskPicker.class);
-        TaskRecord taskRecord = mock(TaskRecord.class);
+        TaskRecord taskRecord = new TaskRecord(0, null, 0, ZonedDateTime.now(),
+                ZonedDateTime.now(), null, null);
         when(taskPicker.pickTask(queue)).thenReturn(taskRecord);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);
 
 
-        when(queue.getQueueConfig()).thenReturn(new QueueConfig(mock(QueueLocation.class),
+        when(queue.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
         Duration waitTimeout = new QueueRunnerInExternalExecutor(taskPicker, taskProcessor, executor).runQueue(queue);
 

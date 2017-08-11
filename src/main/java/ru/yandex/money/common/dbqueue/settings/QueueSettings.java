@@ -16,7 +16,7 @@ import java.util.function.Function;
  * @author Oleg Kandaurov
  * @since 10.07.2017
  */
-public class QueueSettings {
+public final class QueueSettings {
 
     /**
      * Дополнительные настройки очереди
@@ -205,6 +205,30 @@ public class QueueSettings {
                 ", processingMode=" + processingMode +
                 (additionalSettings.isEmpty() ? "" : ", additionalSettings=" + additionalSettings) +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        QueueSettings that = (QueueSettings) obj;
+        return threadCount == that.threadCount &&
+                retryType == that.retryType &&
+                processingMode == that.processingMode &&
+                Objects.equals(noTaskTimeout, that.noTaskTimeout) &&
+                Objects.equals(betweenTaskTimeout, that.betweenTaskTimeout) &&
+                Objects.equals(fatalCrashTimeout, that.fatalCrashTimeout) &&
+                Objects.equals(additionalSettings, that.additionalSettings);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(threadCount, noTaskTimeout, betweenTaskTimeout, fatalCrashTimeout, retryType,
+                processingMode, additionalSettings);
     }
 
     /**

@@ -2,8 +2,8 @@ package ru.yandex.money.common.dbqueue.internal;
 
 import ru.yandex.money.common.dbqueue.api.Queue;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.internal.runner.QueueRunner;
 import ru.yandex.money.common.dbqueue.api.QueueThreadLifecycleListener;
+import ru.yandex.money.common.dbqueue.internal.runner.QueueRunner;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;

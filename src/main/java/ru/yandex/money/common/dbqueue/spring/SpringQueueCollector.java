@@ -85,6 +85,7 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
 
     /**
      * Получить постановщики задач, найденные в spring контексте.
+     *
      * @return Map: key - местоположение очереди, value - постановщик задач данной очереди
      */
     @Nonnull
@@ -94,6 +95,7 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
 
     /**
      * Получить обработчиков очереди, найденные в spring контексте.
+     *
      * @return Map: key - местоположение очереди, value - обработчик очереди
      */
     @Nonnull
@@ -103,6 +105,7 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
 
     /**
      * Получить слушателей задач в данной очереди, найденных в spring контексте.
+     *
      * @return Map: key - местоположение очереди, value - слушатель задач данной очереди
      */
     @Nonnull
@@ -112,6 +115,7 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
 
     /**
      * Получить исполнителей задач, найденных в spring контексте.
+     *
      * @return Map: key - местоположение очереди, value - исполнитель задач данной очереди
      */
     @Nonnull
@@ -121,6 +125,7 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
 
     /**
      * Получить преобразователи данных задачи, найденные в spring контексте.
+     *
      * @return Map: key - местоположение очереди, value - преобразователь данных задачи для данной очереди
      */
     @Nonnull
@@ -130,6 +135,7 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
 
     /**
      * Получить правила шардирования, найденные в spring контексте.
+     *
      * @return Map: key - местоположение очереди, value - правила шардирования задач в очереди
      */
     @Nonnull
@@ -139,6 +145,7 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
 
     /**
      * Получить шарды, найденные в spring контексте.
+     *
      * @return Map: key - идентификатор шарды, value - dao для работы с данным шардом
      */
     @Nonnull

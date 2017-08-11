@@ -39,8 +39,8 @@ public class SpringQueueInitializer implements InitializingBean {
      * Конструктор
      *
      * @param configContainer настройки очередей
-     * @param queueCollector поставщик бинов, связанных с очередями
-     * @param queueRegistry хранилище очередей
+     * @param queueCollector  поставщик бинов, связанных с очередями
+     * @param queueRegistry   хранилище очередей
      */
     public SpringQueueInitializer(@Nonnull SpringQueueConfigContainer configContainer,
                                   @Nonnull SpringQueueCollector queueCollector,

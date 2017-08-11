@@ -30,9 +30,9 @@ class QueueRunnerInTransaction implements QueueRunner {
     /**
      * Конструктор
      *
-     * @param taskPicker выборщик задачи
+     * @param taskPicker    выборщик задачи
      * @param taskProcessor обработчик задачи
-     * @param queueDao шард на котором обрабатываются задачи
+     * @param queueDao      шард на котором обрабатываются задачи
      */
     QueueRunnerInTransaction(@Nonnull TaskPicker taskPicker, @Nonnull TaskProcessor taskProcessor,
                              @Nonnull QueueDao queueDao) {

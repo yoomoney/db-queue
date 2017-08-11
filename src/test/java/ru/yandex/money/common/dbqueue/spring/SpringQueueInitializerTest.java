@@ -100,7 +100,7 @@ public class SpringQueueInitializerTest {
     public void should_throw_when_unused_beans() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("unable to wire queue configuration:" + System.lineSeparator() +
-                "unused enqueuer: location={table=queue_test,queue=test_queue1}"  + System.lineSeparator() +
+                "unused enqueuer: location={table=queue_test,queue=test_queue1}" + System.lineSeparator() +
                 "unused shard router: location={table=queue_test,queue=test_queue1}" + System.lineSeparator() +
                 "unused transformer: location={table=queue_test,queue=test_queue1}" + System.lineSeparator() +
                 "unused config: location={table=queue_test,queue=test_queue1}");

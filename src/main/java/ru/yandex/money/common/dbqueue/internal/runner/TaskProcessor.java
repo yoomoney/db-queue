@@ -1,12 +1,12 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
-import ru.yandex.money.common.dbqueue.api.QueueAction;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
-import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
 import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueAction;
 import ru.yandex.money.common.dbqueue.api.Task;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
+import ru.yandex.money.common.dbqueue.dao.QueueDao;
+import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
 
 import javax.annotation.Nonnull;
 
@@ -33,10 +33,10 @@ class TaskProcessor {
     /**
      * Конструктор
      *
-     * @param queueDao шард на котором происходит выполнение задачи
+     * @param queueDao              шард на котором происходит выполнение задачи
      * @param taskLifecycleListener слушатель жизненного цикла задачи в очереди
-     * @param millisTimeProvider поставщик текущего времени
-     * @param taskResultHandler обработчик результата выполнения задачи
+     * @param millisTimeProvider    поставщик текущего времени
+     * @param taskResultHandler     обработчик результата выполнения задачи
      */
     TaskProcessor(@Nonnull QueueDao queueDao,
                   @Nonnull TaskLifecycleListener taskLifecycleListener,

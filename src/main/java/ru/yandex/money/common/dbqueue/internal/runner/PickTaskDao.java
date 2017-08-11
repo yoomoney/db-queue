@@ -33,8 +33,8 @@ class PickTaskDao {
     /**
      * Конструктор
      *
-     * @param shardId идентификатор шарда на котором будет происходить выборка задач
-     * @param jdbcTemplate spring jdbc template
+     * @param shardId             идентификатор шарда на котором будет происходить выборка задач
+     * @param jdbcTemplate        spring jdbc template
      * @param transactionTemplate spring transaction template
      */
     PickTaskDao(@Nonnull QueueShardId shardId, @Nonnull JdbcOperations jdbcTemplate,

@@ -2,13 +2,13 @@ package ru.yandex.money.common.dbqueue.init;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.api.Enqueuer;
 import ru.yandex.money.common.dbqueue.api.Queue;
 import ru.yandex.money.common.dbqueue.api.QueueExternalExecutor;
+import ru.yandex.money.common.dbqueue.api.QueueShardId;
+import ru.yandex.money.common.dbqueue.api.ShardRouter;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
+import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 
@@ -47,8 +47,8 @@ public class QueueRegistry {
     /**
      * Зарегистрировать очередь.
      *
-     * @param <T> тип данных задачи
-     * @param queue обработчик очереди
+     * @param <T>      тип данных задачи
+     * @param queue    обработчик очереди
      * @param enqueuer постановщик задачи в очередь
      */
     public synchronized <T> void registerQueue(@Nonnull Queue<T> queue,
@@ -58,16 +58,16 @@ public class QueueRegistry {
         ensureConstructionInProgress();
         QueueLocation location = queue.getQueueConfig().getLocation();
 
-        if (queue.getQueueConfig() != enqueuer.getQueueConfig()) {
+        if (!Objects.equals(queue.getQueueConfig(), enqueuer.getQueueConfig())) {
             errorMessages.add(String.format("queue config must be the same: location=%s, enqueuer=%s, " +
                     "queue=%s", location, enqueuer.getQueueConfig(), queue.getQueueConfig()));
         }
 
-        if (enqueuer.getPayloadTransformer() != queue.getPayloadTransformer()) {
+        if (!Objects.equals(enqueuer.getPayloadTransformer(), queue.getPayloadTransformer())) {
             errorMessages.add(String.format("payload transformers must be the same: location=%s", location));
         }
 
-        if (enqueuer.getShardRouter() != queue.getShardRouter()) {
+        if (!Objects.equals(enqueuer.getShardRouter(), queue.getShardRouter())) {
             errorMessages.add(String.format("shard routers must be the same: location=%s", location));
         }
 
@@ -196,7 +196,8 @@ public class QueueRegistry {
     }
 
     /**
-     * Получить список зарегестированных обработчиков очередей
+     * Получить список зарегистрированных обработчиков очередей
+     *
      * @return список очередей
      */
     @Nonnull
@@ -207,6 +208,7 @@ public class QueueRegistry {
 
     /**
      * Получить зарегестрированные слушатели задач
+     *
      * @return Map: key - местоположение очереди, value - слушатель данной очереди
      */
     @Nonnull
@@ -217,6 +219,7 @@ public class QueueRegistry {
 
     /**
      * Получить исполнителей задач
+     *
      * @return Map: key - местоположение очереди, value - исполнитель данной очереди
      */
     @Nonnull
@@ -227,6 +230,7 @@ public class QueueRegistry {
 
     /**
      * Получить зарегестрированные шарды
+     *
      * @return Map: key - идентификатор шарда, value - dao для работы с данным шардом
      */
     @Nonnull

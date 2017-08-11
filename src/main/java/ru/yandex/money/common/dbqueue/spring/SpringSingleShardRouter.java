@@ -14,7 +14,6 @@ import java.util.Collections;
  * и доступен только один шард.
  *
  * @param <T> тип данных задачи
- *
  * @author Oleg Kandaurov
  * @since 05.08.2017
  */
@@ -25,9 +24,10 @@ public class SpringSingleShardRouter<T> extends SpringShardRouter<T> {
 
     /**
      * Конструктор
+     *
      * @param queueLocation местоположение очереди
-     * @param payloadClass класс данных задачи
-     * @param queueDao шард на котором размещены задачи
+     * @param payloadClass  класс данных задачи
+     * @param queueDao      шард на котором размещены задачи
      */
     public SpringSingleShardRouter(QueueLocation queueLocation, Class<T> payloadClass, QueueDao queueDao) {
         super(queueLocation, payloadClass);
