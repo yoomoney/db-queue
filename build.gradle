@@ -102,7 +102,6 @@ idea {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 test {
     systemProperty "file.encoding", "UTF-8"
-    include '**/*Test.class'
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 apply plugin: "jacoco"
@@ -111,15 +110,15 @@ jacocoTestCoverageVerification {
         rule {
             limit {
                 counter = 'INSTRUCTION'
-                minimum = 0.85
+                minimum = 0.90
             }
             limit {
                 counter = 'BRANCH'
-                minimum = 0.81
+                minimum = 0.82
             }
             limit {
                 counter = 'CLASS'
-                minimum = 0.90
+                minimum = 0.99
             }
         }
     }

@@ -82,7 +82,7 @@ public class ArchitectureTest {
                 fullNames("dao..", "internal.."))
                 .should().accessClassesThat().resideInAnyPackage("org.springframework.jdbc..", "java.lang..")
                 .orShould().accessClassesThat().resideInAnyPackage(fullNames("dao..", "api..", "settings..", "internal.."))
-                .because("public classes must not depend only on spring jdbc");
+                .because("public classes must depend only on spring jdbc");
         rule.check(classes);
     }
 

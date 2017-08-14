@@ -61,6 +61,7 @@ public class QueueDatabaseInitializer {
     }
 
     public static void createTable(String tableName) {
+        initialize();
         String tableDDl = String.format(QUEUE_TABLE_DDL, tableName, tableName, tableName);
         transactionTemplate.execute(status -> {
             jdbcTemplate.execute(tableDDl);

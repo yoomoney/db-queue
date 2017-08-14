@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
  * @author Oleg Kandaurov
  * @since 05.08.2017
  */
-public final class SpringNoopPayloadTransformer extends SpringPayloadTransformer<String> {
+public class SpringNoopPayloadTransformer extends SpringPayloadTransformer<String> {
 
     /**
      * Конструктор преобразователя данных задачи

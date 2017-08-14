@@ -8,6 +8,7 @@ import ru.yandex.money.common.dbqueue.api.QueueAction;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.Task;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
+import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
@@ -40,15 +41,29 @@ public class SpringQueueInitializerTest {
 
     private static final QueueLocation testLocation1 =
             new QueueLocation("queue_test", "test_queue1");
-    private static final QueueLocation testLocation2 =
-            new QueueLocation("queue_test", "test_queue2");
 
     @Test
     public void should_not_throw_error_when_empty_configuration() throws Exception {
+        QueueExecutionPool executionPool = mock(QueueExecutionPool.class);
+        when(executionPool.getQueueRegistry()).thenReturn(new QueueRegistry());
         SpringQueueInitializer initializer = new SpringQueueInitializer(
                 new SpringQueueConfigContainer(Collections.emptyList()),
-                mock(SpringQueueCollector.class), new QueueRegistry());
-        initializer.afterPropertiesSet();
+                mock(SpringQueueCollector.class), executionPool);
+        initializer.onApplicationEvent(null);
+    }
+
+    @Test
+    public void should_start_and_stop_queues() throws Exception {
+        QueueExecutionPool executionPool = mock(QueueExecutionPool.class);
+        when(executionPool.getQueueRegistry()).thenReturn(new QueueRegistry());
+        SpringQueueInitializer initializer = new SpringQueueInitializer(
+                new SpringQueueConfigContainer(Collections.emptyList()),
+                mock(SpringQueueCollector.class), executionPool);
+        initializer.onApplicationEvent(null);
+        verify(executionPool).init();
+        verify(executionPool).start();
+        initializer.destroy();
+        verify(executionPool).shutdown();
     }
 
     @Test
@@ -59,15 +74,16 @@ public class SpringQueueInitializerTest {
                 "payload transformer not found: location={table=queue_test,queue=test_queue1}" + System.lineSeparator() +
                 "shard router not found: location={table=queue_test,queue=test_queue1}" + System.lineSeparator() +
                 "enqueuer not found: location={table=queue_test,queue=test_queue1}");
-
+        QueueExecutionPool executionPool = mock(QueueExecutionPool.class);
+        when(executionPool.getQueueRegistry()).thenReturn(new QueueRegistry());
         SpringQueueCollector queueCollector = mock(SpringQueueCollector.class);
 
         when(queueCollector.getQueues()).thenReturn(singletonMap(testLocation1, new SimpleQueue<>(String.class)));
 
         SpringQueueInitializer initializer = new SpringQueueInitializer(
                 new SpringQueueConfigContainer(Collections.emptyList()),
-                queueCollector, new QueueRegistry());
-        initializer.afterPropertiesSet();
+                queueCollector, executionPool);
+        initializer.onApplicationEvent(null);
     }
 
     @Test
@@ -78,8 +94,10 @@ public class SpringQueueInitializerTest {
                 "enqueuer does not match queue: location={table=queue_test,queue=test_queue1}, queueClass=java.lang.Exception, enqueuerClass=java.lang.Long" + System.lineSeparator() +
                 "shard router does not match queue: location={table=queue_test,queue=test_queue1}, queueClass=java.lang.Exception, shardRouterClass=java.math.BigDecimal");
 
-        SpringQueueCollector queueCollector = mock(SpringQueueCollector.class);
+        QueueExecutionPool executionPool = mock(QueueExecutionPool.class);
+        when(executionPool.getQueueRegistry()).thenReturn(new QueueRegistry());
 
+        SpringQueueCollector queueCollector = mock(SpringQueueCollector.class);
         when(queueCollector.getQueues()).thenReturn(singletonMap(testLocation1, new SimpleQueue<>(Exception.class)));
         when(queueCollector.getEnqueuers()).thenReturn(singletonMap(testLocation1,
                 new SpringTransactionalEnqueuer<>(testLocation1, Long.class)));
@@ -92,8 +110,8 @@ public class SpringQueueInitializerTest {
                 new SpringQueueConfigContainer(Collections.singletonList(new QueueConfig(testLocation1,
                         QueueSettings.builder().withNoTaskTimeout(Duration.ofMillis(1L))
                                 .withBetweenTaskTimeout(Duration.ofMillis(1L)).build()))),
-                queueCollector, new QueueRegistry());
-        initializer.afterPropertiesSet();
+                queueCollector, executionPool);
+        initializer.onApplicationEvent(null);
     }
 
     @Test
@@ -104,6 +122,8 @@ public class SpringQueueInitializerTest {
                 "unused shard router: location={table=queue_test,queue=test_queue1}" + System.lineSeparator() +
                 "unused transformer: location={table=queue_test,queue=test_queue1}" + System.lineSeparator() +
                 "unused config: location={table=queue_test,queue=test_queue1}");
+        QueueExecutionPool executionPool = mock(QueueExecutionPool.class);
+        when(executionPool.getQueueRegistry()).thenReturn(new QueueRegistry());
 
         SpringQueueCollector queueCollector = mock(SpringQueueCollector.class);
         when(queueCollector.getEnqueuers()).thenReturn(singletonMap(testLocation1,
@@ -117,8 +137,8 @@ public class SpringQueueInitializerTest {
                 new SpringQueueConfigContainer(Collections.singletonList(new QueueConfig(testLocation1,
                         QueueSettings.builder().withNoTaskTimeout(Duration.ofMillis(1L))
                                 .withBetweenTaskTimeout(Duration.ofMillis(1L)).build()))),
-                queueCollector, new QueueRegistry());
-        initializer.afterPropertiesSet();
+                queueCollector, executionPool);
+        initializer.onApplicationEvent(null);
     }
 
     @Test
@@ -169,10 +189,12 @@ public class SpringQueueInitializerTest {
 
         QueueRegistry queueRegistry = mock(QueueRegistry.class);
 
+        QueueExecutionPool executionPool = mock(QueueExecutionPool.class);
+        when(executionPool.getQueueRegistry()).thenReturn(queueRegistry);
         SpringQueueInitializer initializer = new SpringQueueInitializer(
                 new SpringQueueConfigContainer(Collections.singletonList(queueConfig)),
-                queueCollector, queueRegistry);
-        initializer.afterPropertiesSet();
+                queueCollector, executionPool);
+        initializer.onApplicationEvent(null);
 
         verify(queueRegistry).registerShard(queueDao);
         verify(queueRegistry).registerQueue(queue, enqueuer);

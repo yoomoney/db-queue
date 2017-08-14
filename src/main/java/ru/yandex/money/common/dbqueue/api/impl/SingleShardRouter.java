@@ -11,7 +11,7 @@ import java.util.Collections;
 /**
  * Реализация правил шардирования, в случае когда шардирование не требуется.
  *
- * @param <T> тип данныз задачи
+ * @param <T> тип данных задачи
  */
 public class SingleShardRouter<T> implements ShardRouter<T> {
     private final QueueDao queueDao;

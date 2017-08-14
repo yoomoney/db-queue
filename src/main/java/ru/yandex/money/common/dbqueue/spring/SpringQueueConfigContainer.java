@@ -55,4 +55,11 @@ public class SpringQueueConfigContainer {
     public Map<QueueLocation, QueueConfig> getQueueConfigs() {
         return Collections.unmodifiableMap(queueConfigs);
     }
+
+    @Override
+    public String toString() {
+        return '{' +
+                "queueConfigs=" + queueConfigs +
+                '}';
+    }
 }

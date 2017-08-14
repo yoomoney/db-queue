@@ -1,8 +1,11 @@
 package ru.yandex.money.common.dbqueue.spring;
 
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
+import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 
@@ -18,16 +21,22 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * Класс, собирающий спринговую конфигурацию, и региструющий её в {@link QueueRegistry}
+ * Класс, собирающий конфигурацию очередей, региструющий её в {@link QueueRegistry}
+ * и запускающий её через {@link QueueExecutionPool}.
+ * <p>
+ * Очереди стартуют после построения spring контекста и останавливаются при закрытии контекста.
+ * Для использования достаточно создать bean в spring контексте.
  *
  * @author Oleg Kandaurov
  * @since 17.03.2016.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class SpringQueueInitializer implements InitializingBean {
-
+public class SpringQueueInitializer implements
+        ApplicationListener<ContextRefreshedEvent>, DisposableBean {
     @Nonnull
     private final QueueRegistry queueRegistry;
+    @Nonnull
+    private final QueueExecutionPool executionPool;
     @Nonnull
     private final SpringQueueConfigContainer configContainer;
     @Nonnull
@@ -40,14 +49,15 @@ public class SpringQueueInitializer implements InitializingBean {
      *
      * @param configContainer настройки очередей
      * @param queueCollector  поставщик бинов, связанных с очередями
-     * @param queueRegistry   хранилище очередей
+     * @param executionPool   менеджер запуска очередей
      */
     public SpringQueueInitializer(@Nonnull SpringQueueConfigContainer configContainer,
                                   @Nonnull SpringQueueCollector queueCollector,
-                                  @Nonnull QueueRegistry queueRegistry) {
+                                  @Nonnull QueueExecutionPool executionPool) {
         this.configContainer = requireNonNull(configContainer);
         this.queueCollector = requireNonNull(queueCollector);
-        this.queueRegistry = requireNonNull(queueRegistry);
+        this.executionPool = requireNonNull(executionPool);
+        this.queueRegistry = requireNonNull(executionPool.getQueueRegistry());
     }
 
     private void init() {
@@ -174,8 +184,17 @@ public class SpringQueueInitializer implements InitializingBean {
         });
     }
 
+
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void destroy() throws Exception {
+        executionPool.shutdown();
+    }
+
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+
         init();
+        executionPool.init();
+        executionPool.start();
     }
 }

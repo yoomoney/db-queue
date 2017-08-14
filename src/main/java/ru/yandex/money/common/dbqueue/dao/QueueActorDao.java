@@ -15,6 +15,8 @@ import java.util.Objects;
  * <p>
  * ВНИМАНИЕ: Для использования этой функциональности необходимо добавить
  * составной индекс по полям (actor, queue_name)
+ * <p>
+ * CREATE INDEX actor_name_idx ON tasks (actor, queue_name)
  *
  * @author Oleg Kandaurov
  * @since 11.07.2017

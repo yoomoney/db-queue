@@ -280,4 +280,13 @@ public class QueueExecutionPool {
         }
     }
 
+    /**
+     * Получить реестр очередей
+     *
+     * @return реестр очередей
+     */
+    @Nonnull
+    public QueueRegistry getQueueRegistry() {
+        return queueRegistry;
+    }
 }
