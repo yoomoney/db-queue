@@ -4,16 +4,6 @@
 [![Codacy](https://api.codacy.com/project/badge/Grade/3a0e23fae44843c284540929d750b65c)](https://www.codacy.com/app/f0y/db-queue?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=yandex-money/db-queue&amp;utm_campaign=Badge_Grade)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# Подключение
-
-```
-<dependency>
-  <groupId>ru.yandex.money.common</groupId>
-  <artifactId>db-queue</artifactId>
-  <version>0.0.1</version>
-</dependency>
-```
-
 # Описание
 
 Библиотека предоставляет реализацию очередей поверх базы данных.
@@ -41,6 +31,16 @@
 
 
 # Использование
+
+## Подключение
+
+```
+<dependency>
+  <groupId>ru.yandex.money.common</groupId>
+  <artifactId>db-queue</artifactId>
+  <version>0.0.1</version>
+</dependency>
+```
 
 ## Конфигурация 
 
