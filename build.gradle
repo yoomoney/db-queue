@@ -119,7 +119,7 @@ jacocoTestCoverageVerification {
         rule {
             limit {
                 counter = 'INSTRUCTION'
-                minimum = 0.90
+                minimum = 0.89
             }
             limit {
                 counter = 'BRANCH'
@@ -135,6 +135,7 @@ jacocoTestCoverageVerification {
 jacocoTestReport {
     reports {
         html.enabled = true
+        xml.enabled = true
     }
 }
 check.dependsOn jacocoTestCoverageVerification

@@ -4,7 +4,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
-import ru.yandex.money.common.dbqueue.api.Enqueuer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.dao.QueueActorDao;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
@@ -35,15 +34,13 @@ public class SpringLifecycleTest {
         applicationContext.register(SpringLifecycleConfiguration.class);
         applicationContext.refresh();
         while (actorDao.isTasksExist(SpringLifecycleConfiguration.TEST_QUEUE, "1")) {
-            Thread.sleep(10);
+            Thread.sleep(50);
         }
-        SpringLifecycleConfiguration.EVENTS.add("start enqueuer tests");
-        Enqueuer<String> enqueuer = applicationContext.getBean(Enqueuer.class);
-        enqueuer.enqueue(EnqueueParams.create("second").withActor("2"));
         applicationContext.destroy();
         String events = SpringLifecycleConfiguration.EVENTS.stream().collect(Collectors.joining(lineSeparator()));
         System.out.println(events);
-        Assert.assertThat("queue started" + lineSeparator() +
+        Assert.assertThat(events,
+                equalTo("queue started" + lineSeparator() +
                         "task picked on example payload=first" + lineSeparator() +
                         "running in external pool" + lineSeparator() +
                         "task started on example payload=first" + lineSeparator() +
@@ -53,11 +50,7 @@ public class SpringLifecycleTest {
                         "task finished on example payload=first" + lineSeparator() +
                         "queue finished" + lineSeparator() +
                         "queue started" + lineSeparator() +
-                        "start enqueuer tests" + lineSeparator() +
-                        "resolved shard: {id=shard1}" + lineSeparator() +
-                        "transforming from object: second" + lineSeparator() +
                         "queue finished" + lineSeparator() +
-                        "shutting down external executor",
-                equalTo(events));
+                        "shutting down external executor"));
     }
 }
