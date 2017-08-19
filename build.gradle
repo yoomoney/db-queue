@@ -209,7 +209,7 @@ bintray {
         name = 'db-queue'
         repo = 'maven'
         userOrg = 'yandex-money'
-        desc = 'Queues implementation on top of Java and database'
+        desc = ' Worker-queue implementation on top of Java and database'
         websiteUrl = 'https://github.com/yandex-money/db-queue'
         issueTrackerUrl = 'https://github.com/yandex-money/db-queue/issues'
         vcsUrl = 'https://github.com/yandex-money/db-queue.git'

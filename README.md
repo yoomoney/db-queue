@@ -5,49 +5,76 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Download](https://api.bintray.com/packages/yandex-money/maven/db-queue/images/download.svg)](https://bintray.com/yandex-money/maven/db-queue/_latestVersion)
 
-# Описание
+# Database Queue
 
-Библиотека предоставляет реализацию очередей поверх базы данных.
+Library provides worker-queue implementation on top of Java and database.
 
-Высокоуровневая схема работы:
-1) У клиента есть задача с данными, которые он хочет обработать позднее.
-2) Клиент, сообщает Enqueuer'у, что необходимо поместить задачу в очередь на обработку.
-3) Enqueuer, посредством ShardRouter, выбирает шард базы данных, на которую нужно поместить задачу.
-4) Enqueuer, при помощи PayloadTransformer, преобразует данные задачи в строковое представление.
-5) Enqueuer вставляет задачу в БД используя QueueDao.
-6) ... в назначенное время задача выбирается из БД ...
-7) Строковое предоставление данных задачи преобразуется в типизированное при помощи PayloadTransformer.
-8) Задача поступает в Queue для последующей обработки клиентом.
-9) После выполнения задачи, клиент сообщает с каким результатом она обработана.
+## Why?
 
-Значимые возможности:
-* Поддержка БД Postgresql, начиная с версии 9.5.
-* At-least-once семантика доставки задач (exactly-once при определенных условиях).
-* Хранение задач нескольких очередей, как вместе, так и в разных таблицах (QueueLocation).
-* Хранение задач очереди на разных шардах БД (ShardRouter).
-* Управление стратегией откладывания задачи при возникновении ошибки обработки (TaskRetryType).
-* Получение событий цикла обработки задачи (TaskLifecycleListener, QueueThreadLifecycleListener).
-* Типизированное api для работы с данными задачи (PayloadTransformer).
-* Различные режимы обработки задач (ProcessingMode).
+There are several reasons:
+* You need simple, efficient and flexible task processing tool which supports delayed job execution.
+* You already have a database and don't want to introduce additional tools 
+in your infrastructure (for example Kafka, RabbitMq, ...) 
+* You have somewhat small load. This worker queue mechanism can handle 
+more than 1000 rps on single database and table. Moreover you can shard your database and get horizontal scalability. 
+However we cannot guarantee that it would be easy to auto scale or handle more than 1000 rps.
+* You require strong guaranties for task delivery or processing. Library offers at-least-once delivery semantic. 
 
+## How it works?
 
-# Использование
+1) You have a task that you want to process later. 
+2) You tell Enqueuer to schedule the task. 
+3) Enqueuer chooses a database shard through ShardRouter.
+4) Enqueuer converts the task payload to string representation through PayloadTransformer. 
+5) Enqueuer inserts the task in the database through QueueDao.
+6) ... the task has been selected from database in specified time ... 
+7) The task payload is converted to typed representation through PayloadTransformer.
+8) The task is passed to the Queue instance in order to be processed. 
+9) You process the task and return processing result. 
 
-## Подключение
+## Features
+
+* Support for PostgreSQL with version higher or equal to 9.5.
+* Storing queue tasks in a separate tables or in the same table (QueueLocation).
+* Storing queue tasks in a separate databases for horizontal scaling (ShardRouter).
+* At-least-once task processing semantic (exactly-once in some cases).
+* Delayed task execution.
+* Several retry strategies in case of a task processing error (TaskRetryType).
+* Task event listeners (TaskLifecycleListener, QueueThreadLifecycleListener).
+* Strong-typed api for task processing and enqueuing (PayloadTransformer).
+* Several task processing modes (ProcessingMode).
+
+## Dependencies
+
+Library supports only PostgreSQL as backing database, however library architecture
+makes it easy to add other databases which has "skip locked" feature.
+
+Furthermore, library requires Spring Framework (spring-jdbc and spring-tx) for interacting with database. 
+Spring-context is used only for alternative configuration and can be safely excluded from runtime dependencies.
+
+# Usage
+
+## Versioning Rules
+
+Project uses [Semantic Versioning](http://semver.org/).
+
+## Dependency management
+
+Library is available on [Bintray's JCenter repository](http://jcenter.bintray.com) 
 
 ```
 <dependency>
   <groupId>ru.yandex.money.common</groupId>
   <artifactId>db-queue</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
 </dependency>
 ```
 
-## Конфигурация 
+## Configuration
 
-* Создать таблицу для хранения задач.
+* Create table (with index) where tasks will be stored.
 ```sql
-CREATE TABLE tasks (
+CREATE TABLE queue_tasks (
   id            BIGSERIAL PRIMARY KEY,
   queue_name    VARCHAR(128) NOT NULL,
   task          TEXT,
@@ -57,80 +84,76 @@ CREATE TABLE tasks (
   actor         VARCHAR(128),
   log_timestamp VARCHAR(128)
 );
-CREATE INDEX tasks_name_time_desc_idx
+CREATE INDEX queue_tasks_name_time_desc_idx
   ON tasks (queue_name, process_time, id DESC);
 ```
-* Задать настройки очереди через объект QueueConfig.
-  * Выбрать имя очереди.
-  * Задать настройки betweenTaskTimeout и noTaskTimeout в QueueSettings.
-* Следовать ручной или spring конфигурации.
+* Specify a queue configuration through QueueConfig instance.
+  * Choose name for the queue.
+  * Specify betweenTaskTimeout and noTaskTimeout settings in QueueSettings instance.
+* Use manual or spring-auto configuration.
 
-### Ручная конфигурация
+### Manual configuration
 
-Ручная конфигурация может быть использована там, где нет спрингового контекста.
-В ней описание происходит более явно, все классы immutable и больше гибкости.
-Пример конфигурации - [example.ManualConfiguration](https://github.com/yandex-money/db-queue/blob/master/src/test/java/example/ManualConfiguration.java).
+Manual configuration may be used in cases where you don't have spring context.
+It offers more flexibility than spring configuration.
+Example - [example.ManualConfiguration](https://github.com/yandex-money/db-queue/blob/master/src/test/java/example/ManualConfiguration.java).
 
-* Создать QueueDao для работы с шардами
-* Реализовать интерфейс ShardRouter или использовать SingleShardRouter
-* Реализовать интерфейс PayloadTransformer или использовать NoopPayloadTransformer
-* Реализовать интерфейс Enqueuer или использовать TransactionalEnqueuer
-* Реализовать интерфейс Queue
-* Создать QueueRegistry и зарегистрировать инстансы Queue и Enqueuer
-* Создать QueueExecutionPool и запустить его
+Main steps to create manual configuration:
+* Create QueueDao instance for each shard.
+* Implement ShardRouter interface or use SingleShardRouter.
+* Implement PayloadTransformer interface or use NoopPayloadTransformer.
+* Implement Enqueuer interface or use TransactionalEnqueuer.
+* Implement Queue interface.
+* Create QueueRegistry and register Queue and Enqueuer instances.
+* Create QueueExecutionPool and start it.
 
-### Spring конфигурация
+### Spring-Auto Configuration
 
-Spring конфигурация избавляет от написания boilerplate кода путем конвенций.
-Пример конфигурации - [example.SpringAutoConfiguration](https://github.com/yandex-money/db-queue/blob/master/src/test/java/example/SpringAutoConfiguration.java).
+Spring configuration is more lightweight than manual configuration.
+Example - [example.SpringAutoConfiguration](https://github.com/yandex-money/db-queue/blob/master/src/test/java/example/SpringAutoConfiguration.java).
 
-Spring конфигурацию логически можно разделить на две части:
-* Базовая часть, которая отвечает за конфигурацию очередей - example.SpringAutoConfiguration.Base
-* Бизнесовая часть, в которой задаётся логика работы очередей - example.SpringAutoConfiguration.Client
+Spring configuration can be divided in two parts:
+* Base configuration. You may put it in your common code - example.SpringAutoConfiguration.Base
+* Client configuration specifies how your queues will work - example.SpringAutoConfiguration.Client
 
-Для того, чтобы создать базовую часть, в контексте необходимо объявить несколько бинов:
-* SpringQueueConfigContainer - настройки всех очередей, которые требуется запустить.
-* SpringQueueCollector - Сборщик бинов, которые относятся к очередям.
-* QueueExecutionPool - Управление запуском и остановом очередей.
-* SpringQueueInitializer - Связывание бинов с друг другом и запуск по завершению создания контекста спринга.
+Base configuration includes several beans:
+* SpringQueueConfigContainer - Provides settings for all queues in your spring context.
+* SpringQueueCollector - Collects beans related to spring configuration.
+* SpringQueueInitializer - Wires queue beans to each other and starts queues.
 
-Бизнесовая часть состоит в объявлении бинов Queue, Enqueuer и т.п.
-Для объявления дааных бинов необходимо использовать классы с префиксом Spring.
-Классы спринговой конфигурации реализуют SpringQueueIdentifiable,
-за счет этого происходит связывание бинов по QueueLocation.
+In client configuration you must use classes with prefix Spring.
 
-## Структура проекта
+## Project structure
 
 * _.internal.*
 
-Внутренние классы реализации. 
+Internal classes. **Not for public use**.
 
-*В классах данного пэкеджа, обратная совместимость 
-между любыми релизами библиотеки не гарантируется*
+*Backward compatibility for classes in that package may be broken in any release*
 
 * _.api
 
-Клиенту библиотеки необходимо предоставить реализацию интерфейсов этого пакета. 
-Содержит классы данных, участвующие в обработке очереди и постановке на выполнение.
+You should provide implementation for interfaces in that package.
+The package contains classes which are involved in processing or enqueueing tasks.
 
 * _.api.impl
 
-Реализация по умолчанию для упрощения конфигурирования
-и использования в наиболее частых вариантах использования.
+Default implementation for api interfaces. 
+Allows easier configuration in common use cases.
 
 * _.settings
 
-Пакет с классами, отвечающими за настройку очередей.
+Queue settings.
 
 * _.dao
 
-Вспомогательные классы для управления и получения данных по очередям.
-В случае стандартной реализации вам не потребуется доступ к методам данных классов.
+Additional classes for queue managing and statistics retrieval.
+In common use cases you don't need to use that classes.
 
 * _.init
 
-Классы данного пэкеджа необходимы для регистрации очередей и их запуска.
+Registration and running queues.
 
 * _.spring
 
-Классы отвечающие за spring конфигурацию очередей.
+Classes related to Spring configuration.
