@@ -3,6 +3,7 @@
 [![Codebeat](https://codebeat.co/badges/ff7a4c21-72fb-446c-b245-ba739240fe49)](https://codebeat.co/projects/github-com-yandex-money-db-queue-master)
 [![Codacy](https://api.codacy.com/project/badge/Grade/3a0e23fae44843c284540929d750b65c)](https://www.codacy.com/app/f0y/db-queue?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=yandex-money/db-queue&amp;utm_campaign=Badge_Grade)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Download](https://api.bintray.com/packages/yandex-money/maven/db-queue/images/download.svg)](https://bintray.com/yandex-money/maven/db-queue/_latestVersion)
 
 # Описание
 
