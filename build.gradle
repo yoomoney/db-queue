@@ -5,8 +5,10 @@ buildscript {
 }
 plugins {
     id "net.ltgt.errorprone" version "0.0.11"
-    id 'net.researchgate.release' version '2.4.0'
+    id 'net.researchgate.release' version '2.6.0'
     id "com.jfrog.bintray" version "1.7.3"
+    id 'com.github.ben-manes.versions' version '0.15.0'
+    id 'com.github.ksoichiro.console.reporter' version '0.5.0'
 }
 task wrapper(type: Wrapper) {
     gradleVersion = '4.1'
@@ -72,7 +74,7 @@ release {
 apply plugin: 'findbugs'
 dependencies {
     findbugsPlugins 'com.mebigfatguy.fb-contrib:fb-contrib:7.0.3',
-            'com.h3xstream.findsecbugs:findsecbugs-plugin:1.7.0'
+            'com.h3xstream.findsecbugs:findsecbugs-plugin:1.7.1'
 }
 findbugs {
     toolVersion = "3.0.1"
@@ -109,8 +111,22 @@ idea {
     }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+apply plugin: 'jdepend'
+
+jdepend {
+    ignoreFailures = false
+    sourceSets  = [sourceSets.main]
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 test {
     systemProperty "file.encoding", "UTF-8"
+    testLogging {
+        events "skipped", "failed"
+        exceptionFormat "full"
+        showExceptions true
+        showCauses true
+        showStackTraces true
+    }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 apply plugin: "jacoco"
