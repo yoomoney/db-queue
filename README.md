@@ -66,7 +66,7 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 <dependency>
   <groupId>ru.yandex.money.common</groupId>
   <artifactId>db-queue</artifactId>
-  <version>0.0.2</version>
+  <version>0.0.5</version>
 </dependency>
 ```
 
