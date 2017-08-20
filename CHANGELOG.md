@@ -1,17 +1,20 @@
-# Правила версионирования
+# Changelog
 
-Версионирование осуществляется по [Semantic Versioning](http://semver.org/).
+## Versioning Rules
 
-Версия x.y.z, где
-* x - мажорная версия. Нарушение обратной совместимости.
-* y - минорная версия. Обратная совместимость сохранена.
-Добавлен новый функционал.
-* z - патч версия. Обратная совместимость сохранена.
-Исправление ошибок.
+Project uses [Semantic Versioning](http://semver.org/).
 
-В случае x=0, обратная совместимость в минорных 
-и патч версиях не гарантирвется.
+Given version x.y.z
+* x - Major version. Backward compatibility is broken. Refactoring or big features.
+* y - Minor version. Backward compatibile with previous version. New features.
+* z - Patch version. Backward compatibile with previous version. Bug fix or small features. 
 
-## [0.0.1]() (08-08-2017)
+**In case of x == 0 backward compatibility is not guaranteed.**
 
-* Первая версия
+### [0.0.2]() (20-08-2017)
+
+* Translated README to English
+
+### [0.0.1]() (08-08-2017)
+
+* Initial version
