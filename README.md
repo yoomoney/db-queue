@@ -143,8 +143,7 @@ The package contains classes which are involved in processing or enqueueing task
 
 * _.api.impl
 
-Default implementation for api interfaces. 
-Allows easier configuration in common use cases.
+Default implementation for api interfaces. Allows easy configuration in common use cases.
 
 * _.settings
 
@@ -162,3 +161,46 @@ Registration and running queues.
 * _.spring
 
 Classes related to Spring configuration.
+
+## Database configuration
+
+TODO
+
+## Performance
+
+TODO
+
+# Known Issues
+
+* Retry strategies cannot be defined by user
+
+In some cases client may want to use different retry strategies. 
+For example, do first retry almost immediately and then use standard behaviour.
+This strategy can be useful to deal with temporary glitches in network or database.
+There is hard to predict client needs so it is desirable feature.
+
+* Uneven load balancing
+
+One of the hosts can consequently process several tasks very quickly while other hosts were sleeping.
+
+* Max throughput is limited by "between task timeout"
+
+Thread fall a sleep for "between task timeout" regardless of task processing result. 
+Although, it can pick next task after successful result and do processing.
+
+* No support for Blue-green deployment
+
+There is no support for blue-green deployment because a task is not bound to a host or to a group of hosts. 
+
+* No support for failover.
+
+Enqueuer can fail on task scheduling. We can detect that fail is caused by database 
+and try insert task on next shard.
+
+* Hard to write tests.
+
+Task processing is asynchronous. Therefore, it is hard to write tests because you always must think about that fact
+and write code according to it. We can implement some kind of a synchronous mode for tests. 
+ 
+
+
