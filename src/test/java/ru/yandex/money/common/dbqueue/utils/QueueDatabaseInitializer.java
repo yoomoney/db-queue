@@ -44,9 +44,9 @@ public class QueueDatabaseInitializer {
         try {
             // https://stackoverflow.com/questions/9407442/optimise-postgresql-for-fast-testing
             postgres = EmbeddedPostgres.builder()
-                    .setServerConfig("fsync", "on")
-                    .setServerConfig("synchronous_commit", "on")
+                    .setServerConfig("fsync", "off")
                     .setServerConfig("full_page_writes", "off")
+                    .setServerConfig("synchronous_commit", "off")
                     .start();
         } catch (IOException e) {
             throw new RuntimeException(e);

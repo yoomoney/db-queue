@@ -34,8 +34,9 @@ public class SpringLifecycleTest {
         applicationContext.register(SpringLifecycleConfiguration.class);
         applicationContext.refresh();
         while (actorDao.isTasksExist(SpringLifecycleConfiguration.TEST_QUEUE, "1")) {
-            Thread.sleep(50);
+            Thread.sleep(20);
         }
+        Thread.sleep(20 * 2);
         applicationContext.destroy();
         String events = SpringLifecycleConfiguration.EVENTS.stream().collect(Collectors.joining(lineSeparator()));
         System.out.println(events);
