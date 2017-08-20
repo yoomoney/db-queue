@@ -55,7 +55,7 @@ public class SpringLifecycleConfiguration {
         return new SpringQueueConfigContainer(Collections.singletonList(new QueueConfig(
                 TEST_QUEUE,
                 QueueSettings.builder()
-                        .withBetweenTaskTimeout(Duration.ofMillis(5L))
+                        .withBetweenTaskTimeout(Duration.ofMillis(20L))
                         .withNoTaskTimeout(Duration.ofMinutes(5L))
                         .withProcessingMode(ProcessingMode.USE_EXTERNAL_EXECUTOR)
                         .build())));

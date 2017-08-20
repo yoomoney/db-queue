@@ -12,8 +12,10 @@ import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
 import java.math.BigInteger;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.Objects;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -33,7 +35,7 @@ public class PickTaskDaoTest extends BaseDaoTest {
     /**
      * Из-за особенностей windows какая-то фигня со временем БД
      */
-    private final static Duration WINDOWS_OS_DELAY = Duration.ofSeconds(1);
+    private final static Duration WINDOWS_OS_DELAY = Duration.ofSeconds(2);
 
     @Test
     public void should_not_pick_task_too_early() throws Exception {
@@ -53,8 +55,17 @@ public class PickTaskDaoTest extends BaseDaoTest {
         ZonedDateTime beforeEnqueue = ZonedDateTime.now();
         long enqueueId = executeInTransaction(() -> queueDao.enqueue(location,
                 EnqueueParams.create(payload).withCorrelationId(correlationId).withActor(actor)));
-        TaskRecord taskRecord = executeInTransaction(
-                () -> pickTaskDao.pickTask(location, new RetryTaskStrategy.ArithmeticBackoff()));
+
+        TaskRecord taskRecord = null;
+        while (taskRecord == null) {
+            taskRecord = executeInTransaction(
+                    () -> pickTaskDao.pickTask(location, new RetryTaskStrategy.ArithmeticBackoff()));
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
         ZonedDateTime afterEnqueue = ZonedDateTime.now();
         Assert.assertThat(taskRecord, is(not(nullValue())));
         Objects.requireNonNull(taskRecord);
@@ -89,7 +100,7 @@ public class PickTaskDaoTest extends BaseDaoTest {
             taskRecord = resetProcessTimeAndPick(location, retryTaskStrategy, enqueueId);
             afterPickingTask = ZonedDateTime.now();
             Assert.assertThat(taskRecord.getAttemptsCount(), equalTo((long) attempt));
-            Assert.assertThat(taskRecord.getProcessTime().isAfter(beforePickingTask.plus(expectedDelay)), equalTo(true));
+            Assert.assertThat(taskRecord.getProcessTime().isAfter(beforePickingTask.plus(expectedDelay.minus(WINDOWS_OS_DELAY))), equalTo(true));
             Assert.assertThat(taskRecord.getProcessTime().isBefore(afterPickingTask.plus(expectedDelay).plus(WINDOWS_OS_DELAY)), equalTo(true));
         }
     }
@@ -112,7 +123,7 @@ public class PickTaskDaoTest extends BaseDaoTest {
             afterPickingTask = ZonedDateTime.now();
             expectedDelay = Duration.ofMinutes((long) (1 + (attempt - 1) * 2));
             Assert.assertThat(taskRecord.getAttemptsCount(), equalTo((long) attempt));
-            Assert.assertThat(taskRecord.getProcessTime().isAfter(beforePickingTask.plus(expectedDelay)), equalTo(true));
+            Assert.assertThat(taskRecord.getProcessTime().isAfter(beforePickingTask.plus(expectedDelay.minus(WINDOWS_OS_DELAY))), equalTo(true));
             Assert.assertThat(taskRecord.getProcessTime().isBefore(afterPickingTask.plus(expectedDelay.plus(WINDOWS_OS_DELAY))), equalTo(true));
         }
     }
@@ -135,16 +146,26 @@ public class PickTaskDaoTest extends BaseDaoTest {
             afterPickingTask = ZonedDateTime.now();
             expectedDelay = Duration.ofMinutes(BigInteger.valueOf(2L).pow(attempt - 1).longValue());
             Assert.assertThat(taskRecord.getAttemptsCount(), equalTo((long) attempt));
-            Assert.assertThat(taskRecord.getProcessTime().isAfter(beforePickingTask.plus(expectedDelay)), equalTo(true));
+            Assert.assertThat(taskRecord.getProcessTime().isAfter(beforePickingTask.plus(expectedDelay.minus(WINDOWS_OS_DELAY))), equalTo(true));
             Assert.assertThat(taskRecord.getProcessTime().isBefore(afterPickingTask.plus(expectedDelay.plus(WINDOWS_OS_DELAY))), equalTo(true));
         }
     }
 
     private TaskRecord resetProcessTimeAndPick(QueueLocation location, RetryTaskStrategy retryTaskStrategy, Long enqueueId) {
         executeInTransaction(() -> {
-            jdbcTemplate.update("update " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " set process_time=now() where id=" + enqueueId);
+            jdbcTemplate.update("update " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " set process_time=? where id=" + enqueueId, new Timestamp(new Date().getTime()));
         });
-        return executeInTransaction(
-                () -> pickTaskDao.pickTask(location, retryTaskStrategy));
+
+        TaskRecord taskRecord = null;
+        while (taskRecord == null) {
+            taskRecord = executeInTransaction(
+                    () -> pickTaskDao.pickTask(location, retryTaskStrategy));
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return taskRecord;
     }
 }
