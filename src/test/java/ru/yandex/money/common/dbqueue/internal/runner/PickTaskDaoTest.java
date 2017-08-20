@@ -55,8 +55,17 @@ public class PickTaskDaoTest extends BaseDaoTest {
         ZonedDateTime beforeEnqueue = ZonedDateTime.now();
         long enqueueId = executeInTransaction(() -> queueDao.enqueue(location,
                 EnqueueParams.create(payload).withCorrelationId(correlationId).withActor(actor)));
-        TaskRecord taskRecord = executeInTransaction(
-                () -> pickTaskDao.pickTask(location, new RetryTaskStrategy.ArithmeticBackoff()));
+
+        TaskRecord taskRecord = null;
+        while (taskRecord == null) {
+            taskRecord = executeInTransaction(
+                    () -> pickTaskDao.pickTask(location, new RetryTaskStrategy.ArithmeticBackoff()));
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
         ZonedDateTime afterEnqueue = ZonedDateTime.now();
         Assert.assertThat(taskRecord, is(not(nullValue())));
         Objects.requireNonNull(taskRecord);
@@ -146,7 +155,17 @@ public class PickTaskDaoTest extends BaseDaoTest {
         executeInTransaction(() -> {
             jdbcTemplate.update("update " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " set process_time=? where id=" + enqueueId, new Timestamp(new Date().getTime()));
         });
-        return executeInTransaction(
-                () -> pickTaskDao.pickTask(location, retryTaskStrategy));
+
+        TaskRecord taskRecord = null;
+        while (taskRecord == null) {
+            taskRecord = executeInTransaction(
+                    () -> pickTaskDao.pickTask(location, retryTaskStrategy));
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return taskRecord;
     }
 }

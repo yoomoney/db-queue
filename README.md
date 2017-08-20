@@ -13,6 +13,7 @@ Library provides worker-queue implementation on top of Java and database.
 ## Why?
 
 There are several reasons:
+
 * You need simple, efficient and flexible task processing tool which supports delayed job execution.
 * You already have a database and don't want to introduce additional tools 
 in your infrastructure (for example Kafka, RabbitMq, ...) 
@@ -23,15 +24,15 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 
 ## How it works?
 
-1) You have a task that you want to process later. 
-2) You tell Enqueuer to schedule the task. 
-3) Enqueuer chooses a database shard through ShardRouter.
-4) Enqueuer converts the task payload to string representation through PayloadTransformer. 
-5) Enqueuer inserts the task in the database through QueueDao.
-6) ... the task has been selected from database in specified time ... 
-7) The task payload is converted to typed representation through PayloadTransformer.
-8) The task is passed to the Queue instance in order to be processed. 
-9) You process the task and return processing result. 
+1. You have a task that you want to process later. 
+2. You tell Enqueuer to schedule the task. 
+3. Enqueuer chooses a database shard through ShardRouter.
+4. Enqueuer converts the task payload to string representation through PayloadTransformer. 
+5. Enqueuer inserts the task in the database through QueueDao.
+6. ... the task has been selected from database in specified time ... 
+7. The task payload is converted to typed representation through PayloadTransformer.
+8. The task is passed to the Queue instance in order to be processed. 
+9. You process the task and return processing result. 
 
 ## Features
 
@@ -100,6 +101,7 @@ It offers more flexibility than spring configuration.
 Example - [example.ManualConfiguration](https://github.com/yandex-money/db-queue/blob/master/src/test/java/example/ManualConfiguration.java).
 
 Main steps to create manual configuration:
+
 * Create QueueDao instance for each shard.
 * Implement ShardRouter interface or use SingleShardRouter.
 * Implement PayloadTransformer interface or use NoopPayloadTransformer.
@@ -114,10 +116,12 @@ Spring configuration is more lightweight than manual configuration.
 Example - [example.SpringAutoConfiguration](https://github.com/yandex-money/db-queue/blob/master/src/test/java/example/SpringAutoConfiguration.java).
 
 Spring configuration can be divided in two parts:
+
 * Base configuration. You may put it in your common code - example.SpringAutoConfiguration.Base
 * Client configuration specifies how your queues will work - example.SpringAutoConfiguration.Client
 
 Base configuration includes several beans:
+
 * SpringQueueConfigContainer - Provides settings for all queues in your spring context.
 * SpringQueueCollector - Collects beans related to spring configuration.
 * SpringQueueInitializer - Wires queue beans to each other and starts queues.
