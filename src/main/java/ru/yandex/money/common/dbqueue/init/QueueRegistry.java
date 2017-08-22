@@ -16,10 +16,13 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -131,6 +134,7 @@ public class QueueRegistry {
         validateShards();
         validateTaskListeners();
         validateExternalExecutors();
+        validateQueueNames();
         if (!errorMessages.isEmpty()) {
             throw new IllegalArgumentException("Invalid queue configuration:" + System.lineSeparator() +
                     errorMessages.stream().collect(Collectors.joining(System.lineSeparator())));
@@ -141,6 +145,22 @@ public class QueueRegistry {
         taskListeners.keySet().forEach(location ->
                 log.info("registered task lifecycle listener: location={}", location));
 
+    }
+
+    private void validateQueueNames() {
+        Map<String, Set<String>> queueTablesMap = new HashMap<>();
+        for (QueueLocation queueLocation : queues.keySet()) {
+            if (!queueTablesMap.containsKey(queueLocation.getQueueName())) {
+                queueTablesMap.put(queueLocation.getQueueName(), new LinkedHashSet<>());
+            }
+            queueTablesMap.get(queueLocation.getQueueName()).add(queueLocation.getTableName());
+        }
+        queueTablesMap.forEach((queueName, tableNames) -> {
+            if (tableNames.size() > 1) {
+                errorMessages.add(String.format("queue name must be unique across all tables: " +
+                        "queueName=%s, tables=%s", queueName, tableNames));
+            }
+        });
     }
 
     private void validateShards() {

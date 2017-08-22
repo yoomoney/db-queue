@@ -162,7 +162,9 @@ Registration and running queues.
 
 Classes related to Spring configuration.
 
-## Database configuration
+## Database Tuning
+
+# PostgreSQL
 
 TODO
 

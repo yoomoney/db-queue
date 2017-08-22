@@ -180,6 +180,47 @@ public class QueueRegistryTest {
     }
 
     @Test
+    public void should_fail_when_same_queue_belongs_to_different_tables() throws Exception {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
+                "duplicate queue: location={table=table1,queue=queue}" + System.lineSeparator() +
+                "queue name must be unique across all tables: queueName=queue, tables=[table1, table2]"));
+
+        QueueRegistry queueRegistry = new QueueRegistry();
+
+        QueueConfig queueConfig1 = new QueueConfig(new QueueLocation("table1", "queue"),
+                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
+                        .withNoTaskTimeout(Duration.ZERO).build());
+        QueueConfig queueConfig2 = new QueueConfig(new QueueLocation("table2", "queue"),
+                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
+                        .withNoTaskTimeout(Duration.ZERO).build());
+        QueueConfig queueConfig3 = new QueueConfig(new QueueLocation("table1", "queue"),
+                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
+                        .withNoTaskTimeout(Duration.ZERO).build());
+
+        PayloadTransformer transformer = mock(PayloadTransformer.class);
+        ShardRouter shardRouter = mock(ShardRouter.class);
+        when(shardRouter.getShardsId()).thenReturn(Collections.singletonList(new QueueShardId("s1")));
+        queueRegistry.registerQueue(new FakeQueue(queueConfig1,
+                        transformer, shardRouter, t -> QueueAction.finish()),
+                new FakeEnqueuer(queueConfig1,
+                        transformer, shardRouter, t -> 1L));
+        queueRegistry.registerQueue(new FakeQueue(queueConfig2,
+                        transformer, shardRouter, t -> QueueAction.finish()),
+                new FakeEnqueuer(queueConfig2,
+                        transformer, shardRouter, t -> 1L));
+        queueRegistry.registerQueue(new FakeQueue(queueConfig3,
+                        transformer, shardRouter, t -> QueueAction.finish()),
+                new FakeEnqueuer(queueConfig3,
+                        transformer, shardRouter, t -> 1L));
+
+        QueueDao queueDao = mock(QueueDao.class);
+        when(queueDao.getShardId()).thenReturn(new QueueShardId("s1"));
+        queueRegistry.registerShard(queueDao);
+        queueRegistry.finishRegistration();
+    }
+
+    @Test
     public void should_fail_when_invalid_external_executor_config() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
@@ -313,4 +354,6 @@ public class QueueRegistryTest {
             Assert.assertThat(e.getMessage(), equalTo("cannot get registry property. construction is not finished"));
         }
     }
+
+
 }

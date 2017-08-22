@@ -12,6 +12,10 @@ Given version x.y.z
 
 **In case of x == 0 backward compatibility is not guaranteed.**
 
+### NEXT VERSION 
+
+* Same queue names in different tables are forbidden
+
 ### [0.0.5]() (20-08-2017)
 
 * Translated README to English
