@@ -174,20 +174,20 @@ TODO
 
 # Known Issues
 
-* Retry strategies cannot be defined by user
+* Retry strategies cannot be defined by a user
 
-In some cases client may want to use different retry strategies. 
+In some cases a client may want to use different retry strategies. 
 For example, do first retry almost immediately and then use standard behaviour.
 This strategy can be useful to deal with temporary glitches in network or database.
-There is hard to predict client needs so it is desirable feature.
+There is hard to predict what client needs so it is desirable feature.
 
 * Uneven load balancing
 
-One of the hosts can consequently process several tasks very quickly while other hosts were sleeping.
+One of the hosts can consequently process several tasks very quickly while other hosts are sleeping.
 
 * Max throughput is limited by "between task timeout"
 
-Thread fall a sleep for "between task timeout" regardless of task processing result. 
+Thread falls asleep for "between task timeout" regardless of task processing result. 
 Although, it can pick next task after successful result and do processing.
 
 * No support for Blue-green deployment
