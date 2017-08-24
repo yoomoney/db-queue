@@ -164,9 +164,28 @@ Classes related to Spring configuration.
 
 ## Database Tuning
 
-# PostgreSQL
+### PostgreSQL
 
-TODO
+You should always analyze your database workload before applying 
+this recommendations. These settings heavily depends on a hardware 
+and a load you have.
+
+#### Fill Factor 
+
+You need to set a low fill-factor for table in order to 
+let database put row updates to the same page.
+In that case database will need less amount of random page writes. 
+This technique also prevents fragmentation so we get more robust selects. 
+Same rules are applied to an indexes. You can safely set fill-factor 
+for tables and indexes to 70%. 
+
+#### Autovacuum
+
+You need to make autovacuum more aggressive in order to eliminate dead tuples. 
+Dead tuples leads to excessive page reads because they occupy space 
+that can be reused by active tuples. Autovacuum can be configured in many ways, 
+for example, you can set 
+[scale-factor](https://www.postgresql.org/docs/current/static/runtime-config-autovacuum.html#GUC-AUTOVACUUM-VACUUM-SCALE-FACTOR) to 1%.
 
 # Known Issues
 
