@@ -8,7 +8,6 @@ plugins {
     id 'net.researchgate.release' version '2.6.0'
     id "com.jfrog.bintray" version "1.7.3"
     id 'com.github.ben-manes.versions' version '0.15.0'
-    id 'com.github.ksoichiro.console.reporter' version '0.5.0'
 }
 task wrapper(type: Wrapper) {
     gradleVersion = '4.1'
@@ -25,20 +24,21 @@ repositories {
     jcenter()
 }
 dependencies {
-    compile 'org.slf4j:slf4j-api:1.7.25',
-            'org.springframework:spring-jdbc:4.2.5.RELEASE',
-            'org.springframework:spring-tx:4.2.5.RELEASE',
-            'org.springframework:spring-context:4.2.5.RELEASE'
+    def springVersion = '4.3.7.RELEASE'
+    compile 'org.slf4j:slf4j-api:1.7.24',
+            "org.springframework:spring-jdbc:${springVersion}",
+            "org.springframework:spring-tx:${springVersion}",
+            "org.springframework:spring-context:${springVersion}"
 
     compileOnly 'com.google.code.findbugs:jsr305:3.0.1',
             'com.google.code.findbugs:annotations:3.0.1'
 
-    testCompile 'org.springframework:spring-test:4.2.5.RELEASE',
+    testCompile "org.springframework:spring-test:${springVersion}",
             'com.opentable.components:otj-pg-embedded:0.9.0',
             'org.postgresql:postgresql:9.4.1208',
             'junit:junit:4.12',
-            'org.apache.logging.log4j:log4j-core:2.2',
-            'org.apache.logging.log4j:log4j-slf4j-impl:2.2',
+            'org.apache.logging.log4j:log4j-core:2.8.2',
+            'org.apache.logging.log4j:log4j-slf4j-impl:2.8.2',
             'org.mockito:mockito-core:1.10.19',
             'com.tngtech.archunit:archunit-junit:0.4.0',
             'nl.jqno.equalsverifier:equalsverifier:2.3.2',
@@ -116,7 +116,7 @@ apply plugin: 'jdepend'
 
 jdepend {
     ignoreFailures = false
-    sourceSets  = [sourceSets.main]
+    sourceSets = [sourceSets.main]
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 test {
@@ -197,7 +197,7 @@ publishing {
     }
 }
 
-bintrayUpload.onlyIf { !project.version.endsWith("-SNAPSHOT")}
+bintrayUpload.onlyIf { !project.version.endsWith("-SNAPSHOT") }
 
 bintray {
     user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')

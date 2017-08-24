@@ -12,6 +12,10 @@ Given version x.y.z
 
 **In case of x == 0 backward compatibility is not guaranteed.**
 
+### [0.0.7]() (24-08-2017)
+
+* Upgrade Spring to 4.3.7
+
 ### [0.0.6]() (24-08-2017)
 
 * Same queue names in different tables are forbidden
