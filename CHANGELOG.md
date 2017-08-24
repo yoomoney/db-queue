@@ -15,6 +15,7 @@ Given version x.y.z
 ### NEXT VERSION 
 
 * Same queue names in different tables are forbidden
+* Reading configuration from file (QueueConfigsReader)
 
 ### [0.0.5]() (20-08-2017)
 

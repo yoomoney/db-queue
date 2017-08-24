@@ -25,7 +25,7 @@ public final class QueueSettings {
         /**
          * Значение фиксированной задержки при стратегии {@link TaskRetryType#FIXED_INTERVAL}
          */
-        RETRY_FIXED_INTERVAL_DELAY("retryFixedIntervalDelay");
+        RETRY_FIXED_INTERVAL_DELAY("retry-fixed-interval-delay");
 
         private final String name;
 

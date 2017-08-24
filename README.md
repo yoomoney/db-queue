@@ -87,9 +87,9 @@ CREATE TABLE queue_tasks (
   log_timestamp VARCHAR(128)
 );
 CREATE INDEX queue_tasks_name_time_desc_idx
-  ON tasks (queue_name, process_time, id DESC);
+  ON queue_tasks (queue_name, process_time, id DESC);
 ```
-* Specify a queue configuration through QueueConfig instance.
+* Specify a queue configuration through QueueConfig instance (or use QueueConfigsReader).
   * Choose name for the queue.
   * Specify betweenTaskTimeout and noTaskTimeout settings in QueueSettings instance.
 * Use manual or spring-auto configuration.
