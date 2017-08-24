@@ -37,7 +37,7 @@ public class TaskProcessorTest {
 
     @Test
     public void should_succesfully_process_task() throws Exception {
-        QueueLocation location = new QueueLocation("testLocation", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testLocation").withQueueName("testQueue").build();
         TaskRecord taskRecord = new TaskRecord(1L, "testPayload", 3L,
                 ofSeconds(1), ofSeconds(5), "testcorid", "testactor");
         QueueShardId shardId = new QueueShardId("s1");
@@ -72,7 +72,7 @@ public class TaskProcessorTest {
 
     @Test
     public void should_handle_exception_when_queue_failed() throws Exception {
-        QueueLocation location = new QueueLocation("testLocation", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testLocation").withQueueName("testQueue").build();
         TaskRecord taskRecord = new TaskRecord(1L, "testPayload", 3L,
                 ofSeconds(1), ofSeconds(5), "testcorid", "testactor");
         QueueShardId shardId = new QueueShardId("s1");
@@ -104,7 +104,7 @@ public class TaskProcessorTest {
 
     @Test
     public void should_handle_exception_when_result_handler_failed() throws Exception {
-        QueueLocation location = new QueueLocation("testLocation", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testLocation").withQueueName("testQueue").build();
         TaskRecord taskRecord = new TaskRecord(1L, "testPayload", 3L,
                 ofSeconds(1), ofSeconds(5), "testcorid", "testactor");
         QueueShardId shardId = new QueueShardId("s1");

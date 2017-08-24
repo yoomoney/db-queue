@@ -13,6 +13,9 @@ import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringNoopPayloadTransformer;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringSingleShardRouter;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalEnqueuer;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -40,7 +43,7 @@ public class SpringQueueInitializerTest {
     public ExpectedException thrown = ExpectedException.none();
 
     private static final QueueLocation testLocation1 =
-            new QueueLocation("queue_test", "test_queue1");
+            QueueLocation.builder().withTableName("queue_test").withQueueName("test_queue1").build();
 
     @Test
     public void should_not_throw_error_when_empty_configuration() throws Exception {

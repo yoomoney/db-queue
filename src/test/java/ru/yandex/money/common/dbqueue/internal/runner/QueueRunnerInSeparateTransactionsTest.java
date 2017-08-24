@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 public class QueueRunnerInSeparateTransactionsTest {
 
     private static final QueueLocation testLocation1 =
-            new QueueLocation("queue_test", "test_queue1");
+            QueueLocation.builder().withTableName("queue_test").withQueueName("test_queue1").build();
 
     @Test
     public void should_wait_notasktimeout_when_no_task_found() throws Exception {

@@ -9,6 +9,7 @@ import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalEnqueuer;
 import ru.yandex.money.common.dbqueue.stub.FakeTransactionTemplate;
 
 import java.time.Duration;
@@ -32,7 +33,7 @@ import static org.mockito.Mockito.when;
 public class SpringTransactionalEnqueuerTest {
 
     private static final QueueLocation testLocation1 =
-            new QueueLocation("queue_test", "test_queue1");
+            QueueLocation.builder().withTableName("queue_test").withQueueName("test_queue1").build();
 
     @Test
     public void should_enqueue_in_transaction() throws Exception {

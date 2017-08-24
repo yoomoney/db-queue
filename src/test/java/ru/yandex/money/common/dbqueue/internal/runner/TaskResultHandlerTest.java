@@ -25,7 +25,7 @@ public class TaskResultHandlerTest {
     public void should_reenqueue_task() throws Exception {
         long taskId = 5L;
         Duration reenqueueDelay = Duration.ofMillis(500L);
-        QueueLocation location = new QueueLocation("testTable", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
 
         TaskRecord taskRecord = new TaskRecord(taskId, null, 0, ZonedDateTime.now(),
                 ZonedDateTime.now(), null, null);
@@ -42,7 +42,7 @@ public class TaskResultHandlerTest {
     @Test
     public void should_finish_task() throws Exception {
         long taskId = 5L;
-        QueueLocation location = new QueueLocation("testTable", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
 
         TaskRecord taskRecord = new TaskRecord(taskId, null, 0, ZonedDateTime.now(),
                 ZonedDateTime.now(), null, null);
@@ -60,7 +60,7 @@ public class TaskResultHandlerTest {
     public void should_fail_task_when_delay_is_specified() throws Exception {
         long taskId = 5L;
         Duration executionDelay = Duration.ofMillis(500L);
-        QueueLocation location = new QueueLocation("testTable", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
 
         TaskRecord taskRecord = new TaskRecord(taskId, null, 0, ZonedDateTime.now(),
                 ZonedDateTime.now(), null, null);
@@ -76,7 +76,7 @@ public class TaskResultHandlerTest {
 
     @Test
     public void should_fail_task_when_no_delay() throws Exception {
-        QueueLocation location = new QueueLocation("testTable", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
 
         TaskRecord taskRecord = new TaskRecord(0, null, 0, ZonedDateTime.now(),
                 ZonedDateTime.now(), null, null);

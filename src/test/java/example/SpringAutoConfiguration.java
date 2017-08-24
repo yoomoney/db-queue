@@ -19,13 +19,13 @@ import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
-import ru.yandex.money.common.dbqueue.spring.SpringNoopPayloadTransformer;
 import ru.yandex.money.common.dbqueue.spring.SpringQueue;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueCollector;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueConfigContainer;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueInitializer;
-import ru.yandex.money.common.dbqueue.spring.SpringSingleShardRouter;
-import ru.yandex.money.common.dbqueue.spring.SpringTransactionalEnqueuer;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringNoopPayloadTransformer;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringSingleShardRouter;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalEnqueuer;
 import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
 import javax.annotation.Nonnull;
@@ -41,7 +41,7 @@ import java.util.Collections;
 public class SpringAutoConfiguration {
 
     private static final QueueLocation EXAMPLE_QUEUE =
-            new QueueLocation("example_spring_table", "example_queue");
+            QueueLocation.builder().withTableName("example_spring_table").withQueueName("example_queue").build();
 
     @Test
     public void spring_auto_config() throws Exception {

@@ -15,15 +15,9 @@ public final class QueueLocation {
     @Nonnull
     private final String queueName;
 
-    /**
-     * Конструктор местоположения
-     *
-     * @param tableName имя таблицы, в которой лежат задачи очереди
-     * @param queueName имя очереди
-     */
-    public QueueLocation(@Nonnull String tableName, @Nonnull String queueName) {
-        this.tableName = Objects.requireNonNull(tableName);
+    private QueueLocation(@Nonnull String queueName, @Nonnull String tableName) {
         this.queueName = Objects.requireNonNull(queueName);
+        this.tableName = Objects.requireNonNull(tableName);
     }
 
     /**
@@ -70,5 +64,53 @@ public final class QueueLocation {
     @Override
     public int hashCode() {
         return Objects.hash(tableName, queueName);
+    }
+
+    /**
+     * Создать билдер местоположения очереди
+     *
+     * @return билдер местоположения
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Билдер для класса {@link QueueLocation}
+     */
+    public static class Builder {
+        private String tableName;
+        private String queueName;
+
+        /**
+         * Задать имя таблицы, в которой лежат задачи очереди
+         *
+         * @param tableName имя таблицы
+         * @return билдер
+         */
+        public Builder withTableName(@Nonnull String tableName) {
+            this.tableName = Objects.requireNonNull(tableName);
+            return this;
+        }
+
+        /**
+         * Задать имя очереди
+         *
+         * @param queueName имя очереди
+         * @return билдер
+         */
+        public Builder withQueueName(@Nonnull String queueName) {
+            this.queueName = Objects.requireNonNull(queueName);
+            return this;
+        }
+
+        /**
+         * Сконструировать местоположение очереди
+         *
+         * @return местоположение очереди
+         */
+        public QueueLocation build() {
+            return new QueueLocation(queueName, tableName);
+        }
     }
 }

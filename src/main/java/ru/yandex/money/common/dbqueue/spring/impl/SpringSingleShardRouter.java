@@ -1,10 +1,11 @@
-package ru.yandex.money.common.dbqueue.spring;
+package ru.yandex.money.common.dbqueue.spring.impl;
 
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.impl.SingleShardRouter;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.spring.SpringShardRouter;
 
 import java.util.Collection;
 import java.util.Collections;

@@ -1,5 +1,6 @@
 package ru.yandex.money.common.dbqueue.internal;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,9 +32,10 @@ public interface LoopPolicy {
     /**
      * Cтратегия выполнения задачи в потоке
      */
+    @SuppressFBWarnings("LO_SUSPECT_LOG_CLASS")
     class ThreadLoopPolicy implements LoopPolicy {
 
-        private static final Logger log = LoggerFactory.getLogger(ThreadLoopPolicy.class);
+        private static final Logger log = LoggerFactory.getLogger(LoopPolicy.class);
 
         @Override
         public void doRun(Runnable runnable) {

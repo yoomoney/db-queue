@@ -231,7 +231,8 @@ public class QueueConfigsReader {
         return Objects.requireNonNull(settings.entrySet().stream()
                 .filter(property -> SETTING_TABLE.equals(property.getKey()))
                 .findFirst()
-                .map(property -> new QueueLocation(property.getValue(), queueName))
+                .map(property -> QueueLocation.builder().withTableName(property.getValue())
+                        .withQueueName(queueName).build())
                 .orElse(null));
     }
 

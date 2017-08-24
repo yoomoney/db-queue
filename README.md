@@ -168,10 +168,6 @@ Classes related to Spring configuration.
 
 TODO
 
-## Performance
-
-TODO
-
 # Known Issues
 
 * Retry strategies cannot be defined by a user

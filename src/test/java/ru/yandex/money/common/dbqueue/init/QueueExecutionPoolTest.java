@@ -82,7 +82,8 @@ public class QueueExecutionPoolTest {
 
     @Test
     public void should_start_and_stop_queue_on_two_shards_and_three_threads() throws Exception {
-        QueueLocation location1 = new QueueLocation("testTable", "testQueue1");
+        QueueLocation location1 = QueueLocation.builder().withTableName("testTable")
+                .withQueueName("testQueue1").build();
         QueueShardId shardId1 = new QueueShardId("s1");
         QueueShardId shardId2 = new QueueShardId("s2");
         QueueDao queueDao1 = mock(QueueDao.class);

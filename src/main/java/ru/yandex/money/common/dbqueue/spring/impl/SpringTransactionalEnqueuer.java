@@ -1,8 +1,9 @@
-package ru.yandex.money.common.dbqueue.spring;
+package ru.yandex.money.common.dbqueue.spring.impl;
 
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
 import ru.yandex.money.common.dbqueue.api.impl.TransactionalEnqueuer;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.spring.SpringEnqueuer;
 
 import javax.annotation.Nonnull;
 

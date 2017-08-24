@@ -12,7 +12,7 @@ Given version x.y.z
 
 **In case of x == 0 backward compatibility is not guaranteed.**
 
-### NEXT VERSION 
+### [0.0.6]() (24-08-2017)
 
 * Same queue names in different tables are forbidden
 * Reading configuration from file (QueueConfigsReader)

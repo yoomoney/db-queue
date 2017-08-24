@@ -33,7 +33,7 @@ public class ManualConfiguration {
         QueueDatabaseInitializer.createTable("example_manual_table");
         QueueDao queueDao = new QueueDao(new QueueShardId("master"), QueueDatabaseInitializer.getJdbcTemplate(),
                 QueueDatabaseInitializer.getTransactionTemplate());
-        QueueConfig config = new QueueConfig(new QueueLocation("example_manual_table", "example_queue"),
+        QueueConfig config = new QueueConfig(QueueLocation.builder().withTableName("example_manual_table").withQueueName("example_queue").build(),
                 QueueSettings.builder()
                         .withBetweenTaskTimeout(Duration.ofMillis(100))
                         .withNoTaskTimeout(Duration.ofSeconds(1))

@@ -32,7 +32,8 @@ public class BaseDaoTest {
     }
 
     protected static QueueLocation generateUniqueLocation() {
-        return new QueueLocation(QueueDatabaseInitializer.DEFAULT_TABLE_NAME, "test-queue-" + queueCounter.incrementAndGet());
+        return QueueLocation.builder().withTableName(QueueDatabaseInitializer.DEFAULT_TABLE_NAME)
+                .withQueueName("test-queue-" + queueCounter.incrementAndGet()).build();
     }
 
     protected static String generateUniqueTable() {

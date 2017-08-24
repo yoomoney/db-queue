@@ -38,9 +38,9 @@ public class QueueRegistryTest {
     public ExpectedException thrown = ExpectedException.none();
 
     private static final QueueLocation testLocation1 =
-            new QueueLocation("queue_test", "test_queue1");
+            QueueLocation.builder().withTableName("queue_test").withQueueName("test_queue1").build();
     private static final QueueLocation testLocation2 =
-            new QueueLocation("queue_test", "test_queue2");
+            QueueLocation.builder().withTableName("queue_test").withQueueName("test_queue2").build();
 
     @Test
     public void should_fail_when_no_matching_queue_found() throws Exception {
@@ -188,13 +188,16 @@ public class QueueRegistryTest {
 
         QueueRegistry queueRegistry = new QueueRegistry();
 
-        QueueConfig queueConfig1 = new QueueConfig(new QueueLocation("table1", "queue"),
+        QueueConfig queueConfig1 = new QueueConfig(QueueLocation.builder().withTableName("table1")
+                .withQueueName("queue").build(),
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
                         .withNoTaskTimeout(Duration.ZERO).build());
-        QueueConfig queueConfig2 = new QueueConfig(new QueueLocation("table2", "queue"),
+        QueueConfig queueConfig2 = new QueueConfig(QueueLocation.builder().withTableName("table2")
+                .withQueueName("queue").build(),
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
                         .withNoTaskTimeout(Duration.ZERO).build());
-        QueueConfig queueConfig3 = new QueueConfig(new QueueLocation("table1", "queue"),
+        QueueConfig queueConfig3 = new QueueConfig(QueueLocation.builder().withTableName("table1")
+                .withQueueName("queue").build(),
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
                         .withNoTaskTimeout(Duration.ZERO).build());
 

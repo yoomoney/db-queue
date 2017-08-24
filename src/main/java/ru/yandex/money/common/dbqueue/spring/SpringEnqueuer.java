@@ -84,7 +84,7 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
      *
      * @param queueConfig конфигурация очереди
      */
-    void setQueueConfig(@Nonnull QueueConfig queueConfig) {
+    public void setQueueConfig(@Nonnull QueueConfig queueConfig) {
         this.queueConfig = Objects.requireNonNull(queueConfig);
     }
 
@@ -93,7 +93,7 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
      *
      * @param payloadTransformer преобразователь данных
      */
-    void setPayloadTransformer(@Nonnull PayloadTransformer<T> payloadTransformer) {
+    public void setPayloadTransformer(@Nonnull PayloadTransformer<T> payloadTransformer) {
         this.payloadTransformer = Objects.requireNonNull(payloadTransformer);
     }
 
@@ -102,7 +102,7 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
      *
      * @param shards Map: key - идентификатор шарда, value - dao для работы с шардом
      */
-    void setShards(@Nonnull Map<QueueShardId, QueueDao> shards) {
+    public void setShards(@Nonnull Map<QueueShardId, QueueDao> shards) {
         this.shards = Objects.requireNonNull(shards);
     }
 
@@ -121,7 +121,7 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
      *
      * @param shardRouter роутер
      */
-    void setShardRouter(@Nonnull ShardRouter<T> shardRouter) {
+    public void setShardRouter(@Nonnull ShardRouter<T> shardRouter) {
         this.shardRouter = Objects.requireNonNull(shardRouter);
     }
 

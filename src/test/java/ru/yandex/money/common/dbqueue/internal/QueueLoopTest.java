@@ -29,7 +29,7 @@ public class QueueLoopTest {
         QueueThreadLifecycleListener listener = mock(QueueThreadLifecycleListener.class);
         QueueShardId shardId = new QueueShardId("s1");
         Queue queue = mock(Queue.class);
-        QueueLocation location = new QueueLocation("table", "queue");
+        QueueLocation location = QueueLocation.builder().withTableName("table").withQueueName("queue").build();
         when(queue.getQueueConfig()).thenReturn(new QueueConfig(location,
                 QueueSettings.builder()
                         .withBetweenTaskTimeout(Duration.ZERO)
@@ -54,7 +54,7 @@ public class QueueLoopTest {
         QueueThreadLifecycleListener listener = mock(QueueThreadLifecycleListener.class);
         QueueShardId shardId = new QueueShardId("s1");
         Queue queue = mock(Queue.class);
-        QueueLocation location = new QueueLocation("table", "queue");
+        QueueLocation location = QueueLocation.builder().withTableName("table").withQueueName("queue").build();
         Duration fatalCrashTimeout = Duration.ofDays(1L);
         when(queue.getQueueConfig()).thenReturn(new QueueConfig(location,
                 QueueSettings.builder()

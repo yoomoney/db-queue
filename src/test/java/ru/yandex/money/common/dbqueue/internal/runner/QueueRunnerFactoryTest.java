@@ -31,7 +31,7 @@ public class QueueRunnerFactoryTest {
         Queue queue = mock(Queue.class);
         QueueSettings settings = QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO)
                 .withProcessingMode(ProcessingMode.USE_EXTERNAL_EXECUTOR).build();
-        QueueLocation location = new QueueLocation("testTable", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
         when(queue.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
 
         QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queue,
@@ -48,7 +48,7 @@ public class QueueRunnerFactoryTest {
         Queue queue = mock(Queue.class);
         QueueSettings settings = QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO)
                 .withProcessingMode(ProcessingMode.SEPARATE_TRANSACTIONS).build();
-        QueueLocation location = new QueueLocation("testTable", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
         when(queue.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
 
         QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queue,
@@ -64,7 +64,7 @@ public class QueueRunnerFactoryTest {
         Queue queue = mock(Queue.class);
         QueueSettings settings = QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO)
                 .withProcessingMode(ProcessingMode.WRAP_IN_TRANSACTION).build();
-        QueueLocation location = new QueueLocation("testTable", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
         when(queue.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
 
         QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queue,

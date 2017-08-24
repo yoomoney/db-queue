@@ -18,6 +18,9 @@ import ru.yandex.money.common.dbqueue.api.Task;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringNoopPayloadTransformer;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringSingleShardRouter;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalEnqueuer;
 
 import javax.annotation.Nonnull;
 
@@ -67,9 +70,9 @@ public class SpringQueueCollectorTest {
     private static class ValidContext {
 
         private static final QueueLocation testLocation1 =
-                new QueueLocation("queue_test", "test_queue1");
+                QueueLocation.builder().withTableName("queue_test").withQueueName("test_queue1").build();
         private static final QueueLocation testLocation2 =
-                new QueueLocation("queue_test", "test_queue2");
+                QueueLocation.builder().withTableName("queue_test").withQueueName("test_queue2").build();
 
         public ValidContext() {
         }
@@ -186,7 +189,7 @@ public class SpringQueueCollectorTest {
     @Configuration
     private static class InvalidContext {
         private static final QueueLocation testLocation =
-                new QueueLocation("queue_test", "test_queue");
+                QueueLocation.builder().withTableName("queue_test").withQueueName("test_queue").build();
 
         public InvalidContext() {
         }

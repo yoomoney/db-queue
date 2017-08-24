@@ -21,15 +21,15 @@ import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
-import ru.yandex.money.common.dbqueue.spring.SpringNoopPayloadTransformer;
 import ru.yandex.money.common.dbqueue.spring.SpringQueue;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueCollector;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueConfigContainer;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueExternalExecutor;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueInitializer;
-import ru.yandex.money.common.dbqueue.spring.SpringSingleShardRouter;
 import ru.yandex.money.common.dbqueue.spring.SpringTaskLifecycleListener;
-import ru.yandex.money.common.dbqueue.spring.SpringTransactionalEnqueuer;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringNoopPayloadTransformer;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringSingleShardRouter;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalEnqueuer;
 import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
 import javax.annotation.Nonnull;
@@ -48,7 +48,7 @@ public class SpringLifecycleConfiguration {
     static final List<String> EVENTS = new ArrayList<>();
 
     static final QueueLocation TEST_QUEUE =
-            new QueueLocation("lifecycle_table", "lifecycle_queue");
+            QueueLocation.builder().withTableName("lifecycle_table").withQueueName("lifecycle_queue").build();
 
     @Bean
     SpringQueueConfigContainer springQueueConfigContainer() {

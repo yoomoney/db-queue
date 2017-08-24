@@ -31,7 +31,7 @@ public class TaskPickerTest {
 
     @Test
     public void should_successfully_pick_task() throws Exception {
-        QueueLocation location = new QueueLocation("testTable", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
         QueueShardId shardId = new QueueShardId("s1");
 
         RetryTaskStrategy retryTaskStrategy = mock(RetryTaskStrategy.class);
@@ -61,7 +61,7 @@ public class TaskPickerTest {
 
     @Test
     public void should_not_notify_when_task_not_picked() throws Exception {
-        QueueLocation location = new QueueLocation("testTable", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
 
         RetryTaskStrategy retryTaskStrategy = mock(RetryTaskStrategy.class);
         FakeTransactionTemplate transactionTemplate = spy(new FakeTransactionTemplate());
@@ -87,7 +87,7 @@ public class TaskPickerTest {
 
     @Test(expected = IllegalStateException.class)
     public void should_not_catch_exception() throws Exception {
-        QueueLocation location = new QueueLocation("testTable", "testQueue");
+        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
 
         RetryTaskStrategy retryTaskStrategy = mock(RetryTaskStrategy.class);
         FakeTransactionTemplate transactionTemplate = spy(new FakeTransactionTemplate());

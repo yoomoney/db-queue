@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.api;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
-import org.junit.Ignore;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 
 /**
@@ -11,8 +11,7 @@ import org.junit.Test;
 public class EnqueueParamsTest {
 
     @Test
-    @Ignore
     public void should_define_correct_equals_hashcode() throws Exception {
-        EqualsVerifier.forClass(EnqueueParams.class).verify();
+        EqualsVerifier.forClass(EnqueueParams.class).suppress(Warning.NONFINAL_FIELDS).verify();
     }
 }

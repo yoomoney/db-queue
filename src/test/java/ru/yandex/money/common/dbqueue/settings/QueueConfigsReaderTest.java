@@ -34,7 +34,8 @@ public class QueueConfigsReaderTest {
     public ExpectedException thrown = ExpectedException.none();
 
     private QueueConfig createConfig(String tableName, String queueName, QueueSettings settings) {
-        return new QueueConfig(new QueueLocation(tableName, queueName), settings);
+        return new QueueConfig(QueueLocation.builder().withTableName(tableName)
+                .withQueueName(queueName).build(), settings);
     }
 
     @Test
