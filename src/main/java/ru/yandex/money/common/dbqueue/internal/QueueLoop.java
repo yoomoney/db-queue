@@ -44,7 +44,6 @@ public class QueueLoop {
      */
     public void start(QueueShardId shardId, Queue queue, @Nonnull QueueRunner queueRunner) {
         Objects.requireNonNull(queueRunner);
-        Duration fatalCrashTimeout = queue.getQueueConfig().getSettings().getFatalCrashTimeout();
         loopPolicy.doRun(() -> {
             try {
                 queueThreadLifecycleListener.started(shardId, queue.getQueueConfig().getLocation());
@@ -52,7 +51,7 @@ public class QueueLoop {
                 loopPolicy.doWait(waitDuration);
             } catch (Throwable e) {
                 queueThreadLifecycleListener.crashedPickTask(shardId, queue.getQueueConfig().getLocation(), e);
-                loopPolicy.doWait(fatalCrashTimeout);
+                loopPolicy.doWait(queue.getQueueConfig().getSettings().getFatalCrashTimeout());
             } finally {
                 queueThreadLifecycleListener.finished(shardId, queue.getQueueConfig().getLocation());
             }
