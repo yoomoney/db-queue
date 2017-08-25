@@ -16,6 +16,8 @@ Given version x.y.z
 
 * Fixed ability to disable queue processing via thread count
 * Renamed ThreadLifecycleListener#crashedOnPickedTask to ThreadLifecycleListener#crashed
+* Constructors of builder classes are made private
+* Return value of QueueProducer#enqueue changed to primitive
 
 ### [0.0.8]() (24-08-2017)
 

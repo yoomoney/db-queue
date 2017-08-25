@@ -26,7 +26,7 @@ public interface QueueProducer<T> {
      * @param enqueueParams параметры постановки задачи в очередь
      * @return идентификатор (sequence id) вставленной задачи
      */
-    Long enqueue(@Nonnull EnqueueParams<T> enqueueParams);
+    long enqueue(@Nonnull EnqueueParams<T> enqueueParams);
 
     /**
      * Предоставить преобразователь данных задачи.

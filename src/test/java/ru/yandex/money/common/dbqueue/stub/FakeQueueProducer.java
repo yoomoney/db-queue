@@ -29,7 +29,7 @@ public class FakeQueueProducer implements QueueProducer<String> {
     }
 
     @Override
-    public Long enqueue(@Nonnull EnqueueParams<String> enqueueParams) {
+    public long enqueue(@Nonnull EnqueueParams<String> enqueueParams) {
         return execFunc.apply(enqueueParams);
     }
 

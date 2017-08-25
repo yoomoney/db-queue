@@ -48,7 +48,7 @@ public class TransactionalProducer<T> implements QueueProducer<T> {
     }
 
     @Override
-    public Long enqueue(@Nonnull EnqueueParams<T> enqueueParams) {
+    public long enqueue(@Nonnull EnqueueParams<T> enqueueParams) {
         Objects.requireNonNull(enqueueParams);
         QueueDao queueDao = shards.get(shardRouter.resolveShardId(enqueueParams));
         EnqueueParams<String> rawEnqueueParams = new EnqueueParams<String>()

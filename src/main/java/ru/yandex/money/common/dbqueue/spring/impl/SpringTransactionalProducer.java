@@ -29,7 +29,7 @@ public class SpringTransactionalProducer<T> extends SpringQueueProducer<T> {
     }
 
     @Override
-    public Long enqueue(@Nonnull EnqueueParams<T> enqueueParams) {
+    public long enqueue(@Nonnull EnqueueParams<T> enqueueParams) {
         if (producer == null) {
             producer = new TransactionalProducer<T>(getQueueConfig(), getPayloadTransformer(), getShards(),
                     getShardRouter());
