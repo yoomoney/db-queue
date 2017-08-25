@@ -26,9 +26,9 @@ public interface ThreadLifecycleListener {
     void started(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location);
 
     /**
-     * Завершение обработки задачи в очереди.
+     * Завершение обработки задачи в очереди и старт нового цикла обработки.
      * <p>
-     * Вызывается всегда.
+     * Вызывается всегда, даже после {@link #crashed}
      * <p>
      * Может быть использовано для чтобы вернуть контекст логирования
      * или имя потока в прежнее состояние.
@@ -41,7 +41,7 @@ public interface ThreadLifecycleListener {
     /**
      * Обработка очереди завершилась фатальной ошибкой.
      * <p>
-     * Клиентский код не провоцирует вызов данного метода.
+     * Клиентский код по обработке задач не провоцирует вызов данного метода.
      * Вызывается в случае ошибок в механизме выборки задач.
      * <p>
      * Может быть использовано для логирования и мониторинга.
@@ -50,6 +50,6 @@ public interface ThreadLifecycleListener {
      * @param location местоположение очереди
      * @param exc      исключение приведшее к неуспеху обработки
      */
-    void crashedPickTask(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull Throwable exc);
+    void crashed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull Throwable exc);
 
 }

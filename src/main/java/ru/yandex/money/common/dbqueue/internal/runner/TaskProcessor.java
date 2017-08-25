@@ -51,8 +51,8 @@ class TaskProcessor {
     /**
      * Передать выбранную задачу в клиентский код на выполнение и обработать результат
      *
-     * @param queueConsumer      очередь
-     * @param taskRecord запись на обработку
+     * @param queueConsumer очередь
+     * @param taskRecord    запись на обработку
      */
     void processTask(@Nonnull QueueConsumer queueConsumer, @Nonnull TaskRecord taskRecord) {
         requireNonNull(queueConsumer);

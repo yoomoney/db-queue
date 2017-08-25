@@ -44,7 +44,7 @@ public interface QueueRunner {
         /**
          * Создать исполнителя задач очереди
          *
-         * @param queueConsumer                 очередь обработки задач
+         * @param queueConsumer         очередь обработки задач
          * @param queueDao              dao взаимодействия с очередью
          * @param taskLifecycleListener слушатель исполнения задач в очереди
          * @param externalExecutor      пул через который выполняются задачи в режиме

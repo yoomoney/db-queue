@@ -21,6 +21,6 @@ class EmptyListener implements ThreadLifecycleListener {
     }
 
     @Override
-    public void crashedPickTask(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull Throwable exc) {
+    public void crashed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull Throwable exc) {
     }
 }

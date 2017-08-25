@@ -72,7 +72,7 @@ public class QueueLoopTest {
         verify(listener).started(shardId, location);
         verify(queueRunner).runQueue(queueConsumer);
         verify(loopPolicy).doWait(fatalCrashTimeout);
-        verify(listener).crashedPickTask(shardId, location, exception);
+        verify(listener).crashed(shardId, location, exception);
         verify(listener).finished(shardId, location);
     }
 

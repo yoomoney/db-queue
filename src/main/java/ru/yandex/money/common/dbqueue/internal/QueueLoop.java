@@ -26,7 +26,7 @@ public class QueueLoop {
     /**
      * Конструктор
      *
-     * @param loopPolicy                   стратегия выполнения цикла
+     * @param loopPolicy              стратегия выполнения цикла
      * @param threadLifecycleListener слушатель событий исполнения очереди
      */
     public QueueLoop(@Nonnull LoopPolicy loopPolicy,
@@ -38,9 +38,9 @@ public class QueueLoop {
     /**
      * Запустить цикл обработки задач в очерди
      *
-     * @param shardId     идентификатор шарда, на котором происходит обработка
-     * @param queueConsumer       выполняемая очередь
-     * @param queueRunner исполнитель очереди
+     * @param shardId       идентификатор шарда, на котором происходит обработка
+     * @param queueConsumer выполняемая очередь
+     * @param queueRunner   исполнитель очереди
      */
     public void start(QueueShardId shardId, QueueConsumer queueConsumer, @Nonnull QueueRunner queueRunner) {
         Objects.requireNonNull(queueRunner);
@@ -50,7 +50,7 @@ public class QueueLoop {
                 Duration waitDuration = queueRunner.runQueue(queueConsumer);
                 loopPolicy.doWait(waitDuration);
             } catch (Throwable e) {
-                threadLifecycleListener.crashedPickTask(shardId, queueConsumer.getQueueConfig().getLocation(), e);
+                threadLifecycleListener.crashed(shardId, queueConsumer.getQueueConfig().getLocation(), e);
                 loopPolicy.doWait(queueConsumer.getQueueConfig().getSettings().getFatalCrashTimeout());
             } finally {
                 threadLifecycleListener.finished(shardId, queueConsumer.getQueueConfig().getLocation());

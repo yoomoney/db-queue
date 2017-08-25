@@ -50,8 +50,8 @@ public class QueueRegistry {
     /**
      * Зарегистрировать очередь.
      *
-     * @param <T>      тип данных задачи
-     * @param queueConsumer    обработчик очереди
+     * @param <T>           тип данных задачи
+     * @param queueConsumer обработчик очереди
      * @param queueProducer постановщик задачи в очередь
      */
     public synchronized <T> void registerQueue(@Nonnull QueueConsumer<T> queueConsumer,

@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class QueueExecutionPoolTest {
@@ -78,6 +80,77 @@ public class QueueExecutionPoolTest {
         } catch (Exception e) {
             assertThat(e.getMessage(), equalTo("queues already stopped"));
         }
+    }
+
+    @Test
+    public void should_not_start_queue_when_thread_count_is_zero() throws Exception {
+        QueueLocation location1 = QueueLocation.builder().withTableName("testTable")
+                .withQueueName("testQueue1").build();
+        QueueShardId shardId1 = new QueueShardId("s1");
+        QueueDao queueDao1 = mock(QueueDao.class);
+        when(queueDao1.getShardId()).thenReturn(shardId1);
+
+        QueueRegistry queueRegistry = mock(QueueRegistry.class);
+        QueueConsumer queueConsumer = mock(QueueConsumer.class);
+        when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(
+                location1,
+                QueueSettings.builder()
+                        .withNoTaskTimeout(Duration.ZERO)
+                        .withThreadCount(0)
+                        .withBetweenTaskTimeout(Duration.ZERO).build()));
+        QueueShardRouter shardRouter = mock(QueueShardRouter.class);
+        when(shardRouter.getShardsId()).thenReturn(new ArrayList() {{
+            add(shardId1);
+        }});
+        TaskLifecycleListener queueShardListener = mock(TaskLifecycleListener.class);
+        QueueExternalExecutor externalExecutor = mock(QueueExternalExecutor.class);
+
+        when(queueConsumer.getShardRouter()).thenReturn(shardRouter);
+        when(queueRegistry.getConsumers()).thenReturn(Collections.singletonList(queueConsumer));
+        when(queueRegistry.getTaskListeners()).thenReturn(
+                Collections.singletonMap(location1, queueShardListener));
+        when(queueRegistry.getExternalExecutors()).thenReturn(
+                Collections.singletonMap(location1, externalExecutor));
+        when(queueRegistry.getShards()).thenReturn(new HashMap<QueueShardId, QueueDao>() {{
+            put(shardId1, queueDao1);
+        }});
+
+        ThreadFactory threadFactory = mock(ThreadFactory.class);
+        TaskLifecycleListener defaultTaskListener = mock(TaskLifecycleListener.class);
+        ThreadLifecycleListener threadListener = mock(ThreadLifecycleListener.class);
+        ExecutorService queueThreadExecutor = spy(MoreExecutors.newDirectExecutorService());
+
+        QueueLoop queueLoop = mock(QueueLoop.class);
+        QueueRunner queueRunner = mock(QueueRunner.class);
+
+        QueueExecutionPool queueExecutionPool = new QueueExecutionPool(queueRegistry,
+                defaultTaskListener, threadListener,
+                (location, shardId) -> threadFactory,
+                (threadCount, factory) -> {
+                    new ArrayBlockingQueue<>(threadCount);
+                    assertThat(factory, sameInstance(threadFactory));
+                    assertThat(threadCount, equalTo(0));
+                    return queueThreadExecutor;
+                },
+                listener -> {
+                    assertThat(listener, sameInstance(threadListener));
+                    return queueLoop;
+                },
+                poolInstance -> {
+                    assertThat(poolInstance.queueConsumer, sameInstance(queueConsumer));
+                    assertThat(poolInstance.externalExecutor, sameInstance(externalExecutor));
+                    assertThat(poolInstance.taskListener, sameInstance(queueShardListener));
+                    return queueRunner;
+                });
+        queueExecutionPool.init();
+        queueExecutionPool.start();
+
+        verifyZeroInteractions(queueThreadExecutor);
+        verifyZeroInteractions(queueLoop);
+        queueExecutionPool.shutdown();
+
+        verify(externalExecutor, times(1)).shutdownQueueExecutor();
+        verifyZeroInteractions(queueThreadExecutor);
     }
 
     @Test
@@ -130,6 +203,7 @@ public class QueueExecutionPoolTest {
                 defaultTaskListener, threadListener,
                 (location, shardId) -> threadFactory,
                 (threadCount, factory) -> {
+                    new ArrayBlockingQueue<>(threadCount);
                     assertThat(factory, sameInstance(threadFactory));
                     assertThat(threadCount, equalTo(3));
                     return queueThreadExecutor;
