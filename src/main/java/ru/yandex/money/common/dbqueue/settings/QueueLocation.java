@@ -82,6 +82,9 @@ public final class QueueLocation {
         private String tableName;
         private String queueName;
 
+        private Builder(){
+        }
+
         /**
          * Задать имя таблицы, в которой лежат задачи очереди
          *

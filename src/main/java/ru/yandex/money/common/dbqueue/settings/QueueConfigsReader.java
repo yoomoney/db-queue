@@ -237,7 +237,7 @@ public class QueueConfigsReader {
     }
 
     private QueueSettings.Builder buildQueueSettings(Map<String, String> settings) {
-        QueueSettings.Builder builder = new QueueSettings.Builder();
+        QueueSettings.Builder builder = QueueSettings.builder();
         settings.entrySet().stream()
                 .filter(property -> !property.getKey().startsWith(SETTING_ADDITIONAL + "."))
                 .filter(property -> !SETTING_TABLE.equals(property.getKey()))

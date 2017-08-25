@@ -77,7 +77,7 @@ public final class QueueSettings {
         this.retryType = retryType == null ? TaskRetryType.GEOMETRIC_BACKOFF : retryType;
         this.processingMode = processingMode == null ? ProcessingMode.SEPARATE_TRANSACTIONS : processingMode;
         this.additionalSettings = additionalSettings == null ? Collections.emptyMap() :
-                Collections.unmodifiableMap(additionalSettings);
+                Collections.unmodifiableMap(new HashMap<>(additionalSettings));
     }
 
     /**
@@ -242,6 +242,9 @@ public final class QueueSettings {
         private TaskRetryType retryType;
         private ProcessingMode processingMode;
         private final Map<String, String> additionalSettings = new HashMap<>();
+
+        private Builder(){
+        }
 
         /**
          * Установить задержку обработки в случае отсутствия задач в очереди
