@@ -27,10 +27,10 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 1. You have a task that you want to process later. 
 2. You tell QueueProducer to schedule the task. 
 3. QueueProducer chooses a database shard through ShardRouter.
-4. QueueProducer converts the task payload to string representation through PayloadTransformer. 
+4. QueueProducer converts the task payload to string representation through TaskPayloadTransformer. 
 5. QueueProducer inserts the task in the database through QueueDao.
 6. ... the task has been selected from database in specified time ... 
-7. The task payload is converted to typed representation through PayloadTransformer.
+7. The task payload is converted to typed representation through TaskPayloadTransformer.
 8. The task is passed to the Queue instance in order to be processed. 
 9. You process the task and return processing result. 
 
@@ -38,12 +38,12 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 
 * Support for PostgreSQL with version higher or equal to 9.5.
 * Storing queue tasks in a separate tables or in the same table (QueueLocation).
-* Storing queue tasks in a separate databases for horizontal scaling (ShardRouter).
+* Storing queue tasks in a separate databases for horizontal scaling (QueueShardRouter).
 * At-least-once task processing semantic (exactly-once in some cases).
 * Delayed task execution.
 * Several retry strategies in case of a task processing error (TaskRetryType).
-* Task event listeners (TaskLifecycleListener, QueueThreadLifecycleListener).
-* Strong-typed api for task processing and enqueuing (PayloadTransformer).
+* Task event listeners (TaskLifecycleListener, ThreadLifecycleListener).
+* Strong-typed api for task processing and enqueuing (TaskPayloadTransformer).
 * Several task processing modes (ProcessingMode).
 
 ## Dependencies
