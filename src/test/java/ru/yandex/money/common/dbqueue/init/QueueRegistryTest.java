@@ -4,21 +4,21 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import ru.yandex.money.common.dbqueue.api.Enqueuer;
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
-import ru.yandex.money.common.dbqueue.api.Queue;
-import ru.yandex.money.common.dbqueue.api.QueueAction;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueExternalExecutor;
+import ru.yandex.money.common.dbqueue.api.QueueProducer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
+import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
+import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
+import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
-import ru.yandex.money.common.dbqueue.stub.FakeEnqueuer;
-import ru.yandex.money.common.dbqueue.stub.FakeQueue;
+import ru.yandex.money.common.dbqueue.stub.FakeQueueConsumer;
+import ru.yandex.money.common.dbqueue.stub.FakeQueueProducer;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -46,8 +46,8 @@ public class QueueRegistryTest {
     public void should_fail_when_no_matching_queue_found() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
-                "no matching queue for task listener: location={table=queue_test,queue=test_queue1}" + System.lineSeparator() +
-                "no matching queue for external executor: location={table=queue_test,queue=test_queue1}"));
+                "no matching queue for task listener: location={queue=test_queue1,table=queue_test}" + System.lineSeparator() +
+                "no matching queue for external executor: location={queue=test_queue1,table=queue_test}"));
 
         QueueRegistry queueRegistry = new QueueRegistry();
         queueRegistry.registerExternalExecutor(testLocation1, mock(QueueExternalExecutor.class));
@@ -56,19 +56,19 @@ public class QueueRegistryTest {
     }
 
     @Test
-    public void should_fail_when_enqueuer_does_not_match_queue() throws Exception {
+    public void should_fail_when_producer_does_not_match_consumer() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
-                "queue config must be the same: location={table=queue_test,queue=test_queue1}, enqueuer={location={table=queue_test,queue=test_queue1}, settings={threadCount=1, betweenTaskTimeout=PT0.1S, noTaskTimeout=PT0S, fatalCrashTimeout=PT2S, retryType=GEOMETRIC_BACKOFF, processingMode=SEPARATE_TRANSACTIONS}}, queue={location={table=queue_test,queue=test_queue1}, settings={threadCount=1, betweenTaskTimeout=PT0S, noTaskTimeout=PT0S, fatalCrashTimeout=PT2S, retryType=GEOMETRIC_BACKOFF, processingMode=SEPARATE_TRANSACTIONS}}" + System.lineSeparator() +
-                "payload transformers must be the same: location={table=queue_test,queue=test_queue1}" + System.lineSeparator() +
-                "shard routers must be the same: location={table=queue_test,queue=test_queue1}"));
+                "queue config must be the same: location={queue=test_queue1,table=queue_test}, producer={location={queue=test_queue1,table=queue_test}, settings={threadCount=1, betweenTaskTimeout=PT0.1S, noTaskTimeout=PT0S, fatalCrashTimeout=PT2S, retryType=GEOMETRIC_BACKOFF, processingMode=SEPARATE_TRANSACTIONS}}, consumer={location={queue=test_queue1,table=queue_test}, settings={threadCount=1, betweenTaskTimeout=PT0S, noTaskTimeout=PT0S, fatalCrashTimeout=PT2S, retryType=GEOMETRIC_BACKOFF, processingMode=SEPARATE_TRANSACTIONS}}" + System.lineSeparator() +
+                "payload transformers must be the same: location={queue=test_queue1,table=queue_test}" + System.lineSeparator() +
+                "shard routers must be the same: location={queue=test_queue1,table=queue_test}"));
         QueueRegistry queueRegistry = new QueueRegistry();
-        queueRegistry.registerQueue(new FakeQueue(new QueueConfig(testLocation1,
+        queueRegistry.registerQueue(new FakeQueueConsumer(new QueueConfig(testLocation1,
                         QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO).build()),
-                        mock(PayloadTransformer.class), mock(ShardRouter.class), t -> QueueAction.finish()),
-                new FakeEnqueuer(new QueueConfig(testLocation1,
+                        mock(TaskPayloadTransformer.class), mock(QueueShardRouter.class), t -> TaskExecutionResult.finish()),
+                new FakeQueueProducer(new QueueConfig(testLocation1,
                         QueueSettings.builder().withBetweenTaskTimeout(Duration.ofMillis(100)).withNoTaskTimeout(Duration.ZERO).build()),
-                        mock(PayloadTransformer.class), mock(ShardRouter.class), t -> 1L));
+                        mock(TaskPayloadTransformer.class), mock(QueueShardRouter.class), t -> 1L));
         queueRegistry.finishRegistration();
     }
 
@@ -76,19 +76,19 @@ public class QueueRegistryTest {
     public void should_fail_when_duplicate_queue() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
-                "duplicate queue: location={table=queue_test,queue=test_queue1}"));
+                "duplicate queue: location={queue=test_queue1,table=queue_test}"));
         QueueRegistry queueRegistry = new QueueRegistry();
         QueueConfig queueConfig = new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO).build());
-        PayloadTransformer transformer = mock(PayloadTransformer.class);
-        ShardRouter shardRouter = mock(ShardRouter.class);
-        queueRegistry.registerQueue(new FakeQueue(queueConfig,
-                        transformer, shardRouter, t -> QueueAction.finish()),
-                new FakeEnqueuer(queueConfig,
+        TaskPayloadTransformer transformer = mock(TaskPayloadTransformer.class);
+        QueueShardRouter shardRouter = mock(QueueShardRouter.class);
+        queueRegistry.registerQueue(new FakeQueueConsumer(queueConfig,
+                        transformer, shardRouter, t -> TaskExecutionResult.finish()),
+                new FakeQueueProducer(queueConfig,
                         transformer, shardRouter, t -> 1L));
-        queueRegistry.registerQueue(new FakeQueue(queueConfig,
-                        transformer, shardRouter, t -> QueueAction.finish()),
-                new FakeEnqueuer(queueConfig,
+        queueRegistry.registerQueue(new FakeQueueConsumer(queueConfig,
+                        transformer, shardRouter, t -> TaskExecutionResult.finish()),
+                new FakeQueueProducer(queueConfig,
                         transformer, shardRouter, t -> 1L));
         queueRegistry.finishRegistration();
     }
@@ -99,24 +99,24 @@ public class QueueRegistryTest {
         thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
                 "shards is not used: shardIds=s2"));
         QueueRegistry queueRegistry = new QueueRegistry();
-        PayloadTransformer transformer = mock(PayloadTransformer.class);
+        TaskPayloadTransformer transformer = mock(TaskPayloadTransformer.class);
 
-        ShardRouter shardRouter = mock(ShardRouter.class);
+        QueueShardRouter shardRouter = mock(QueueShardRouter.class);
         when(shardRouter.getShardsId()).thenReturn(Collections.singletonList(new QueueShardId("s1")));
         QueueDao queueDao1 = mock(QueueDao.class);
         when(queueDao1.getShardId()).thenReturn(new QueueShardId("s1"));
         QueueConfig queueConfig1 = new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO).build());
-        queueRegistry.registerQueue(new FakeQueue(queueConfig1,
-                        transformer, shardRouter, t -> QueueAction.finish()),
-                new FakeEnqueuer(queueConfig1,
+        queueRegistry.registerQueue(new FakeQueueConsumer(queueConfig1,
+                        transformer, shardRouter, t -> TaskExecutionResult.finish()),
+                new FakeQueueProducer(queueConfig1,
                         transformer, shardRouter, t -> 1L));
 
         QueueConfig queueConfig = new QueueConfig(testLocation2,
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO).build());
-        queueRegistry.registerQueue(new FakeQueue(queueConfig,
-                        transformer, shardRouter, t -> QueueAction.finish()),
-                new FakeEnqueuer(queueConfig,
+        queueRegistry.registerQueue(new FakeQueueConsumer(queueConfig,
+                        transformer, shardRouter, t -> TaskExecutionResult.finish()),
+                new FakeQueueProducer(queueConfig,
                         transformer, shardRouter, t -> 1L));
         QueueDao queueDao2 = mock(QueueDao.class);
         when(queueDao2.getShardId()).thenReturn(new QueueShardId("s2"));
@@ -136,12 +136,12 @@ public class QueueRegistryTest {
         QueueRegistry queueRegistry = new QueueRegistry();
         QueueConfig queueConfig = new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO).build());
-        PayloadTransformer transformer = mock(PayloadTransformer.class);
-        ShardRouter shardRouter = mock(ShardRouter.class);
+        TaskPayloadTransformer transformer = mock(TaskPayloadTransformer.class);
+        QueueShardRouter shardRouter = mock(QueueShardRouter.class);
         when(shardRouter.getShardsId()).thenReturn(Collections.singletonList(new QueueShardId("s1")));
-        queueRegistry.registerQueue(new FakeQueue(queueConfig,
-                        transformer, shardRouter, t -> QueueAction.finish()),
-                new FakeEnqueuer(queueConfig,
+        queueRegistry.registerQueue(new FakeQueueConsumer(queueConfig,
+                        transformer, shardRouter, t -> TaskExecutionResult.finish()),
+                new FakeQueueProducer(queueConfig,
                         transformer, shardRouter, t -> 1L));
         queueRegistry.finishRegistration();
     }
@@ -150,9 +150,9 @@ public class QueueRegistryTest {
     public void should_fail_on_duplicate() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
-                "duplicate external executor: location={table=queue_test,queue=test_queue1}" + System.lineSeparator() +
+                "duplicate external executor: location={queue=test_queue1,table=queue_test}" + System.lineSeparator() +
                 "duplicate shard: shardId={id=s1}" + System.lineSeparator() +
-                "duplicate task lifecycle listener: location={table=queue_test,queue=test_queue1}"));
+                "duplicate task lifecycle listener: location={queue=test_queue1,table=queue_test}"));
 
         QueueRegistry queueRegistry = new QueueRegistry();
 
@@ -160,12 +160,12 @@ public class QueueRegistryTest {
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
                         .withProcessingMode(ProcessingMode.USE_EXTERNAL_EXECUTOR)
                         .withNoTaskTimeout(Duration.ZERO).build());
-        PayloadTransformer transformer = mock(PayloadTransformer.class);
-        ShardRouter shardRouter = mock(ShardRouter.class);
+        TaskPayloadTransformer transformer = mock(TaskPayloadTransformer.class);
+        QueueShardRouter shardRouter = mock(QueueShardRouter.class);
         when(shardRouter.getShardsId()).thenReturn(Collections.singletonList(new QueueShardId("s1")));
-        queueRegistry.registerQueue(new FakeQueue(queueConfig,
-                        transformer, shardRouter, t -> QueueAction.finish()),
-                new FakeEnqueuer(queueConfig,
+        queueRegistry.registerQueue(new FakeQueueConsumer(queueConfig,
+                        transformer, shardRouter, t -> TaskExecutionResult.finish()),
+                new FakeQueueProducer(queueConfig,
                         transformer, shardRouter, t -> 1L));
 
         queueRegistry.registerExternalExecutor(testLocation1, mock(QueueExternalExecutor.class));
@@ -183,7 +183,7 @@ public class QueueRegistryTest {
     public void should_fail_when_same_queue_belongs_to_different_tables() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
-                "duplicate queue: location={table=table1,queue=queue}" + System.lineSeparator() +
+                "duplicate queue: location={queue=queue,table=table1}" + System.lineSeparator() +
                 "queue name must be unique across all tables: queueName=queue, tables=[table1, table2]"));
 
         QueueRegistry queueRegistry = new QueueRegistry();
@@ -201,20 +201,20 @@ public class QueueRegistryTest {
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
                         .withNoTaskTimeout(Duration.ZERO).build());
 
-        PayloadTransformer transformer = mock(PayloadTransformer.class);
-        ShardRouter shardRouter = mock(ShardRouter.class);
+        TaskPayloadTransformer transformer = mock(TaskPayloadTransformer.class);
+        QueueShardRouter shardRouter = mock(QueueShardRouter.class);
         when(shardRouter.getShardsId()).thenReturn(Collections.singletonList(new QueueShardId("s1")));
-        queueRegistry.registerQueue(new FakeQueue(queueConfig1,
-                        transformer, shardRouter, t -> QueueAction.finish()),
-                new FakeEnqueuer(queueConfig1,
+        queueRegistry.registerQueue(new FakeQueueConsumer(queueConfig1,
+                        transformer, shardRouter, t -> TaskExecutionResult.finish()),
+                new FakeQueueProducer(queueConfig1,
                         transformer, shardRouter, t -> 1L));
-        queueRegistry.registerQueue(new FakeQueue(queueConfig2,
-                        transformer, shardRouter, t -> QueueAction.finish()),
-                new FakeEnqueuer(queueConfig2,
+        queueRegistry.registerQueue(new FakeQueueConsumer(queueConfig2,
+                        transformer, shardRouter, t -> TaskExecutionResult.finish()),
+                new FakeQueueProducer(queueConfig2,
                         transformer, shardRouter, t -> 1L));
-        queueRegistry.registerQueue(new FakeQueue(queueConfig3,
-                        transformer, shardRouter, t -> QueueAction.finish()),
-                new FakeEnqueuer(queueConfig3,
+        queueRegistry.registerQueue(new FakeQueueConsumer(queueConfig3,
+                        transformer, shardRouter, t -> TaskExecutionResult.finish()),
+                new FakeQueueProducer(queueConfig3,
                         transformer, shardRouter, t -> 1L));
 
         QueueDao queueDao = mock(QueueDao.class);
@@ -227,13 +227,13 @@ public class QueueRegistryTest {
     public void should_fail_when_invalid_external_executor_config() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
-                "external executor missing for processing mode USE_EXTERNAL_EXECUTOR: location={table=queue_test,queue=test_queue1}" + System.lineSeparator() +
-                "external executor must be specified only for processing mode USE_EXTERNAL_EXECUTOR: location={table=queue_test,queue=test_queue2}"));
+                "external executor missing for processing mode USE_EXTERNAL_EXECUTOR: location={queue=test_queue1,table=queue_test}" + System.lineSeparator() +
+                "external executor must be specified only for processing mode USE_EXTERNAL_EXECUTOR: location={queue=test_queue2,table=queue_test}"));
 
         QueueRegistry queueRegistry = new QueueRegistry();
 
-        PayloadTransformer transformer = mock(PayloadTransformer.class);
-        ShardRouter shardRouter = mock(ShardRouter.class);
+        TaskPayloadTransformer transformer = mock(TaskPayloadTransformer.class);
+        QueueShardRouter shardRouter = mock(QueueShardRouter.class);
         when(shardRouter.getShardsId()).thenReturn(Collections.singletonList(new QueueShardId("s1")));
 
         QueueConfig queueConfig1 = new QueueConfig(testLocation1,
@@ -247,13 +247,13 @@ public class QueueRegistryTest {
                         .withBetweenTaskTimeout(Duration.ZERO)
                         .withNoTaskTimeout(Duration.ZERO).build());
 
-        queueRegistry.registerQueue(new FakeQueue(queueConfig1,
-                        transformer, shardRouter, t -> QueueAction.finish()),
-                new FakeEnqueuer(queueConfig1,
+        queueRegistry.registerQueue(new FakeQueueConsumer(queueConfig1,
+                        transformer, shardRouter, t -> TaskExecutionResult.finish()),
+                new FakeQueueProducer(queueConfig1,
                         transformer, shardRouter, t -> 1L));
-        queueRegistry.registerQueue(new FakeQueue(queueConfig2,
-                        transformer, shardRouter, t -> QueueAction.finish()),
-                new FakeEnqueuer(queueConfig2,
+        queueRegistry.registerQueue(new FakeQueueConsumer(queueConfig2,
+                        transformer, shardRouter, t -> TaskExecutionResult.finish()),
+                new FakeQueueProducer(queueConfig2,
                         transformer, shardRouter, t -> 1L));
 
         QueueDao queueDao = mock(QueueDao.class);
@@ -273,15 +273,15 @@ public class QueueRegistryTest {
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
                         .withProcessingMode(ProcessingMode.USE_EXTERNAL_EXECUTOR)
                         .withNoTaskTimeout(Duration.ZERO).build());
-        PayloadTransformer transformer = mock(PayloadTransformer.class);
-        ShardRouter shardRouter = mock(ShardRouter.class);
+        TaskPayloadTransformer transformer = mock(TaskPayloadTransformer.class);
+        QueueShardRouter shardRouter = mock(QueueShardRouter.class);
         QueueShardId shardId = new QueueShardId("s1");
         when(shardRouter.getShardsId()).thenReturn(Collections.singletonList(shardId));
-        FakeQueue queue = new FakeQueue(queueConfig,
-                transformer, shardRouter, t -> QueueAction.finish());
-        FakeEnqueuer enqueuer = new FakeEnqueuer(queueConfig,
+        FakeQueueConsumer consumer = new FakeQueueConsumer(queueConfig,
+                transformer, shardRouter, t -> TaskExecutionResult.finish());
+        FakeQueueProducer producer = new FakeQueueProducer(queueConfig,
                 transformer, shardRouter, t -> 1L);
-        queueRegistry.registerQueue(queue, enqueuer);
+        queueRegistry.registerQueue(consumer, producer);
 
         QueueExternalExecutor externalExecutor = mock(QueueExternalExecutor.class);
         queueRegistry.registerExternalExecutor(testLocation1, externalExecutor);
@@ -295,7 +295,7 @@ public class QueueRegistryTest {
         Assert.assertThat(queueRegistry.getExternalExecutors(), equalTo(Collections.singletonMap(testLocation1, externalExecutor)));
         Assert.assertThat(queueRegistry.getShards(), equalTo(Collections.singletonMap(shardId, queueDao)));
         Assert.assertThat(queueRegistry.getTaskListeners(), equalTo(Collections.singletonMap(testLocation1, taskLifecycleListener)));
-        Assert.assertThat(queueRegistry.getQueues(), hasItem(queue));
+        Assert.assertThat(queueRegistry.getConsumers(), hasItem(consumer));
     }
 
     @Test
@@ -304,7 +304,7 @@ public class QueueRegistryTest {
         queueRegistry.finishRegistration();
 
         try {
-            queueRegistry.registerQueue(mock(Queue.class), mock(Enqueuer.class));
+            queueRegistry.registerQueue(mock(QueueConsumer.class), mock(QueueProducer.class));
             Assert.fail("should not do registration");
         } catch (Exception e) {
             Assert.assertThat(e.getMessage(), equalTo("cannot update property. construction is finished"));
@@ -345,7 +345,7 @@ public class QueueRegistryTest {
             Assert.assertThat(e.getMessage(), equalTo("cannot get registry property. construction is not finished"));
         }
         try {
-            queueRegistry.getQueues();
+            queueRegistry.getConsumers();
             Assert.fail("should not get properties");
         } catch (Exception e) {
             Assert.assertThat(e.getMessage(), equalTo("cannot get registry property. construction is not finished"));

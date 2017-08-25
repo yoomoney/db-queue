@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
 import org.junit.Test;
-import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
@@ -36,8 +36,8 @@ public class TaskPickerTest {
 
         RetryTaskStrategy retryTaskStrategy = mock(RetryTaskStrategy.class);
         FakeTransactionTemplate transactionTemplate = spy(new FakeTransactionTemplate());
-        Queue queue = mock(Queue.class);
-        when(queue.getQueueConfig()).thenReturn(new QueueConfig(location,
+        QueueConsumer queueConsumer = mock(QueueConsumer.class);
+        when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
                         .withNoTaskTimeout(Duration.ZERO).build()));
         PickTaskDao pickTaskDao = mock(PickTaskDao.class);
@@ -49,7 +49,7 @@ public class TaskPickerTest {
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
         FakeMillisTimeProvider millisTimeProvider = spy(new FakeMillisTimeProvider(3L, 5L));
 
-        TaskRecord pickedTask = new TaskPicker(pickTaskDao, listener, millisTimeProvider, retryTaskStrategy).pickTask(queue);
+        TaskRecord pickedTask = new TaskPicker(pickTaskDao, listener, millisTimeProvider, retryTaskStrategy).pickTask(queueConsumer);
 
         assertThat(pickedTask, equalTo(taskRecord));
 
@@ -65,8 +65,8 @@ public class TaskPickerTest {
 
         RetryTaskStrategy retryTaskStrategy = mock(RetryTaskStrategy.class);
         FakeTransactionTemplate transactionTemplate = spy(new FakeTransactionTemplate());
-        Queue queue = mock(Queue.class);
-        when(queue.getQueueConfig()).thenReturn(new QueueConfig(location,
+        QueueConsumer queueConsumer = mock(QueueConsumer.class);
+        when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
                         .withNoTaskTimeout(Duration.ZERO).build()));
         PickTaskDao pickTaskDao = mock(PickTaskDao.class);
@@ -75,7 +75,7 @@ public class TaskPickerTest {
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
         FakeMillisTimeProvider millisTimeProvider = spy(new FakeMillisTimeProvider(3L, 5L));
 
-        TaskRecord pickedTask = new TaskPicker(pickTaskDao, listener, millisTimeProvider, retryTaskStrategy).pickTask(queue);
+        TaskRecord pickedTask = new TaskPicker(pickTaskDao, listener, millisTimeProvider, retryTaskStrategy).pickTask(queueConsumer);
 
         assertThat(pickedTask, equalTo(null));
 
@@ -91,8 +91,8 @@ public class TaskPickerTest {
 
         RetryTaskStrategy retryTaskStrategy = mock(RetryTaskStrategy.class);
         FakeTransactionTemplate transactionTemplate = spy(new FakeTransactionTemplate());
-        Queue queue = mock(Queue.class);
-        when(queue.getQueueConfig()).thenReturn(new QueueConfig(location,
+        QueueConsumer queueConsumer = mock(QueueConsumer.class);
+        when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
                         .withNoTaskTimeout(Duration.ZERO).build()));
         PickTaskDao pickTaskDao = mock(PickTaskDao.class);
@@ -101,7 +101,7 @@ public class TaskPickerTest {
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
         FakeMillisTimeProvider millisTimeProvider = spy(new FakeMillisTimeProvider(3L, 5L));
 
-        TaskRecord pickedTask = new TaskPicker(pickTaskDao, listener, millisTimeProvider, retryTaskStrategy).pickTask(queue);
+        TaskRecord pickedTask = new TaskPicker(pickTaskDao, listener, millisTimeProvider, retryTaskStrategy).pickTask(queueConsumer);
 
         assertThat(pickedTask, equalTo(null));
 

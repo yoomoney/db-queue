@@ -1,8 +1,8 @@
 package ru.yandex.money.common.dbqueue.spring;
 
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
-import ru.yandex.money.common.dbqueue.api.Queue;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
+import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
+import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 
@@ -17,15 +17,15 @@ import java.util.Objects;
  * @author Oleg Kandaurov
  * @since 19.07.2017
  */
-public abstract class SpringQueue<T> implements Queue<T>, SpringQueueIdentifiable {
+public abstract class SpringQueueConsumer<T> implements QueueConsumer<T>, SpringQueueIdentifiable {
 
     @Nonnull
     private final QueueLocation queueLocation;
     @Nonnull
     private final Class<T> payloadClass;
-    private PayloadTransformer<T> payloadTransformer;
+    private TaskPayloadTransformer<T> payloadTransformer;
     private QueueConfig queueConfig;
-    private ShardRouter<T> shardRouter;
+    private QueueShardRouter<T> shardRouter;
 
     /**
      * Конструктор очереди
@@ -33,7 +33,7 @@ public abstract class SpringQueue<T> implements Queue<T>, SpringQueueIdentifiabl
      * @param queueLocation местоположение очереди
      * @param payloadClass  класс данных задачи
      */
-    protected SpringQueue(@Nonnull QueueLocation queueLocation, @Nonnull Class<T> payloadClass) {
+    protected SpringQueueConsumer(@Nonnull QueueLocation queueLocation, @Nonnull Class<T> payloadClass) {
         this.queueLocation = Objects.requireNonNull(queueLocation);
         this.payloadClass = Objects.requireNonNull(payloadClass);
     }
@@ -52,13 +52,13 @@ public abstract class SpringQueue<T> implements Queue<T>, SpringQueueIdentifiabl
 
     @Nonnull
     @Override
-    public PayloadTransformer<T> getPayloadTransformer() {
+    public TaskPayloadTransformer<T> getPayloadTransformer() {
         return payloadTransformer;
     }
 
     @Nonnull
     @Override
-    public ShardRouter<T> getShardRouter() {
+    public QueueShardRouter<T> getShardRouter() {
         return shardRouter;
     }
 
@@ -77,7 +77,7 @@ public abstract class SpringQueue<T> implements Queue<T>, SpringQueueIdentifiabl
      *
      * @param shardRouter роутер
      */
-    void setShardRouter(@Nonnull ShardRouter<T> shardRouter) {
+    void setShardRouter(@Nonnull QueueShardRouter<T> shardRouter) {
         this.shardRouter = Objects.requireNonNull(shardRouter);
     }
 
@@ -86,7 +86,7 @@ public abstract class SpringQueue<T> implements Queue<T>, SpringQueueIdentifiabl
      *
      * @param payloadTransformer преобразователь данных
      */
-    void setPayloadTransformer(@Nonnull PayloadTransformer<T> payloadTransformer) {
+    void setPayloadTransformer(@Nonnull TaskPayloadTransformer<T> payloadTransformer) {
         this.payloadTransformer = Objects.requireNonNull(payloadTransformer);
     }
 

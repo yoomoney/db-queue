@@ -2,11 +2,11 @@ package ru.yandex.money.common.dbqueue.init;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.yandex.money.common.dbqueue.api.Enqueuer;
-import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueExternalExecutor;
+import ru.yandex.money.common.dbqueue.api.QueueProducer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
+import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
@@ -39,7 +39,7 @@ public class QueueRegistry {
 
     private static final Logger log = LoggerFactory.getLogger(QueueRegistry.class);
 
-    private final Map<QueueLocation, Queue> queues = new LinkedHashMap<>();
+    private final Map<QueueLocation, QueueConsumer> consumers = new LinkedHashMap<>();
     private final Map<QueueLocation, TaskLifecycleListener> taskListeners = new LinkedHashMap<>();
     private final Map<QueueLocation, QueueExternalExecutor> externalExecutors = new LinkedHashMap<>();
     private final Map<QueueShardId, QueueDao> shards = new LinkedHashMap<>();
@@ -51,30 +51,30 @@ public class QueueRegistry {
      * Зарегистрировать очередь.
      *
      * @param <T>      тип данных задачи
-     * @param queue    обработчик очереди
-     * @param enqueuer постановщик задачи в очередь
+     * @param queueConsumer    обработчик очереди
+     * @param queueProducer постановщик задачи в очередь
      */
-    public synchronized <T> void registerQueue(@Nonnull Queue<T> queue,
-                                               @Nonnull Enqueuer<T> enqueuer) {
-        Objects.requireNonNull(queue);
-        Objects.requireNonNull(enqueuer);
+    public synchronized <T> void registerQueue(@Nonnull QueueConsumer<T> queueConsumer,
+                                               @Nonnull QueueProducer<T> queueProducer) {
+        Objects.requireNonNull(queueConsumer);
+        Objects.requireNonNull(queueProducer);
         ensureConstructionInProgress();
-        QueueLocation location = queue.getQueueConfig().getLocation();
+        QueueLocation location = queueConsumer.getQueueConfig().getLocation();
 
-        if (!Objects.equals(queue.getQueueConfig(), enqueuer.getQueueConfig())) {
-            errorMessages.add(String.format("queue config must be the same: location=%s, enqueuer=%s, " +
-                    "queue=%s", location, enqueuer.getQueueConfig(), queue.getQueueConfig()));
+        if (!Objects.equals(queueConsumer.getQueueConfig(), queueProducer.getQueueConfig())) {
+            errorMessages.add(String.format("queue config must be the same: location=%s, producer=%s, " +
+                    "consumer=%s", location, queueProducer.getQueueConfig(), queueConsumer.getQueueConfig()));
         }
 
-        if (!Objects.equals(enqueuer.getPayloadTransformer(), queue.getPayloadTransformer())) {
+        if (!Objects.equals(queueProducer.getPayloadTransformer(), queueConsumer.getPayloadTransformer())) {
             errorMessages.add(String.format("payload transformers must be the same: location=%s", location));
         }
 
-        if (!Objects.equals(enqueuer.getShardRouter(), queue.getShardRouter())) {
+        if (!Objects.equals(queueProducer.getShardRouter(), queueConsumer.getShardRouter())) {
             errorMessages.add(String.format("shard routers must be the same: location=%s", location));
         }
 
-        if (queues.putIfAbsent(location, queue) != null) {
+        if (consumers.putIfAbsent(location, queueConsumer) != null) {
             errorMessages.add("duplicate queue: location=" + location);
         }
     }
@@ -139,7 +139,7 @@ public class QueueRegistry {
             throw new IllegalArgumentException("Invalid queue configuration:" + System.lineSeparator() +
                     errorMessages.stream().collect(Collectors.joining(System.lineSeparator())));
         }
-        queues.values().forEach(queue -> log.info("registered queue: config={}", queue.getQueueConfig()));
+        consumers.values().forEach(consumer -> log.info("registered consumer: config={}", consumer.getQueueConfig()));
         shards.values().forEach(shard -> log.info("registered shard: shardId={}", shard.getShardId()));
         externalExecutors.keySet().forEach(location -> log.info("registered external executor: location={}", location));
         taskListeners.keySet().forEach(location ->
@@ -149,7 +149,7 @@ public class QueueRegistry {
 
     private void validateQueueNames() {
         Map<String, Set<String>> queueTablesMap = new HashMap<>();
-        for (QueueLocation queueLocation : queues.keySet()) {
+        for (QueueLocation queueLocation : consumers.keySet()) {
             if (!queueTablesMap.containsKey(queueLocation.getQueueName())) {
                 queueTablesMap.put(queueLocation.getQueueName(), new LinkedHashSet<>());
             }
@@ -166,8 +166,8 @@ public class QueueRegistry {
     private void validateShards() {
         Map<QueueShardId, Boolean> shardsInUse = shards.keySet().stream()
                 .collect(Collectors.toMap(id -> id, id -> Boolean.FALSE));
-        for (ShardRouter shardRouter : queues.values().stream()
-                .map(Queue::getShardRouter).collect(Collectors.toList())) {
+        for (QueueShardRouter shardRouter : consumers.values().stream()
+                .map(QueueConsumer::getShardRouter).collect(Collectors.toList())) {
             Collection<QueueShardId> routerShards = shardRouter.getShardsId();
             for (QueueShardId shardId : routerShards) {
                 if (shards.containsKey(shardId)) {
@@ -187,7 +187,7 @@ public class QueueRegistry {
 
     private void validateTaskListeners() {
         for (QueueLocation location : taskListeners.keySet()) {
-            if (!queues.containsKey(location)) {
+            if (!consumers.containsKey(location)) {
                 errorMessages.add("no matching queue for task listener: location=" + location);
             }
         }
@@ -195,11 +195,11 @@ public class QueueRegistry {
 
     private void validateExternalExecutors() {
         for (QueueLocation location : externalExecutors.keySet()) {
-            if (!queues.containsKey(location)) {
+            if (!consumers.containsKey(location)) {
                 errorMessages.add("no matching queue for external executor: location=" + location);
             }
         }
-        for (Map.Entry<QueueLocation, Queue> entry : queues.entrySet()) {
+        for (Map.Entry<QueueLocation, QueueConsumer> entry : consumers.entrySet()) {
             boolean isUseExternalExecutor = entry.getValue().getQueueConfig()
                     .getSettings().getProcessingMode() == ProcessingMode.USE_EXTERNAL_EXECUTOR;
             boolean hasExternalExecutor = externalExecutors.containsKey(entry.getKey());
@@ -221,9 +221,9 @@ public class QueueRegistry {
      * @return список очередей
      */
     @Nonnull
-    Collection<Queue> getQueues() {
+    Collection<QueueConsumer> getConsumers() {
         ensureConstructionFinished();
-        return Collections.unmodifiableCollection(queues.values());
+        return Collections.unmodifiableCollection(consumers.values());
     }
 
     /**

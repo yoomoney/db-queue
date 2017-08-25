@@ -24,12 +24,12 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SpringQueueCollector implements BeanPostProcessor, ApplicationListener<ContextRefreshedEvent> {
-    private final Map<QueueLocation, SpringEnqueuer> enqueuers = new LinkedHashMap<>();
-    private final Map<QueueLocation, SpringQueue> queues = new LinkedHashMap<>();
+    private final Map<QueueLocation, SpringQueueProducer> producers = new LinkedHashMap<>();
+    private final Map<QueueLocation, SpringQueueConsumer> queueConsumers = new LinkedHashMap<>();
     private final Map<QueueLocation, SpringTaskLifecycleListener> listeners = new LinkedHashMap<>();
     private final Map<QueueLocation, SpringQueueExternalExecutor> executors = new LinkedHashMap<>();
-    private final Map<QueueLocation, SpringPayloadTransformer> transformers = new LinkedHashMap<>();
-    private final Map<QueueLocation, SpringShardRouter> shardRouters = new LinkedHashMap<>();
+    private final Map<QueueLocation, SpringTaskPayloadTransformer> transformers = new LinkedHashMap<>();
+    private final Map<QueueLocation, SpringQueueShardRouter> shardRouters = new LinkedHashMap<>();
     private final Map<QueueShardId, QueueDao> shards = new LinkedHashMap<>();
     private final Collection<String> errorMessages = new ArrayList<>();
 
@@ -68,12 +68,12 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-        collectBeanIfPossible(SpringQueue.class, bean, queues, beanName);
-        collectBeanIfPossible(SpringEnqueuer.class, bean, enqueuers, beanName);
+        collectBeanIfPossible(SpringQueueConsumer.class, bean, queueConsumers, beanName);
+        collectBeanIfPossible(SpringQueueProducer.class, bean, producers, beanName);
         collectBeanIfPossible(SpringTaskLifecycleListener.class, bean, listeners, beanName);
         collectBeanIfPossible(SpringQueueExternalExecutor.class, bean, executors, beanName);
-        collectBeanIfPossible(SpringPayloadTransformer.class, bean, transformers, beanName);
-        collectBeanIfPossible(SpringShardRouter.class, bean, shardRouters, beanName);
+        collectBeanIfPossible(SpringTaskPayloadTransformer.class, bean, transformers, beanName);
+        collectBeanIfPossible(SpringQueueShardRouter.class, bean, shardRouters, beanName);
         collectShardIfPossible(bean, shards, beanName);
         return bean;
     }
@@ -89,8 +89,8 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
      * @return Map: key - местоположение очереди, value - постановщик задач данной очереди
      */
     @Nonnull
-    Map<QueueLocation, SpringEnqueuer> getEnqueuers() {
-        return Collections.unmodifiableMap(enqueuers);
+    Map<QueueLocation, SpringQueueProducer> getProducers() {
+        return Collections.unmodifiableMap(producers);
     }
 
     /**
@@ -99,8 +99,8 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
      * @return Map: key - местоположение очереди, value - обработчик очереди
      */
     @Nonnull
-    Map<QueueLocation, SpringQueue> getQueues() {
-        return Collections.unmodifiableMap(queues);
+    Map<QueueLocation, SpringQueueConsumer> getConsumers() {
+        return Collections.unmodifiableMap(queueConsumers);
     }
 
     /**
@@ -129,7 +129,7 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
      * @return Map: key - местоположение очереди, value - преобразователь данных задачи для данной очереди
      */
     @Nonnull
-    Map<QueueLocation, SpringPayloadTransformer> getTransformers() {
+    Map<QueueLocation, SpringTaskPayloadTransformer> getTransformers() {
         return Collections.unmodifiableMap(transformers);
     }
 
@@ -139,7 +139,7 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
      * @return Map: key - местоположение очереди, value - правила шардирования задач в очереди
      */
     @Nonnull
-    Map<QueueLocation, SpringShardRouter> getShardRouters() {
+    Map<QueueLocation, SpringQueueShardRouter> getShardRouters() {
         return Collections.unmodifiableMap(shardRouters);
     }
 

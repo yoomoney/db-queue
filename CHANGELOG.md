@@ -12,6 +12,16 @@ Given version x.y.z
 
 **In case of x == 0 backward compatibility is not guaranteed.**
 
+### NEXT_VERSION
+
+Renamed classes:
+* Queue -> QueueConsumer
+* Enqueuer -> QueueProducer
+* ShardRouter -> QueueShardRouter
+* QueueThreadLifecycleListener -> ThreadLifecycleListener
+* QueueAction -> TaskExecutionResult
+* PayloadTransformer -> TaskPayloadTransformer
+
 ### [0.0.7]() (24-08-2017)
 
 * Upgrade Spring to 4.3.7

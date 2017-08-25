@@ -7,10 +7,10 @@ import org.junit.Test;
  * @author Oleg Kandaurov
  * @since 10.08.2017
  */
-public class QueueActionTest {
+public class TaskExecutionResultTest {
 
     @Test
     public void should_define_correct_equals_hashcode() throws Exception {
-        EqualsVerifier.forClass(QueueAction.class).verify();
+        EqualsVerifier.forClass(TaskExecutionResult.class).verify();
     }
 }

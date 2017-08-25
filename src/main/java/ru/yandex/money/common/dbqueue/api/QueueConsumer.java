@@ -11,7 +11,7 @@ import javax.annotation.Nonnull;
  * @author Oleg Kandaurov
  * @since 09.07.2017
  */
-public interface Queue<T> {
+public interface QueueConsumer<T> {
 
     /**
      * Обработать задачу.
@@ -20,7 +20,7 @@ public interface Queue<T> {
      * @return результат выполнения очереди
      */
     @Nonnull
-    QueueAction execute(@Nonnull Task<T> task);
+    TaskExecutionResult execute(@Nonnull Task<T> task);
 
     /**
      * Получить конфигурацию данной очереди.
@@ -36,7 +36,7 @@ public interface Queue<T> {
      * @return преобразователь данных
      */
     @Nonnull
-    PayloadTransformer<T> getPayloadTransformer();
+    TaskPayloadTransformer<T> getPayloadTransformer();
 
     /**
      * Получить правила шардирования задач, обрабатываемых очередью
@@ -44,5 +44,5 @@ public interface Queue<T> {
      * @return правила шардирования
      */
     @Nonnull
-    ShardRouter<T> getShardRouter();
+    QueueShardRouter<T> getShardRouter();
 }

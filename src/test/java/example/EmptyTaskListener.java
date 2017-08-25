@@ -1,7 +1,7 @@
 package example;
 
-import ru.yandex.money.common.dbqueue.api.QueueAction;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
+import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
@@ -22,7 +22,7 @@ class EmptyTaskListener implements TaskLifecycleListener {
     }
 
     @Override
-    public void executed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord, @Nonnull QueueAction executionResult, long processTaskTime) {
+    public void executed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord, @Nonnull TaskExecutionResult executionResult, long processTaskTime) {
     }
 
     @Override

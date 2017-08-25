@@ -1,6 +1,6 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
-import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
@@ -49,20 +49,20 @@ class TaskPicker {
     /**
      * Выбрать задачу из очереди
      *
-     * @param queue очередь для выборки
+     * @param queueConsumer очередь для выборки
      * @return задача или null если отсуствует
      */
     @Nullable
-    TaskRecord pickTask(@Nonnull Queue queue) {
-        requireNonNull(queue);
+    TaskRecord pickTask(@Nonnull QueueConsumer queueConsumer) {
+        requireNonNull(queueConsumer);
         long startPickTaskTime = millisTimeProvider.getMillis();
         TaskRecord taskRecord = pickTaskDao.getTransactionTemplate()
-                .execute(status -> pickTaskDao.pickTask(queue.getQueueConfig().getLocation(),
+                .execute(status -> pickTaskDao.pickTask(queueConsumer.getQueueConfig().getLocation(),
                         retryTaskStrategy));
         if (taskRecord == null) {
             return null;
         }
-        taskLifecycleListener.picked(pickTaskDao.getShardId(), queue.getQueueConfig().getLocation(),
+        taskLifecycleListener.picked(pickTaskDao.getShardId(), queueConsumer.getQueueConfig().getLocation(),
                 taskRecord, millisTimeProvider.getMillis() - startPickTaskTime);
         return taskRecord;
     }

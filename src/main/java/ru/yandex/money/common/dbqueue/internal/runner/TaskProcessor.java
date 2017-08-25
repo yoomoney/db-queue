@@ -1,8 +1,8 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
-import ru.yandex.money.common.dbqueue.api.Queue;
-import ru.yandex.money.common.dbqueue.api.QueueAction;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.Task;
+import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
@@ -51,26 +51,30 @@ class TaskProcessor {
     /**
      * Передать выбранную задачу в клиентский код на выполнение и обработать результат
      *
-     * @param queue      очередь
+     * @param queueConsumer      очередь
      * @param taskRecord запись на обработку
      */
-    void processTask(@Nonnull Queue queue, @Nonnull TaskRecord taskRecord) {
-        requireNonNull(queue);
+    void processTask(@Nonnull QueueConsumer queueConsumer, @Nonnull TaskRecord taskRecord) {
+        requireNonNull(queueConsumer);
         requireNonNull(taskRecord);
         try {
-            taskLifecycleListener.started(queueDao.getShardId(), queue.getQueueConfig().getLocation(), taskRecord);
+            taskLifecycleListener.started(queueDao.getShardId(), queueConsumer.getQueueConfig().getLocation(),
+                    taskRecord);
             long processTaskStarted = millisTimeProvider.getMillis();
-            Object payload = queue.getPayloadTransformer().toObject(taskRecord.getPayload());
+            Object payload = queueConsumer.getPayloadTransformer().toObject(taskRecord.getPayload());
             Task task = new Task(queueDao.getShardId(), payload, taskRecord.getAttemptsCount(),
                     taskRecord.getCreateDate(), taskRecord.getCorrelationId(), taskRecord.getActor());
-            QueueAction executionResult = queue.execute(task);
-            taskLifecycleListener.executed(queueDao.getShardId(), queue.getQueueConfig().getLocation(), taskRecord,
+            TaskExecutionResult executionResult = queueConsumer.execute(task);
+            taskLifecycleListener.executed(queueDao.getShardId(), queueConsumer.getQueueConfig().getLocation(),
+                    taskRecord,
                     executionResult, millisTimeProvider.getMillis() - processTaskStarted);
             taskResultHandler.handleResult(taskRecord, executionResult);
         } catch (Exception exc) {
-            taskLifecycleListener.crashed(queueDao.getShardId(), queue.getQueueConfig().getLocation(), taskRecord, exc);
+            taskLifecycleListener.crashed(queueDao.getShardId(), queueConsumer.getQueueConfig().getLocation(),
+                    taskRecord, exc);
         } finally {
-            taskLifecycleListener.finished(queueDao.getShardId(), queue.getQueueConfig().getLocation(), taskRecord);
+            taskLifecycleListener.finished(queueDao.getShardId(), queueConsumer.getQueueConfig().getLocation(),
+                    taskRecord);
         }
     }
 

@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
 import org.junit.Test;
-import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
@@ -33,21 +33,21 @@ public class QueueRunnerInTransactionTest {
         Duration betweenTaskTimeout = Duration.ofHours(1L);
         Duration noTaskTimeout = Duration.ofMillis(5L);
 
-        Queue queue = mock(Queue.class);
+        QueueConsumer queueConsumer = mock(QueueConsumer.class);
         TaskPicker taskPicker = mock(TaskPicker.class);
-        when(taskPicker.pickTask(queue)).thenReturn(null);
+        when(taskPicker.pickTask(queueConsumer)).thenReturn(null);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);
         QueueDao queueDao = mock(QueueDao.class);
         when(queueDao.getTransactionTemplate()).thenReturn(new FakeTransactionTemplate());
 
-        when(queue.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
+        when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
-        Duration waitTimeout = new QueueRunnerInTransaction(taskPicker, taskProcessor, queueDao).runQueue(queue);
+        Duration waitTimeout = new QueueRunnerInTransaction(taskPicker, taskProcessor, queueDao).runQueue(queueConsumer);
 
         assertThat(waitTimeout, equalTo(noTaskTimeout));
 
         verify(queueDao).getTransactionTemplate();
-        verify(taskPicker).pickTask(queue);
+        verify(taskPicker).pickTask(queueConsumer);
         verifyZeroInteractions(taskProcessor);
     }
 
@@ -56,24 +56,24 @@ public class QueueRunnerInTransactionTest {
         Duration betweenTaskTimeout = Duration.ofHours(1L);
         Duration noTaskTimeout = Duration.ofMillis(5L);
 
-        Queue queue = mock(Queue.class);
+        QueueConsumer queueConsumer = mock(QueueConsumer.class);
         TaskPicker taskPicker = mock(TaskPicker.class);
         TaskRecord taskRecord = new TaskRecord(0, null, 0, ZonedDateTime.now(),
                 ZonedDateTime.now(), null, null);
-        when(taskPicker.pickTask(queue)).thenReturn(taskRecord);
+        when(taskPicker.pickTask(queueConsumer)).thenReturn(taskRecord);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);
         QueueDao queueDao = mock(QueueDao.class);
         when(queueDao.getTransactionTemplate()).thenReturn(new FakeTransactionTemplate());
 
 
-        when(queue.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
+        when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
-        Duration waitTimeout = new QueueRunnerInTransaction(taskPicker, taskProcessor, queueDao).runQueue(queue);
+        Duration waitTimeout = new QueueRunnerInTransaction(taskPicker, taskProcessor, queueDao).runQueue(queueConsumer);
 
         assertThat(waitTimeout, equalTo(betweenTaskTimeout));
 
         verify(queueDao).getTransactionTemplate();
-        verify(taskPicker).pickTask(queue);
-        verify(taskProcessor).processTask(queue, taskRecord);
+        verify(taskPicker).pickTask(queueConsumer);
+        verify(taskProcessor).processTask(queueConsumer, taskRecord);
     }
 }

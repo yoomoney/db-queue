@@ -1,9 +1,9 @@
 package ru.yandex.money.common.dbqueue.spring.impl;
 
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
-import ru.yandex.money.common.dbqueue.api.impl.TransactionalEnqueuer;
+import ru.yandex.money.common.dbqueue.api.impl.TransactionalProducer;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
-import ru.yandex.money.common.dbqueue.spring.SpringEnqueuer;
+import ru.yandex.money.common.dbqueue.spring.SpringQueueProducer;
 
 import javax.annotation.Nonnull;
 
@@ -14,9 +14,9 @@ import javax.annotation.Nonnull;
  * @author Oleg Kandaurov
  * @since 05.08.2017
  */
-public class SpringTransactionalEnqueuer<T> extends SpringEnqueuer<T> {
+public class SpringTransactionalProducer<T> extends SpringQueueProducer<T> {
 
-    private TransactionalEnqueuer<T> enqueuer;
+    private TransactionalProducer<T> producer;
 
     /**
      * Конструктор постановщика задач
@@ -24,16 +24,16 @@ public class SpringTransactionalEnqueuer<T> extends SpringEnqueuer<T> {
      * @param queueLocation местоположение очереди
      * @param payloadClass  класс данных задачи
      */
-    public SpringTransactionalEnqueuer(@Nonnull QueueLocation queueLocation, @Nonnull Class<T> payloadClass) {
+    public SpringTransactionalProducer(@Nonnull QueueLocation queueLocation, @Nonnull Class<T> payloadClass) {
         super(queueLocation, payloadClass);
     }
 
     @Override
     public Long enqueue(@Nonnull EnqueueParams<T> enqueueParams) {
-        if (enqueuer == null) {
-            enqueuer = new TransactionalEnqueuer<T>(getQueueConfig(), getPayloadTransformer(), getShards(),
+        if (producer == null) {
+            producer = new TransactionalProducer<T>(getQueueConfig(), getPayloadTransformer(), getShards(),
                     getShardRouter());
         }
-        return enqueuer.enqueue(enqueueParams);
+        return producer.enqueue(enqueueParams);
     }
 }

@@ -4,7 +4,7 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.transaction.support.TransactionOperations;
-import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
@@ -28,13 +28,13 @@ public class QueueRunnerFactoryTest {
 
     @Test
     public void should_return_external_executor_runner() throws Exception {
-        Queue queue = mock(Queue.class);
+        QueueConsumer queueConsumer = mock(QueueConsumer.class);
         QueueSettings settings = QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO)
                 .withProcessingMode(ProcessingMode.USE_EXTERNAL_EXECUTOR).build();
         QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
-        when(queue.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
+        when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
 
-        QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queue,
+        QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queueConsumer,
                 new QueueDao(new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
                 mock(TaskLifecycleListener.class),
                 mock(Executor.class));
@@ -45,13 +45,13 @@ public class QueueRunnerFactoryTest {
 
     @Test
     public void should_return_separate_transactions_runner() throws Exception {
-        Queue queue = mock(Queue.class);
+        QueueConsumer queueConsumer = mock(QueueConsumer.class);
         QueueSettings settings = QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO)
                 .withProcessingMode(ProcessingMode.SEPARATE_TRANSACTIONS).build();
         QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
-        when(queue.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
+        when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
 
-        QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queue,
+        QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queueConsumer,
                 new QueueDao(new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
                 mock(TaskLifecycleListener.class),
                 null);
@@ -61,13 +61,13 @@ public class QueueRunnerFactoryTest {
 
     @Test
     public void should_return_wrap_in_transaction_runner() throws Exception {
-        Queue queue = mock(Queue.class);
+        QueueConsumer queueConsumer = mock(QueueConsumer.class);
         QueueSettings settings = QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO)
                 .withProcessingMode(ProcessingMode.WRAP_IN_TRANSACTION).build();
         QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
-        when(queue.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
+        when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
 
-        QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queue,
+        QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queueConsumer,
                 new QueueDao(new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
                 mock(TaskLifecycleListener.class),
                 null);

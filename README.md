@@ -25,10 +25,10 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 ## How it works?
 
 1. You have a task that you want to process later. 
-2. You tell Enqueuer to schedule the task. 
-3. Enqueuer chooses a database shard through ShardRouter.
-4. Enqueuer converts the task payload to string representation through PayloadTransformer. 
-5. Enqueuer inserts the task in the database through QueueDao.
+2. You tell QueueProducer to schedule the task. 
+3. QueueProducer chooses a database shard through ShardRouter.
+4. QueueProducer converts the task payload to string representation through PayloadTransformer. 
+5. QueueProducer inserts the task in the database through QueueDao.
 6. ... the task has been selected from database in specified time ... 
 7. The task payload is converted to typed representation through PayloadTransformer.
 8. The task is passed to the Queue instance in order to be processed. 
@@ -103,11 +103,11 @@ Example - [example.ManualConfiguration](https://github.com/yandex-money/db-queue
 Main steps to create manual configuration:
 
 * Create QueueDao instance for each shard.
-* Implement ShardRouter interface or use SingleShardRouter.
-* Implement PayloadTransformer interface or use NoopPayloadTransformer.
-* Implement Enqueuer interface or use TransactionalEnqueuer.
-* Implement Queue interface.
-* Create QueueRegistry and register Queue and Enqueuer instances.
+* Implement QueueShardRouter interface or use SingleShardRouter.
+* Implement TaskPayloadTransformer interface or use NoopPayloadTransformer.
+* Implement QueueProducer interface or use TransactionalProducer.
+* Implement QueueConsumer interface.
+* Create QueueRegistry and register QueueConsumer and QueueProducer instances.
 * Create QueueExecutionPool and start it.
 
 ### Spring-Auto Configuration
@@ -211,7 +211,7 @@ There is no support for blue-green deployment because a task is not bound to a h
 
 * No support for failover.
 
-Enqueuer can fail on task scheduling. We can detect that fail is caused by database 
+QueueProducer can fail on task scheduling. We can detect that fail is caused by database 
 and try insert task on next shard.
 
 * Hard to write tests.

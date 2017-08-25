@@ -10,7 +10,7 @@ import javax.annotation.Nonnull;
  * @author Oleg Kandaurov
  * @since 16.07.2017
  */
-public interface QueueThreadLifecycleListener {
+public interface ThreadLifecycleListener {
 
     /**
      * Начало обработки задачи в очереди.

@@ -55,7 +55,7 @@ public interface TaskLifecycleListener {
      * @param processTaskTime время обработки задачи, не включая время выборки
      */
     void executed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord,
-                  @Nonnull QueueAction executionResult, long processTaskTime);
+                  @Nonnull TaskExecutionResult executionResult, long processTaskTime);
 
     /**
      * Событие завершение обработки задачи в очереди.

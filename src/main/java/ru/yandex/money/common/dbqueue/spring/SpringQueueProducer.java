@@ -1,9 +1,9 @@
 package ru.yandex.money.common.dbqueue.spring;
 
-import ru.yandex.money.common.dbqueue.api.Enqueuer;
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
+import ru.yandex.money.common.dbqueue.api.QueueProducer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
+import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
+import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
@@ -23,16 +23,16 @@ import java.util.Objects;
  * @author Oleg Kandaurov
  * @since 19.07.2017
  */
-public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdentifiable {
+public abstract class SpringQueueProducer<T> implements QueueProducer<T>, SpringQueueIdentifiable {
 
     @Nonnull
     private final QueueLocation queueLocation;
     @Nonnull
     private final Class<T> payloadClass;
     private QueueConfig queueConfig;
-    private PayloadTransformer<T> payloadTransformer;
+    private TaskPayloadTransformer<T> payloadTransformer;
     private Map<QueueShardId, QueueDao> shards;
-    private ShardRouter<T> shardRouter;
+    private QueueShardRouter<T> shardRouter;
 
     /**
      * Конструктор постановщика задач
@@ -40,7 +40,7 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
      * @param queueLocation местоположение очереди
      * @param payloadClass  класс данных задачи
      */
-    public SpringEnqueuer(@Nonnull QueueLocation queueLocation, @Nonnull Class<T> payloadClass) {
+    public SpringQueueProducer(@Nonnull QueueLocation queueLocation, @Nonnull Class<T> payloadClass) {
         this.queueLocation = Objects.requireNonNull(queueLocation);
         this.payloadClass = Objects.requireNonNull(payloadClass);
     }
@@ -63,13 +63,13 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
 
     @Nonnull
     @Override
-    public PayloadTransformer<T> getPayloadTransformer() {
+    public TaskPayloadTransformer<T> getPayloadTransformer() {
         return payloadTransformer;
     }
 
     @Nonnull
     @Override
-    public ShardRouter<T> getShardRouter() {
+    public QueueShardRouter<T> getShardRouter() {
         return shardRouter;
     }
 
@@ -93,7 +93,7 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
      *
      * @param payloadTransformer преобразователь данных
      */
-    public void setPayloadTransformer(@Nonnull PayloadTransformer<T> payloadTransformer) {
+    public void setPayloadTransformer(@Nonnull TaskPayloadTransformer<T> payloadTransformer) {
         this.payloadTransformer = Objects.requireNonNull(payloadTransformer);
     }
 
@@ -121,7 +121,7 @@ public abstract class SpringEnqueuer<T> implements Enqueuer<T>, SpringQueueIdent
      *
      * @param shardRouter роутер
      */
-    public void setShardRouter(@Nonnull ShardRouter<T> shardRouter) {
+    public void setShardRouter(@Nonnull QueueShardRouter<T> shardRouter) {
         this.shardRouter = Objects.requireNonNull(shardRouter);
     }
 

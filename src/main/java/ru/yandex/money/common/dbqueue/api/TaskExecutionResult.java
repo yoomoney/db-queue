@@ -13,7 +13,7 @@ import java.util.Optional;
  * @author Oleg Kandaurov
  * @since 09.07.2017
  */
-public final class QueueAction {
+public final class TaskExecutionResult {
 
     /**
      * Действие, выполняемое после обработки задачи
@@ -33,20 +33,20 @@ public final class QueueAction {
         FAIL
     }
 
-    private static final QueueAction FINISH_ACTION = new QueueAction(Type.FINISH);
-    private static final QueueAction FAIL_ACTION = new QueueAction(Type.FAIL);
+    private static final TaskExecutionResult FINISH = new TaskExecutionResult(Type.FINISH);
+    private static final TaskExecutionResult FAIL = new TaskExecutionResult(Type.FAIL);
 
     @Nonnull
     private final Type actionType;
     @Nullable
     private final Duration executionDelay;
 
-    private QueueAction(@Nonnull Type actionType, @Nullable Duration executionDelay) {
+    private TaskExecutionResult(@Nonnull Type actionType, @Nullable Duration executionDelay) {
         this.actionType = Objects.requireNonNull(actionType);
         this.executionDelay = executionDelay;
     }
 
-    private QueueAction(@Nonnull Type actionType) {
+    private TaskExecutionResult(@Nonnull Type actionType) {
         this(actionType, null);
     }
 
@@ -91,9 +91,9 @@ public final class QueueAction {
      * @return действие
      */
     @Nonnull
-    public static QueueAction reenqueue(@Nonnull Duration delay) {
+    public static TaskExecutionResult reenqueue(@Nonnull Duration delay) {
         Objects.requireNonNull(delay);
-        return new QueueAction(Type.REENQUEUE, delay);
+        return new TaskExecutionResult(Type.REENQUEUE, delay);
     }
 
     /**
@@ -102,8 +102,8 @@ public final class QueueAction {
      * @return действие
      */
     @Nonnull
-    public static QueueAction fail() {
-        return FAIL_ACTION;
+    public static TaskExecutionResult fail() {
+        return FAIL;
     }
 
     /**
@@ -113,9 +113,9 @@ public final class QueueAction {
      * @return действие
      */
     @Nonnull
-    public static QueueAction fail(@Nonnull Duration delay) {
+    public static TaskExecutionResult fail(@Nonnull Duration delay) {
         Objects.requireNonNull(delay);
-        return new QueueAction(Type.FAIL, delay);
+        return new TaskExecutionResult(Type.FAIL, delay);
     }
 
     /**
@@ -124,8 +124,8 @@ public final class QueueAction {
      * @return действие
      */
     @Nonnull
-    public static QueueAction finish() {
-        return FINISH_ACTION;
+    public static TaskExecutionResult finish() {
+        return FINISH;
     }
 
     @Override
@@ -136,7 +136,7 @@ public final class QueueAction {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        QueueAction that = (QueueAction) obj;
+        TaskExecutionResult that = (TaskExecutionResult) obj;
         return actionType == that.actionType &&
                 Objects.equals(executionDelay, that.executionDelay);
     }

@@ -3,17 +3,17 @@ package ru.yandex.money.common.dbqueue.spring.wiring;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
-import ru.yandex.money.common.dbqueue.api.Enqueuer;
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
-import ru.yandex.money.common.dbqueue.api.Queue;
-import ru.yandex.money.common.dbqueue.api.QueueAction;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueExternalExecutor;
+import ru.yandex.money.common.dbqueue.api.QueueProducer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.QueueThreadLifecycleListener;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
+import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.Task;
+import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
+import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
+import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
@@ -21,15 +21,15 @@ import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
-import ru.yandex.money.common.dbqueue.spring.SpringQueue;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueCollector;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueConfigContainer;
+import ru.yandex.money.common.dbqueue.spring.SpringQueueConsumer;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueExternalExecutor;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueInitializer;
 import ru.yandex.money.common.dbqueue.spring.SpringTaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringNoopPayloadTransformer;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringSingleShardRouter;
-import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalEnqueuer;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalProducer;
 import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
 import javax.annotation.Nonnull;
@@ -62,8 +62,8 @@ public class SpringLifecycleConfiguration {
     }
 
     @Bean
-    QueueThreadLifecycleListener queueThreadLifecycleListener() {
-        return new CustomQueueThreadLifecycleListener();
+    ThreadLifecycleListener queueThreadLifecycleListener() {
+        return new CustomThreadLifecycleListener();
     }
 
     @Bean
@@ -96,24 +96,24 @@ public class SpringLifecycleConfiguration {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Bean
-    Enqueuer<String> exampleEnqueuer() {
-        return new SpringTransactionalEnqueuer<>(TEST_QUEUE, String.class);
+    QueueProducer<String> exampleProducer() {
+        return new SpringTransactionalProducer<>(TEST_QUEUE, String.class);
     }
 
     @Bean
-    Queue<String> exampleQueue() {
-        return new SpringQueue<String>(TEST_QUEUE, String.class) {
+    QueueConsumer<String> exampleQueue() {
+        return new SpringQueueConsumer<String>(TEST_QUEUE, String.class) {
             @Nonnull
             @Override
-            public QueueAction execute(@Nonnull Task<String> task) {
+            public TaskExecutionResult execute(@Nonnull Task<String> task) {
                 EVENTS.add("processing task");
-                return QueueAction.finish();
+                return TaskExecutionResult.finish();
             }
         };
     }
 
     @Bean
-    PayloadTransformer<String> exampleTransformer() {
+    TaskPayloadTransformer<String> exampleTransformer() {
         return new SpringNoopPayloadTransformer(TEST_QUEUE) {
             @Nullable
             @Override
@@ -132,7 +132,7 @@ public class SpringLifecycleConfiguration {
     }
 
     @Bean
-    ShardRouter<String> exampleShardRouter(QueueDao queueDao) {
+    QueueShardRouter<String> exampleShardRouter(QueueDao queueDao) {
         return new SpringSingleShardRouter<String>(TEST_QUEUE, String.class, queueDao) {
             @Override
             public QueueShardId resolveShardId(EnqueueParams<String> enqueueParams) {
@@ -183,7 +183,7 @@ public class SpringLifecycleConfiguration {
             }
 
             @Override
-            public void executed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord, @Nonnull QueueAction executionResult, long processTaskTime) {
+            public void executed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord, @Nonnull TaskExecutionResult executionResult, long processTaskTime) {
                 delegate.executed(shardId, location, taskRecord, executionResult, processTaskTime);
             }
 
@@ -199,7 +199,7 @@ public class SpringLifecycleConfiguration {
         };
     }
 
-    public static class CustomQueueThreadLifecycleListener implements QueueThreadLifecycleListener {
+    public static class CustomThreadLifecycleListener implements ThreadLifecycleListener {
 
         @Override
         public void started(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location) {
@@ -237,7 +237,7 @@ public class SpringLifecycleConfiguration {
 
         @Override
         public void executed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord,
-                             @Nonnull QueueAction executionResult, long processTaskTime) {
+                             @Nonnull TaskExecutionResult executionResult, long processTaskTime) {
             EVENTS.add("task executed on " + listenerName + " payload=" + taskRecord.getPayload());
         }
 

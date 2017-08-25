@@ -1,6 +1,6 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
-import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
@@ -27,11 +27,11 @@ public interface QueueRunner {
     /**
      * Единократно обработать заданную очередь
      *
-     * @param queue очередь для обработки
+     * @param queueConsumer очередь для обработки
      * @return таймаут ожидания после обработки задачи в очереди
      */
     @Nonnull
-    Duration runQueue(@Nonnull Queue queue);
+    Duration runQueue(@Nonnull QueueConsumer queueConsumer);
 
     /**
      * Фабрика исполнителей задач в очереди
@@ -44,7 +44,7 @@ public interface QueueRunner {
         /**
          * Создать исполнителя задач очереди
          *
-         * @param queue                 очередь обработки задач
+         * @param queueConsumer                 очередь обработки задач
          * @param queueDao              dao взаимодействия с очередью
          * @param taskLifecycleListener слушатель исполнения задач в очереди
          * @param externalExecutor      пул через который выполняются задачи в режиме
@@ -53,10 +53,10 @@ public interface QueueRunner {
          * @return инстанс исполнителя задач
          */
         @SuppressWarnings("rawtypes")
-        public static QueueRunner createQueueRunner(@Nonnull Queue queue, @Nonnull QueueDao queueDao,
+        public static QueueRunner createQueueRunner(@Nonnull QueueConsumer queueConsumer, @Nonnull QueueDao queueDao,
                                                     @Nonnull TaskLifecycleListener taskLifecycleListener,
                                                     @Nullable Executor externalExecutor) {
-            requireNonNull(queue);
+            requireNonNull(queueConsumer);
             requireNonNull(queueDao);
             requireNonNull(taskLifecycleListener);
 
@@ -64,11 +64,12 @@ public interface QueueRunner {
                     queueDao.getJdbcTemplate(), queueDao.getTransactionTemplate());
             TaskPicker taskPicker = new TaskPicker(pickTaskDao, taskLifecycleListener,
                     new MillisTimeProvider.SystemMillisTimeProvider(), RetryTaskStrategy.Factory.create(
-                    queue.getQueueConfig().getSettings()));
-            TaskResultHandler taskResultHandler = new TaskResultHandler(queue.getQueueConfig().getLocation(), queueDao);
+                    queueConsumer.getQueueConfig().getSettings()));
+            TaskResultHandler taskResultHandler = new TaskResultHandler(queueConsumer.getQueueConfig().getLocation(),
+                    queueDao);
             TaskProcessor taskProcessor = new TaskProcessor(queueDao, taskLifecycleListener,
                     new MillisTimeProvider.SystemMillisTimeProvider(), taskResultHandler);
-            QueueSettings settings = queue.getQueueConfig().getSettings();
+            QueueSettings settings = queueConsumer.getQueueConfig().getSettings();
             switch (settings.getProcessingMode()) {
                 case SEPARATE_TRANSACTIONS:
                     return new QueueRunnerInSeparateTransactions(taskPicker, taskProcessor);

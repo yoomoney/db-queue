@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
  * @author Oleg Kandaurov
  * @since 10.07.2017
  */
-public interface PayloadTransformer<T> {
+public interface TaskPayloadTransformer<T> {
 
     /**
      * Преобразовать строковые данные задачи в объект.

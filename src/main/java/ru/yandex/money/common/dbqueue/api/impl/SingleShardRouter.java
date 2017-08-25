@@ -2,7 +2,7 @@ package ru.yandex.money.common.dbqueue.api.impl;
 
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
+import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 
 import java.util.Collection;
@@ -13,7 +13,7 @@ import java.util.Collections;
  *
  * @param <T> тип данных задачи
  */
-public class SingleShardRouter<T> implements ShardRouter<T> {
+public class SingleShardRouter<T> implements QueueShardRouter<T> {
     private final QueueDao queueDao;
 
     /**

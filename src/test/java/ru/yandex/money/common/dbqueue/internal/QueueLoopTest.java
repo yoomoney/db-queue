@@ -1,9 +1,9 @@
 package ru.yandex.money.common.dbqueue.internal;
 
 import org.junit.Test;
-import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.QueueThreadLifecycleListener;
+import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
 import ru.yandex.money.common.dbqueue.internal.runner.QueueRunner;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
@@ -26,24 +26,24 @@ public class QueueLoopTest {
     @Test
     public void should_perform_success_lifecycle() throws Exception {
         LoopPolicy loopPolicy = spy(new SyncLoopPolicy());
-        QueueThreadLifecycleListener listener = mock(QueueThreadLifecycleListener.class);
+        ThreadLifecycleListener listener = mock(ThreadLifecycleListener.class);
         QueueShardId shardId = new QueueShardId("s1");
-        Queue queue = mock(Queue.class);
+        QueueConsumer queueConsumer = mock(QueueConsumer.class);
         QueueLocation location = QueueLocation.builder().withTableName("table").withQueueName("queue").build();
-        when(queue.getQueueConfig()).thenReturn(new QueueConfig(location,
+        when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
                 QueueSettings.builder()
                         .withBetweenTaskTimeout(Duration.ZERO)
                         .withNoTaskTimeout(Duration.ZERO)
                         .build()));
         QueueRunner queueRunner = mock(QueueRunner.class);
         Duration waitDuration = Duration.ofMillis(100L);
-        when(queueRunner.runQueue(queue)).thenReturn(waitDuration);
+        when(queueRunner.runQueue(queueConsumer)).thenReturn(waitDuration);
 
-        new QueueLoop(loopPolicy, listener).start(shardId, queue, queueRunner);
+        new QueueLoop(loopPolicy, listener).start(shardId, queueConsumer, queueRunner);
 
         verify(loopPolicy).doRun(any());
         verify(listener).started(shardId, location);
-        verify(queueRunner).runQueue(queue);
+        verify(queueRunner).runQueue(queueConsumer);
         verify(loopPolicy).doWait(waitDuration);
         verify(listener).finished(shardId, location);
     }
@@ -51,12 +51,12 @@ public class QueueLoopTest {
     @Test
     public void should_perform_crash_lifecycle() throws Exception {
         LoopPolicy loopPolicy = spy(new SyncLoopPolicy());
-        QueueThreadLifecycleListener listener = mock(QueueThreadLifecycleListener.class);
+        ThreadLifecycleListener listener = mock(ThreadLifecycleListener.class);
         QueueShardId shardId = new QueueShardId("s1");
-        Queue queue = mock(Queue.class);
+        QueueConsumer queueConsumer = mock(QueueConsumer.class);
         QueueLocation location = QueueLocation.builder().withTableName("table").withQueueName("queue").build();
         Duration fatalCrashTimeout = Duration.ofDays(1L);
-        when(queue.getQueueConfig()).thenReturn(new QueueConfig(location,
+        when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
                 QueueSettings.builder()
                         .withBetweenTaskTimeout(Duration.ZERO)
                         .withNoTaskTimeout(Duration.ZERO)
@@ -64,13 +64,13 @@ public class QueueLoopTest {
                         .build()));
         QueueRunner queueRunner = mock(QueueRunner.class);
         RuntimeException exception = new RuntimeException("exc");
-        when(queueRunner.runQueue(queue)).thenThrow(exception);
+        when(queueRunner.runQueue(queueConsumer)).thenThrow(exception);
 
-        new QueueLoop(loopPolicy, listener).start(shardId, queue, queueRunner);
+        new QueueLoop(loopPolicy, listener).start(shardId, queueConsumer, queueRunner);
 
         verify(loopPolicy).doRun(any());
         verify(listener).started(shardId, location);
-        verify(queueRunner).runQueue(queue);
+        verify(queueRunner).runQueue(queueConsumer);
         verify(loopPolicy).doWait(fatalCrashTimeout);
         verify(listener).crashedPickTask(shardId, location, exception);
         verify(listener).finished(shardId, location);

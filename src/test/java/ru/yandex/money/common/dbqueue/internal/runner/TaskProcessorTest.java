@@ -1,13 +1,13 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
 import org.junit.Test;
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
-import ru.yandex.money.common.dbqueue.api.Queue;
-import ru.yandex.money.common.dbqueue.api.QueueAction;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
+import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.Task;
+import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
+import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
@@ -15,7 +15,7 @@ import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.stub.FakeMillisTimeProvider;
-import ru.yandex.money.common.dbqueue.stub.FakeQueue;
+import ru.yandex.money.common.dbqueue.stub.FakeQueueConsumer;
 
 import java.time.Duration;
 import java.time.ZoneId;
@@ -42,7 +42,7 @@ public class TaskProcessorTest {
                 ofSeconds(1), ofSeconds(5), "testcorid", "testactor");
         QueueShardId shardId = new QueueShardId("s1");
         String transformedPayload = "transformedPayload";
-        QueueAction queueResult = QueueAction.finish();
+        TaskExecutionResult queueResult = TaskExecutionResult.finish();
 
 
         QueueDao queueDao = mock(QueueDao.class);
@@ -50,18 +50,18 @@ public class TaskProcessorTest {
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
         MillisTimeProvider millisTimeProvider = spy(new FakeMillisTimeProvider(3L, 5L));
         TaskResultHandler resultHandler = mock(TaskResultHandler.class);
-        PayloadTransformer<String> transformer = mock(PayloadTransformer.class);
+        TaskPayloadTransformer<String> transformer = mock(TaskPayloadTransformer.class);
         when(transformer.toObject(taskRecord.getPayload())).thenReturn(transformedPayload);
-        Queue<String> queue = spy(new FakeQueue(new QueueConfig(location,
+        QueueConsumer<String> queueConsumer = spy(new FakeQueueConsumer(new QueueConfig(location,
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO).build()),
-                transformer, mock(ShardRouter.class), r -> queueResult));
+                transformer, mock(QueueShardRouter.class), r -> queueResult));
 
 
-        new TaskProcessor(queueDao, listener, millisTimeProvider, resultHandler).processTask(queue, taskRecord);
+        new TaskProcessor(queueDao, listener, millisTimeProvider, resultHandler).processTask(queueConsumer, taskRecord);
 
         verify(listener).started(shardId, location, taskRecord);
         verify(millisTimeProvider, times(2)).getMillis();
-        verify(queue).execute(new Task<>(shardId, transformedPayload,
+        verify(queueConsumer).execute(new Task<>(shardId, transformedPayload,
                 taskRecord.getAttemptsCount(), taskRecord.getCreateDate(),
                 taskRecord.getCorrelationId(), taskRecord.getActor()));
         verify(listener).executed(shardId, location, taskRecord, queueResult, 2);
@@ -84,19 +84,19 @@ public class TaskProcessorTest {
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
         MillisTimeProvider millisTimeProvider = mock(MillisTimeProvider.class);
         TaskResultHandler resultHandler = mock(TaskResultHandler.class);
-        PayloadTransformer<String> transformer = mock(PayloadTransformer.class);
+        TaskPayloadTransformer<String> transformer = mock(TaskPayloadTransformer.class);
         when(transformer.toObject(taskRecord.getPayload())).thenReturn(taskRecord.getPayload());
-        Queue<String> queue = spy(new FakeQueue(new QueueConfig(location,
+        QueueConsumer<String> queueConsumer = spy(new FakeQueueConsumer(new QueueConfig(location,
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO).build()),
-                transformer, mock(ShardRouter.class), r -> {
+                transformer, mock(QueueShardRouter.class), r -> {
             throw queueException;
         }));
 
 
-        new TaskProcessor(queueDao, listener, millisTimeProvider, resultHandler).processTask(queue, taskRecord);
+        new TaskProcessor(queueDao, listener, millisTimeProvider, resultHandler).processTask(queueConsumer, taskRecord);
 
         verify(listener).started(shardId, location, taskRecord);
-        verify(queue).execute(any());
+        verify(queueConsumer).execute(any());
         verify(listener).crashed(shardId, location, taskRecord, queueException);
         verify(listener).finished(shardId, location, taskRecord);
 
@@ -109,7 +109,7 @@ public class TaskProcessorTest {
                 ofSeconds(1), ofSeconds(5), "testcorid", "testactor");
         QueueShardId shardId = new QueueShardId("s1");
         RuntimeException handlerException = new RuntimeException("fail");
-        QueueAction queueResult = QueueAction.finish();
+        TaskExecutionResult queueResult = TaskExecutionResult.finish();
 
 
         QueueDao queueDao = mock(QueueDao.class);
@@ -118,17 +118,17 @@ public class TaskProcessorTest {
         MillisTimeProvider millisTimeProvider = mock(MillisTimeProvider.class);
         TaskResultHandler resultHandler = mock(TaskResultHandler.class);
         doThrow(handlerException).when(resultHandler).handleResult(any(), any());
-        PayloadTransformer<String> transformer = mock(PayloadTransformer.class);
+        TaskPayloadTransformer<String> transformer = mock(TaskPayloadTransformer.class);
         when(transformer.toObject(taskRecord.getPayload())).thenReturn(taskRecord.getPayload());
-        Queue<String> queue = spy(new FakeQueue(new QueueConfig(location,
+        QueueConsumer<String> queueConsumer = spy(new FakeQueueConsumer(new QueueConfig(location,
                 QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO).build()),
-                transformer, mock(ShardRouter.class), r -> queueResult));
+                transformer, mock(QueueShardRouter.class), r -> queueResult));
 
 
-        new TaskProcessor(queueDao, listener, millisTimeProvider, resultHandler).processTask(queue, taskRecord);
+        new TaskProcessor(queueDao, listener, millisTimeProvider, resultHandler).processTask(queueConsumer, taskRecord);
 
         verify(listener).started(shardId, location, taskRecord);
-        verify(queue).execute(any());
+        verify(queueConsumer).execute(any());
         verify(resultHandler).handleResult(taskRecord, queueResult);
         verify(listener).crashed(shardId, location, taskRecord, handlerException);
         verify(listener).finished(shardId, location, taskRecord);

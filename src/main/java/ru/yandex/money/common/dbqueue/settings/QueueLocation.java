@@ -43,8 +43,8 @@ public final class QueueLocation {
     @Override
     public String toString() {
         return '{' +
-                "table=" + tableName +
-                ",queue=" + queueName +
+                "queue=" + queueName +
+                ",table=" + tableName +
                 '}';
     }
 

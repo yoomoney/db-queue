@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.spring.impl;
 
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
-import ru.yandex.money.common.dbqueue.spring.SpringPayloadTransformer;
+import ru.yandex.money.common.dbqueue.spring.SpringTaskPayloadTransformer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
  * @author Oleg Kandaurov
  * @since 05.08.2017
  */
-public class SpringNoopPayloadTransformer extends SpringPayloadTransformer<String> {
+public class SpringNoopPayloadTransformer extends SpringTaskPayloadTransformer<String> {
 
     /**
      * Конструктор преобразователя данных задачи

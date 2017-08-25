@@ -1,6 +1,6 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
-import ru.yandex.money.common.dbqueue.api.QueueAction;
+import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
@@ -38,7 +38,7 @@ class TaskResultHandler {
      * @param taskRecord      обработанная задача
      * @param executionResult результат обработки
      */
-    void handleResult(@Nonnull TaskRecord taskRecord, @Nonnull QueueAction executionResult) {
+    void handleResult(@Nonnull TaskRecord taskRecord, @Nonnull TaskExecutionResult executionResult) {
         Objects.requireNonNull(taskRecord);
         Objects.requireNonNull(executionResult);
         switch (executionResult.getActionType()) {

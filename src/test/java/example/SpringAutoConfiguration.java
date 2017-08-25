@@ -6,26 +6,26 @@ import org.junit.runner.RunWith;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import ru.yandex.money.common.dbqueue.api.Enqueuer;
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
-import ru.yandex.money.common.dbqueue.api.Queue;
-import ru.yandex.money.common.dbqueue.api.QueueAction;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
+import ru.yandex.money.common.dbqueue.api.QueueProducer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
+import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.Task;
+import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
+import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
-import ru.yandex.money.common.dbqueue.spring.SpringQueue;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueCollector;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueConfigContainer;
+import ru.yandex.money.common.dbqueue.spring.SpringQueueConsumer;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueInitializer;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringNoopPayloadTransformer;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringSingleShardRouter;
-import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalEnqueuer;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalProducer;
 import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
 import javax.annotation.Nonnull;
@@ -51,28 +51,28 @@ public class SpringAutoConfiguration {
     @ContextConfiguration
     public static class Client {
         @Bean
-        Queue<String> exampleQueue() {
-            return new SpringQueue<String>(EXAMPLE_QUEUE, String.class) {
+        QueueConsumer<String> exampleQueue() {
+            return new SpringQueueConsumer<String>(EXAMPLE_QUEUE, String.class) {
                 @Nonnull
                 @Override
-                public QueueAction execute(@Nonnull Task<String> task) {
-                    return QueueAction.finish();
+                public TaskExecutionResult execute(@Nonnull Task<String> task) {
+                    return TaskExecutionResult.finish();
                 }
             };
         }
 
         @Bean
-        Enqueuer<String> exampleEnqueuer() {
-            return new SpringTransactionalEnqueuer<>(EXAMPLE_QUEUE, String.class);
+        QueueProducer<String> exampleProducer() {
+            return new SpringTransactionalProducer<>(EXAMPLE_QUEUE, String.class);
         }
 
         @Bean
-        ShardRouter<String> exampleShardRouter(QueueDao queueDao) {
+        QueueShardRouter<String> exampleShardRouter(QueueDao queueDao) {
             return new SpringSingleShardRouter<>(EXAMPLE_QUEUE, String.class, queueDao);
         }
 
         @Bean
-        PayloadTransformer<String> examplePayloadTransformer() {
+        TaskPayloadTransformer<String> examplePayloadTransformer() {
             return new SpringNoopPayloadTransformer(EXAMPLE_QUEUE);
         }
     }
@@ -107,7 +107,7 @@ public class SpringAutoConfiguration {
                                                       SpringQueueCollector springQueueCollector) {
             return new SpringQueueInitializer(springQueueConfigContainer, springQueueCollector,
                     new QueueExecutionPool(new QueueRegistry(), new EmptyTaskListener(),
-                            new EmptyQueueListener()));
+                            new EmptyListener()));
         }
     }
 

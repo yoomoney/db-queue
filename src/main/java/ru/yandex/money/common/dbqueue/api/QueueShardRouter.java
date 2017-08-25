@@ -9,7 +9,7 @@ import java.util.Collection;
  * @author Oleg Kandaurov
  * @since 29.07.2017
  */
-public interface ShardRouter<T> {
+public interface QueueShardRouter<T> {
 
     /**
      * Получить шард, на котором должна быть размещена задача

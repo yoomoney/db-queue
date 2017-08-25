@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
 import org.junit.Test;
-import ru.yandex.money.common.dbqueue.api.QueueAction;
+import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
@@ -31,9 +31,9 @@ public class TaskResultHandlerTest {
                 ZonedDateTime.now(), null, null);
         QueueDao queueDao = mock(QueueDao.class);
         when(queueDao.getTransactionTemplate()).thenReturn(new FakeTransactionTemplate());
-        QueueAction action = QueueAction.reenqueue(reenqueueDelay);
+        TaskExecutionResult result = TaskExecutionResult.reenqueue(reenqueueDelay);
 
-        new TaskResultHandler(location, queueDao).handleResult(taskRecord, action);
+        new TaskResultHandler(location, queueDao).handleResult(taskRecord, result);
 
         verify(queueDao).getTransactionTemplate();
         verify(queueDao).reenqueue(location, taskId, reenqueueDelay, true);
@@ -48,9 +48,9 @@ public class TaskResultHandlerTest {
                 ZonedDateTime.now(), null, null);
         QueueDao queueDao = mock(QueueDao.class);
         when(queueDao.getTransactionTemplate()).thenReturn(new FakeTransactionTemplate());
-        QueueAction action = QueueAction.finish();
+        TaskExecutionResult result = TaskExecutionResult.finish();
 
-        new TaskResultHandler(location, queueDao).handleResult(taskRecord, action);
+        new TaskResultHandler(location, queueDao).handleResult(taskRecord, result);
 
         verify(queueDao).getTransactionTemplate();
         verify(queueDao).deleteTask(location, taskId);
@@ -66,9 +66,9 @@ public class TaskResultHandlerTest {
                 ZonedDateTime.now(), null, null);
         QueueDao queueDao = mock(QueueDao.class);
         when(queueDao.getTransactionTemplate()).thenReturn(new FakeTransactionTemplate());
-        QueueAction action = QueueAction.fail(executionDelay);
+        TaskExecutionResult result = TaskExecutionResult.fail(executionDelay);
 
-        new TaskResultHandler(location, queueDao).handleResult(taskRecord, action);
+        new TaskResultHandler(location, queueDao).handleResult(taskRecord, result);
 
         verify(queueDao).getTransactionTemplate();
         verify(queueDao).reenqueue(location, taskId, executionDelay, false);
@@ -82,9 +82,9 @@ public class TaskResultHandlerTest {
                 ZonedDateTime.now(), null, null);
         QueueDao queueDao = mock(QueueDao.class);
         when(queueDao.getTransactionTemplate()).thenReturn(new FakeTransactionTemplate());
-        QueueAction action = QueueAction.fail();
+        TaskExecutionResult result = TaskExecutionResult.fail();
 
-        new TaskResultHandler(location, queueDao).handleResult(taskRecord, action);
+        new TaskResultHandler(location, queueDao).handleResult(taskRecord, result);
 
         verifyZeroInteractions(queueDao);
     }

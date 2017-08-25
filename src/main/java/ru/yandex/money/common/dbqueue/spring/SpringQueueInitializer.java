@@ -81,15 +81,15 @@ public class SpringQueueInitializer implements
     }
 
     private void wireQueueConfig() {
-        queueCollector.getQueues().forEach((location, queue) -> {
+        queueCollector.getConsumers().forEach((location, consumer) -> {
             QueueConfig queueConfig = requireNonNull(configContainer.getQueueConfig(location).orElse(null));
-            SpringPayloadTransformer payloadTransformer = requireNonNull(
+            SpringTaskPayloadTransformer payloadTransformer = requireNonNull(
                     queueCollector.getTransformers().get(location));
-            SpringShardRouter shardRouter = requireNonNull(queueCollector.getShardRouters().get(location));
+            SpringQueueShardRouter shardRouter = requireNonNull(queueCollector.getShardRouters().get(location));
 
-            queue.setPayloadTransformer(payloadTransformer);
-            queue.setQueueConfig(queueConfig);
-            queue.setShardRouter(shardRouter);
+            consumer.setPayloadTransformer(payloadTransformer);
+            consumer.setQueueConfig(queueConfig);
+            consumer.setShardRouter(shardRouter);
 
             Collection<QueueShardId> routerShards = shardRouter.getShardsId();
             Map<QueueShardId, QueueDao> allShards = queueCollector.getShards();
@@ -97,21 +97,21 @@ public class SpringQueueInitializer implements
                     .filter(allShards::containsKey)
                     .map(allShards::get)
                     .collect(Collectors.toMap(QueueDao::getShardId, Function.identity()));
-            SpringEnqueuer enqueuer = requireNonNull(queueCollector.getEnqueuers().get(location));
-            enqueuer.setPayloadTransformer(payloadTransformer);
-            enqueuer.setShardRouter(shardRouter);
-            enqueuer.setQueueConfig(queueConfig);
-            enqueuer.setShards(queueShards);
+            SpringQueueProducer producer = requireNonNull(queueCollector.getProducers().get(location));
+            producer.setPayloadTransformer(payloadTransformer);
+            producer.setShardRouter(shardRouter);
+            producer.setQueueConfig(queueConfig);
+            producer.setShards(queueShards);
 
 
-            queueRegistry.registerQueue(queue, enqueuer);
+            queueRegistry.registerQueue(consumer, producer);
         });
     }
 
     private void checkMissingConfiguration() {
-        queueCollector.getQueues().forEach((location, queue) -> {
+        queueCollector.getConsumers().forEach((location, consumer) -> {
             if (!configContainer.getQueueConfigs().containsKey(location)) {
-                errorMessages.add("queue config not found: location=" + location);
+                errorMessages.add("consumer config not found: location=" + location);
             }
             if (!queueCollector.getTransformers().containsKey(location)) {
                 errorMessages.add("payload transformer not found: location=" + location);
@@ -119,66 +119,66 @@ public class SpringQueueInitializer implements
             if (!queueCollector.getShardRouters().containsKey(location)) {
                 errorMessages.add("shard router not found: location=" + location);
             }
-            if (!queueCollector.getEnqueuers().containsKey(location)) {
-                errorMessages.add("enqueuer not found: location=" + location);
+            if (!queueCollector.getProducers().containsKey(location)) {
+                errorMessages.add("producer not found: location=" + location);
             }
         });
     }
 
     private void checkUnusedConfiguration() {
-        queueCollector.getEnqueuers().forEach((location, value) -> {
-            if (!queueCollector.getQueues().containsKey(location)) {
-                errorMessages.add("unused enqueuer: location=" + location);
+        queueCollector.getProducers().forEach((location, value) -> {
+            if (!queueCollector.getConsumers().containsKey(location)) {
+                errorMessages.add("unused producer: location=" + location);
             }
         });
         queueCollector.getShardRouters().forEach((location, value) -> {
-            if (!queueCollector.getQueues().containsKey(location)) {
+            if (!queueCollector.getConsumers().containsKey(location)) {
                 errorMessages.add("unused shard router: location=" + location);
             }
         });
         queueCollector.getTransformers().forEach((location, value) -> {
-            if (!queueCollector.getQueues().containsKey(location)) {
+            if (!queueCollector.getConsumers().containsKey(location)) {
                 errorMessages.add("unused transformer: location=" + location);
             }
         });
         configContainer.getQueueConfigs().forEach((location, value) -> {
-            if (!queueCollector.getQueues().containsKey(location)) {
+            if (!queueCollector.getConsumers().containsKey(location)) {
                 errorMessages.add("unused config: location=" + location);
             }
         });
     }
 
     private void validatePayloadType() {
-        queueCollector.getQueues().forEach((location, queue) -> {
-            SpringPayloadTransformer payloadTransformer = queueCollector.getTransformers().get(location);
-            SpringShardRouter shardRouter = queueCollector.getShardRouters().get(location);
-            SpringEnqueuer enqueuer = queueCollector.getEnqueuers().get(location);
-            Class queuePayloadClass = queue.getPayloadClass();
+        queueCollector.getConsumers().forEach((location, consumer) -> {
+            SpringTaskPayloadTransformer payloadTransformer = queueCollector.getTransformers().get(location);
+            SpringQueueShardRouter shardRouter = queueCollector.getShardRouters().get(location);
+            SpringQueueProducer producer = queueCollector.getProducers().get(location);
+            Class consumerPayloadClass = consumer.getPayloadClass();
 
             Class payloadTransformerClass = payloadTransformer.getPayloadClass();
-            if (!Objects.equals(requireNonNull(queuePayloadClass),
+            if (!Objects.equals(requireNonNull(consumerPayloadClass),
                     requireNonNull(payloadTransformerClass))) {
-                errorMessages.add(String.format("payload transformer does not match queue: " +
-                                "location=%s, queueClass=%s, transformerClass=%s",
-                        queue.getQueueLocation(), queuePayloadClass.getCanonicalName(),
+                errorMessages.add(String.format("payload transformer does not match consumer: " +
+                                "location=%s, consumerClass=%s, transformerClass=%s",
+                        consumer.getQueueLocation(), consumerPayloadClass.getCanonicalName(),
                         payloadTransformerClass.getCanonicalName()));
             }
 
-            Class enqueuerPayloadClass = enqueuer.getPayloadClass();
-            if (!Objects.equals(requireNonNull(queuePayloadClass),
-                    requireNonNull(enqueuerPayloadClass))) {
-                errorMessages.add(String.format("enqueuer does not match queue: " +
-                                "location=%s, queueClass=%s, enqueuerClass=%s",
-                        queue.getQueueLocation(), queuePayloadClass.getCanonicalName(),
-                        enqueuerPayloadClass.getCanonicalName()));
+            Class producerPayloadClass = producer.getPayloadClass();
+            if (!Objects.equals(requireNonNull(consumerPayloadClass),
+                    requireNonNull(producerPayloadClass))) {
+                errorMessages.add(String.format("producer does not match consumer: " +
+                                "location=%s, consumerClass=%s, producerClass=%s",
+                        consumer.getQueueLocation(), consumerPayloadClass.getCanonicalName(),
+                        producerPayloadClass.getCanonicalName()));
             }
 
             Class shardRouterPayloadClass = shardRouter.getPayloadClass();
-            if (!Objects.equals(requireNonNull(queuePayloadClass),
+            if (!Objects.equals(requireNonNull(consumerPayloadClass),
                     requireNonNull(shardRouterPayloadClass))) {
-                errorMessages.add(String.format("shard router does not match queue: " +
-                                "location=%s, queueClass=%s, shardRouterClass=%s",
-                        queue.getQueueLocation(), queuePayloadClass.getCanonicalName(),
+                errorMessages.add(String.format("shard router does not match consumer: " +
+                                "location=%s, consumerClass=%s, shardRouterClass=%s",
+                        consumer.getQueueLocation(), consumerPayloadClass.getCanonicalName(),
                         shardRouterPayloadClass.getCanonicalName()));
             }
         });

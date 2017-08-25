@@ -1,34 +1,31 @@
 package ru.yandex.money.common.dbqueue.spring;
 
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
+import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
-import java.util.Objects;
 
 /**
- * Преобразователь данных задачи, используемый в spring конфигурации.
+ * Класс, описывающий правила шардирования задачи и исползуемый в spring конфигурации
  *
  * @param <T> тип данных задачи
  * @author Oleg Kandaurov
- * @since 19.07.2017
+ * @since 30.07.2017
  */
-public abstract class SpringPayloadTransformer<T> implements PayloadTransformer<T>, SpringQueueIdentifiable {
+public abstract class SpringQueueShardRouter<T> implements QueueShardRouter<T>, SpringQueueIdentifiable {
 
-    @Nonnull
     private final QueueLocation queueLocation;
-    @Nonnull
     private final Class<T> payloadClass;
 
     /**
-     * Конструктор преобразователя данных задачи
+     * Конструктор
      *
      * @param queueLocation местоположение очереди
      * @param payloadClass  класс данных задачи
      */
-    protected SpringPayloadTransformer(@Nonnull QueueLocation queueLocation, @Nonnull Class<T> payloadClass) {
-        this.queueLocation = Objects.requireNonNull(queueLocation);
-        this.payloadClass = Objects.requireNonNull(payloadClass);
+    protected SpringQueueShardRouter(QueueLocation queueLocation, Class<T> payloadClass) {
+        this.queueLocation = queueLocation;
+        this.payloadClass = payloadClass;
     }
 
     @Nonnull

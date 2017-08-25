@@ -18,7 +18,7 @@ import javax.annotation.Nonnull;
  * @author Oleg Kandaurov
  * @since 10.07.2017
  */
-public interface Enqueuer<T> {
+public interface QueueProducer<T> {
 
     /**
      * Поместить задачу в очередь.
@@ -34,7 +34,7 @@ public interface Enqueuer<T> {
      * @return преобразователь данных
      */
     @Nonnull
-    PayloadTransformer<T> getPayloadTransformer();
+    TaskPayloadTransformer<T> getPayloadTransformer();
 
     /**
      * Получить конфигурацию очереди, обработающую поставленную задачу.
@@ -50,6 +50,6 @@ public interface Enqueuer<T> {
      * @return правила шардирования
      */
     @Nonnull
-    ShardRouter<T> getShardRouter();
+    QueueShardRouter<T> getShardRouter();
 
 }

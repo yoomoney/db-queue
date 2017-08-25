@@ -8,19 +8,19 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.transaction.support.TransactionOperations;
-import ru.yandex.money.common.dbqueue.api.Enqueuer;
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
-import ru.yandex.money.common.dbqueue.api.Queue;
-import ru.yandex.money.common.dbqueue.api.QueueAction;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
+import ru.yandex.money.common.dbqueue.api.QueueProducer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
+import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.Task;
+import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
+import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringNoopPayloadTransformer;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringSingleShardRouter;
-import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalEnqueuer;
+import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalProducer;
 
 import javax.annotation.Nonnull;
 
@@ -41,13 +41,13 @@ public class SpringQueueCollectorTest {
             new AnnotationConfigApplicationContext(InvalidContext.class);
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), equalTo("unable to collect queue beans:" + System.lineSeparator() +
-                    "duplicate bean: name=testEnqueuer2, class=SpringEnqueuer, location={table=queue_test,queue=test_queue}" + System.lineSeparator() +
-                    "duplicate bean: name=testQueue2, class=SpringQueue, location={table=queue_test,queue=test_queue}" + System.lineSeparator() +
-                    "duplicate bean: name=testTransformer2, class=SpringPayloadTransformer, location={table=queue_test,queue=test_queue}" + System.lineSeparator() +
-                    "duplicate bean: name=testShardRouter2, class=SpringShardRouter, location={table=queue_test,queue=test_queue}" + System.lineSeparator() +
+                    "duplicate bean: name=testProducer2, class=SpringQueueProducer, location={queue=test_queue,table=queue_test}" + System.lineSeparator() +
+                    "duplicate bean: name=testConsumer2, class=SpringQueueConsumer, location={queue=test_queue,table=queue_test}" + System.lineSeparator() +
+                    "duplicate bean: name=testTransformer2, class=SpringTaskPayloadTransformer, location={queue=test_queue,table=queue_test}" + System.lineSeparator() +
+                    "duplicate bean: name=testShardRouter2, class=SpringQueueShardRouter, location={queue=test_queue,table=queue_test}" + System.lineSeparator() +
                     "duplicate bean: name=queueDao2, class=QueueDao, shardId={id=1}" + System.lineSeparator() +
-                    "duplicate bean: name=springTaskLifecycleListener2, class=SpringTaskLifecycleListener, location={table=queue_test,queue=test_queue}" + System.lineSeparator() +
-                    "duplicate bean: name=springQueueExternalExecutor2, class=SpringQueueExternalExecutor, location={table=queue_test,queue=test_queue}"));
+                    "duplicate bean: name=springTaskLifecycleListener2, class=SpringTaskLifecycleListener, location={queue=test_queue,table=queue_test}" + System.lineSeparator() +
+                    "duplicate bean: name=springQueueExternalExecutor2, class=SpringQueueExternalExecutor, location={queue=test_queue,table=queue_test}"));
             return;
         }
         Assert.fail("context should not be constructed");
@@ -57,8 +57,8 @@ public class SpringQueueCollectorTest {
     public void should_collect_all_bean_definitions() throws Exception {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ValidContext.class);
         SpringQueueCollector collector = context.getBean(SpringQueueCollector.class);
-        assertThat(collector.getEnqueuers().size(), equalTo(2));
-        assertThat(collector.getQueues().size(), equalTo(2));
+        assertThat(collector.getProducers().size(), equalTo(2));
+        assertThat(collector.getConsumers().size(), equalTo(2));
         assertThat(collector.getTransformers().size(), equalTo(2));
         assertThat(collector.getShardRouters().size(), equalTo(2));
         assertThat(collector.getShards().size(), equalTo(2));
@@ -78,62 +78,62 @@ public class SpringQueueCollectorTest {
         }
 
         @Bean
-        Enqueuer<String> testEnqueuer1() {
-            return new SpringTransactionalEnqueuer<>(testLocation1, String.class);
+        QueueProducer<String> testProducer1() {
+            return new SpringTransactionalProducer<>(testLocation1, String.class);
         }
 
-        @DependsOn("testEnqueuer1")
+        @DependsOn("testProducer1")
         @Bean
-        Enqueuer<String> testEnqueuer2() {
-            return new SpringTransactionalEnqueuer<>(testLocation2, String.class);
+        QueueProducer<String> testProducer2() {
+            return new SpringTransactionalProducer<>(testLocation2, String.class);
         }
 
-        @DependsOn("testEnqueuer2")
+        @DependsOn("testProducer2")
         @Bean
-        Queue<String> testQueue1() {
-            return new SpringQueue<String>(testLocation1, String.class) {
+        QueueConsumer<String> testConsumer1() {
+            return new SpringQueueConsumer<String>(testLocation1, String.class) {
                 @Nonnull
                 @Override
-                public QueueAction execute(@Nonnull Task<String> task) {
-                    return QueueAction.finish();
+                public TaskExecutionResult execute(@Nonnull Task<String> task) {
+                    return TaskExecutionResult.finish();
                 }
             };
         }
 
-        @DependsOn("testQueue1")
+        @DependsOn("testConsumer1")
         @Bean
-        Queue<String> testQueue2() {
-            return new SpringQueue<String>(testLocation2, String.class) {
+        QueueConsumer<String> testConsumer2() {
+            return new SpringQueueConsumer<String>(testLocation2, String.class) {
                 @Nonnull
                 @Override
-                public QueueAction execute(@Nonnull Task<String> task) {
-                    return QueueAction.finish();
+                public TaskExecutionResult execute(@Nonnull Task<String> task) {
+                    return TaskExecutionResult.finish();
                 }
             };
         }
 
-        @DependsOn("testQueue2")
+        @DependsOn("testConsumer2")
         @Bean
-        PayloadTransformer<String> testTransformer1() {
+        TaskPayloadTransformer<String> testTransformer1() {
             return new SpringNoopPayloadTransformer(testLocation1);
         }
 
         @DependsOn("testTransformer1")
         @Bean
-        PayloadTransformer<String> testTransformer2() {
+        TaskPayloadTransformer<String> testTransformer2() {
             return new SpringNoopPayloadTransformer(testLocation2);
         }
 
         @DependsOn("testTransformer2")
         @Bean
-        ShardRouter<String> testShardRouter1() {
+        QueueShardRouter<String> testShardRouter1() {
             return new SpringSingleShardRouter<>(testLocation1,
                     String.class, mock(QueueDao.class));
         }
 
         @DependsOn("testShardRouter1")
         @Bean
-        ShardRouter<String> testShardRouter2() {
+        QueueShardRouter<String> testShardRouter2() {
             return new SpringSingleShardRouter<>(testLocation2,
                     String.class, mock(QueueDao.class));
         }
@@ -195,62 +195,62 @@ public class SpringQueueCollectorTest {
         }
 
         @Bean
-        Enqueuer<String> testEnqueuer1() {
-            return new SpringTransactionalEnqueuer<>(testLocation, String.class);
+        QueueProducer<String> testProducer1() {
+            return new SpringTransactionalProducer<>(testLocation, String.class);
         }
 
-        @DependsOn("testEnqueuer1")
+        @DependsOn("testProducer1")
         @Bean
-        Enqueuer<String> testEnqueuer2() {
-            return new SpringTransactionalEnqueuer<>(testLocation, String.class);
+        QueueProducer<String> testProducer2() {
+            return new SpringTransactionalProducer<>(testLocation, String.class);
         }
 
-        @DependsOn("testEnqueuer2")
+        @DependsOn("testProducer2")
         @Bean
-        Queue<String> testQueue1() {
-            return new SpringQueue<String>(testLocation, String.class) {
+        QueueConsumer<String> testConsumer1() {
+            return new SpringQueueConsumer<String>(testLocation, String.class) {
                 @Nonnull
                 @Override
-                public QueueAction execute(@Nonnull Task<String> task) {
-                    return QueueAction.finish();
+                public TaskExecutionResult execute(@Nonnull Task<String> task) {
+                    return TaskExecutionResult.finish();
                 }
             };
         }
 
-        @DependsOn("testQueue1")
+        @DependsOn("testConsumer1")
         @Bean
-        Queue<String> testQueue2() {
-            return new SpringQueue<String>(testLocation, String.class) {
+        QueueConsumer<String> testConsumer2() {
+            return new SpringQueueConsumer<String>(testLocation, String.class) {
                 @Nonnull
                 @Override
-                public QueueAction execute(@Nonnull Task<String> task) {
-                    return QueueAction.finish();
+                public TaskExecutionResult execute(@Nonnull Task<String> task) {
+                    return TaskExecutionResult.finish();
                 }
             };
         }
 
-        @DependsOn("testQueue2")
+        @DependsOn("testConsumer2")
         @Bean
-        PayloadTransformer<String> testTransformer1() {
+        TaskPayloadTransformer<String> testTransformer1() {
             return new SpringNoopPayloadTransformer(testLocation);
         }
 
         @DependsOn("testTransformer1")
         @Bean
-        PayloadTransformer<String> testTransformer2() {
+        TaskPayloadTransformer<String> testTransformer2() {
             return new SpringNoopPayloadTransformer(testLocation);
         }
 
         @DependsOn("testTransformer2")
         @Bean
-        ShardRouter<String> testShardRouter1() {
+        QueueShardRouter<String> testShardRouter1() {
             return new SpringSingleShardRouter<>(testLocation,
                     String.class, mock(QueueDao.class));
         }
 
         @DependsOn("testShardRouter1")
         @Bean
-        ShardRouter<String> testShardRouter2() {
+        QueueShardRouter<String> testShardRouter2() {
             return new SpringSingleShardRouter<>(testLocation,
                     String.class, mock(QueueDao.class));
         }
@@ -320,7 +320,7 @@ public class SpringQueueCollectorTest {
         }
 
         @Override
-        public void executed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord, @Nonnull QueueAction executionResult, long processTaskTime) {
+        public void executed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord, @Nonnull TaskExecutionResult executionResult, long processTaskTime) {
 
         }
 

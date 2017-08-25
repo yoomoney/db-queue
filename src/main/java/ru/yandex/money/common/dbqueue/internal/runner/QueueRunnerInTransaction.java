@@ -1,6 +1,6 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
-import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
@@ -43,14 +43,14 @@ class QueueRunnerInTransaction implements QueueRunner {
 
     @Override
     @Nonnull
-    public Duration runQueue(@Nonnull Queue queue) {
+    public Duration runQueue(@Nonnull QueueConsumer queueConsumer) {
         return queueDao.getTransactionTemplate().execute(status -> {
-            QueueConfig config = queue.getQueueConfig();
-            TaskRecord taskRecord = taskPicker.pickTask(queue);
+            QueueConfig config = queueConsumer.getQueueConfig();
+            TaskRecord taskRecord = taskPicker.pickTask(queueConsumer);
             if (taskRecord == null) {
                 return config.getSettings().getNoTaskTimeout();
             }
-            taskProcessor.processTask(queue, taskRecord);
+            taskProcessor.processTask(queueConsumer, taskRecord);
             return config.getSettings().getBetweenTaskTimeout();
         });
     }

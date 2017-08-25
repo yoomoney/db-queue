@@ -1,6 +1,6 @@
 package ru.yandex.money.common.dbqueue.api.impl;
 
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
+import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 
 import javax.annotation.Nullable;
 
@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
  * <p>
  * Используется в случае, когда преобразование данных не требуется.
  */
-public final class NoopPayloadTransformer implements PayloadTransformer<String> {
+public final class NoopPayloadTransformer implements TaskPayloadTransformer<String> {
 
     private static final NoopPayloadTransformer INSTANCE = new NoopPayloadTransformer();
 

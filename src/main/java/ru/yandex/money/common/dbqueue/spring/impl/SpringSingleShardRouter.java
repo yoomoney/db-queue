@@ -5,7 +5,7 @@ import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.impl.SingleShardRouter;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
-import ru.yandex.money.common.dbqueue.spring.SpringShardRouter;
+import ru.yandex.money.common.dbqueue.spring.SpringQueueShardRouter;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -18,7 +18,7 @@ import java.util.Collections;
  * @author Oleg Kandaurov
  * @since 05.08.2017
  */
-public class SpringSingleShardRouter<T> extends SpringShardRouter<T> {
+public class SpringSingleShardRouter<T> extends SpringQueueShardRouter<T> {
 
     private final QueueDao queueDao;
     private SingleShardRouter<T> singleShardRouter;

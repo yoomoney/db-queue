@@ -1,15 +1,15 @@
 package example;
 
 import org.junit.Test;
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
-import ru.yandex.money.common.dbqueue.api.Queue;
-import ru.yandex.money.common.dbqueue.api.QueueAction;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
+import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.Task;
+import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
+import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.impl.NoopPayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.impl.SingleShardRouter;
-import ru.yandex.money.common.dbqueue.api.impl.TransactionalEnqueuer;
+import ru.yandex.money.common.dbqueue.api.impl.TransactionalProducer;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
@@ -40,31 +40,31 @@ public class ManualConfiguration {
                         .build());
 
         SingleShardRouter<String> shardRouter = new SingleShardRouter<>(queueDao);
-        TransactionalEnqueuer<String> enqueuer = new TransactionalEnqueuer<>(config,
+        TransactionalProducer<String> producer = new TransactionalProducer<>(config,
                 NoopPayloadTransformer.getInstance(), Collections.singletonList(queueDao), shardRouter);
-        ExampleQueue queue = new ExampleQueue(config, NoopPayloadTransformer.getInstance(), shardRouter);
+        ExampleQueueConsumer consumer = new ExampleQueueConsumer(config, NoopPayloadTransformer.getInstance(), shardRouter);
 
         QueueRegistry queueRegistry = new QueueRegistry();
         queueRegistry.registerShard(queueDao);
-        queueRegistry.registerQueue(queue, enqueuer);
+        queueRegistry.registerQueue(consumer, producer);
         queueRegistry.finishRegistration();
 
         QueueExecutionPool executionPool = new QueueExecutionPool(queueRegistry, new EmptyTaskListener(),
-                new EmptyQueueListener());
+                new EmptyListener());
         executionPool.init();
         executionPool.start();
 
         executionPool.shutdown();
     }
 
-    private static class ExampleQueue implements Queue<String> {
+    private static class ExampleQueueConsumer implements QueueConsumer<String> {
 
         private final QueueConfig queueConfig;
-        private final PayloadTransformer<String> payloadTransformer;
-        private final ShardRouter<String> shardRouter;
+        private final TaskPayloadTransformer<String> payloadTransformer;
+        private final QueueShardRouter<String> shardRouter;
 
-        private ExampleQueue(QueueConfig queueConfig, PayloadTransformer<String> payloadTransformer,
-                             ShardRouter<String> shardRouter) {
+        private ExampleQueueConsumer(QueueConfig queueConfig, TaskPayloadTransformer<String> payloadTransformer,
+                                     QueueShardRouter<String> shardRouter) {
             this.queueConfig = queueConfig;
             this.payloadTransformer = payloadTransformer;
             this.shardRouter = shardRouter;
@@ -73,8 +73,8 @@ public class ManualConfiguration {
 
         @Nonnull
         @Override
-        public QueueAction execute(@Nonnull Task<String> task) {
-            return QueueAction.finish();
+        public TaskExecutionResult execute(@Nonnull Task<String> task) {
+            return TaskExecutionResult.finish();
         }
 
         @Nonnull
@@ -85,13 +85,13 @@ public class ManualConfiguration {
 
         @Nonnull
         @Override
-        public PayloadTransformer<String> getPayloadTransformer() {
+        public TaskPayloadTransformer<String> getPayloadTransformer() {
             return payloadTransformer;
         }
 
         @Nonnull
         @Override
-        public ShardRouter<String> getShardRouter() {
+        public QueueShardRouter<String> getShardRouter() {
             return shardRouter;
         }
     }

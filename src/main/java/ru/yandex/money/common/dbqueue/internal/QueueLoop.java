@@ -1,8 +1,8 @@
 package ru.yandex.money.common.dbqueue.internal;
 
-import ru.yandex.money.common.dbqueue.api.Queue;
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.QueueThreadLifecycleListener;
+import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
 import ru.yandex.money.common.dbqueue.internal.runner.QueueRunner;
 
 import javax.annotation.Nonnull;
@@ -21,39 +21,39 @@ public class QueueLoop {
     @Nonnull
     private final LoopPolicy loopPolicy;
     @Nonnull
-    private final QueueThreadLifecycleListener queueThreadLifecycleListener;
+    private final ThreadLifecycleListener threadLifecycleListener;
 
     /**
      * Конструктор
      *
      * @param loopPolicy                   стратегия выполнения цикла
-     * @param queueThreadLifecycleListener слушатель событий исполнения очереди
+     * @param threadLifecycleListener слушатель событий исполнения очереди
      */
     public QueueLoop(@Nonnull LoopPolicy loopPolicy,
-                     @Nonnull QueueThreadLifecycleListener queueThreadLifecycleListener) {
+                     @Nonnull ThreadLifecycleListener threadLifecycleListener) {
         this.loopPolicy = Objects.requireNonNull(loopPolicy);
-        this.queueThreadLifecycleListener = Objects.requireNonNull(queueThreadLifecycleListener);
+        this.threadLifecycleListener = Objects.requireNonNull(threadLifecycleListener);
     }
 
     /**
      * Запустить цикл обработки задач в очерди
      *
      * @param shardId     идентификатор шарда, на котором происходит обработка
-     * @param queue       выполняемая очередь
+     * @param queueConsumer       выполняемая очередь
      * @param queueRunner исполнитель очереди
      */
-    public void start(QueueShardId shardId, Queue queue, @Nonnull QueueRunner queueRunner) {
+    public void start(QueueShardId shardId, QueueConsumer queueConsumer, @Nonnull QueueRunner queueRunner) {
         Objects.requireNonNull(queueRunner);
         loopPolicy.doRun(() -> {
             try {
-                queueThreadLifecycleListener.started(shardId, queue.getQueueConfig().getLocation());
-                Duration waitDuration = queueRunner.runQueue(queue);
+                threadLifecycleListener.started(shardId, queueConsumer.getQueueConfig().getLocation());
+                Duration waitDuration = queueRunner.runQueue(queueConsumer);
                 loopPolicy.doWait(waitDuration);
             } catch (Throwable e) {
-                queueThreadLifecycleListener.crashedPickTask(shardId, queue.getQueueConfig().getLocation(), e);
-                loopPolicy.doWait(queue.getQueueConfig().getSettings().getFatalCrashTimeout());
+                threadLifecycleListener.crashedPickTask(shardId, queueConsumer.getQueueConfig().getLocation(), e);
+                loopPolicy.doWait(queueConsumer.getQueueConfig().getSettings().getFatalCrashTimeout());
             } finally {
-                queueThreadLifecycleListener.finished(shardId, queue.getQueueConfig().getLocation());
+                threadLifecycleListener.finished(shardId, queueConsumer.getQueueConfig().getLocation());
             }
         });
     }

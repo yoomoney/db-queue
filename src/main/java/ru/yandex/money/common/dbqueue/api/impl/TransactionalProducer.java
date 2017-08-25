@@ -1,10 +1,10 @@
 package ru.yandex.money.common.dbqueue.api.impl;
 
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
-import ru.yandex.money.common.dbqueue.api.Enqueuer;
-import ru.yandex.money.common.dbqueue.api.PayloadTransformer;
+import ru.yandex.money.common.dbqueue.api.QueueProducer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.ShardRouter;
+import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
+import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 
@@ -24,12 +24,12 @@ import java.util.stream.Collectors;
  * @author Oleg Kandaurov
  * @since 05.08.2017
  */
-public class TransactionalEnqueuer<T> implements Enqueuer<T> {
+public class TransactionalProducer<T> implements QueueProducer<T> {
 
     private final QueueConfig queueConfig;
-    private final PayloadTransformer<T> payloadTransformer;
+    private final TaskPayloadTransformer<T> payloadTransformer;
     private final Map<QueueShardId, QueueDao> shards;
-    private final ShardRouter<T> shardRouter;
+    private final QueueShardRouter<T> shardRouter;
 
     /**
      * Конструктор
@@ -39,8 +39,8 @@ public class TransactionalEnqueuer<T> implements Enqueuer<T> {
      * @param shards             шарды, доступные для роутинга
      * @param shardRouter        правила роутинга задачи на шарды
      */
-    public TransactionalEnqueuer(QueueConfig queueConfig, PayloadTransformer<T> payloadTransformer,
-                                 Collection<QueueDao> shards, ShardRouter<T> shardRouter) {
+    public TransactionalProducer(QueueConfig queueConfig, TaskPayloadTransformer<T> payloadTransformer,
+                                 Collection<QueueDao> shards, QueueShardRouter<T> shardRouter) {
         this.queueConfig = queueConfig;
         this.payloadTransformer = payloadTransformer;
         this.shards = shards.stream().collect(Collectors.toMap(QueueDao::getShardId, Function.identity()));
@@ -62,13 +62,13 @@ public class TransactionalEnqueuer<T> implements Enqueuer<T> {
 
     @Nonnull
     @Override
-    public PayloadTransformer<T> getPayloadTransformer() {
+    public TaskPayloadTransformer<T> getPayloadTransformer() {
         return payloadTransformer;
     }
 
     @Nonnull
     @Override
-    public ShardRouter<T> getShardRouter() {
+    public QueueShardRouter<T> getShardRouter() {
         return shardRouter;
     }
 
