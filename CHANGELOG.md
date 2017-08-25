@@ -12,7 +12,7 @@ Given version x.y.z
 
 **In case of x == 0 backward compatibility is not guaranteed.**
 
-### NEXT_VERSION
+### [0.0.8]() (24-08-2017)
 
 Renamed classes:
 * Queue -> QueueConsumer
