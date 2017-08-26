@@ -172,9 +172,8 @@ public class QueueConfigsReader {
         Objects.requireNonNull(configPath, "config path is empty");
         Map<String, String> rawSettings = readRawSettings(configPath);
         if (overrideConfigPath != null) {
-            Arrays.stream(overrideConfigPath).forEach(path -> {
-                overrideExistingSettings(rawSettings, readRawSettings(path));
-            });
+            Arrays.stream(overrideConfigPath).forEach(path ->
+                    overrideExistingSettings(rawSettings, readRawSettings(path)));
         }
 
         Map<String, Map<String, String>> queues = splitRawSettingsByQueueName(rawSettings);

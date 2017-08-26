@@ -29,7 +29,7 @@ public final class QueueSettings {
 
         private final String name;
 
-        private AdditionalSetting(@Nonnull String name) {
+        AdditionalSetting(@Nonnull String name) {
             this.name = Objects.requireNonNull(name);
         }
 

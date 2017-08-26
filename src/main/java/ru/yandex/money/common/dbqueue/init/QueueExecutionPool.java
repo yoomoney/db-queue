@@ -197,6 +197,7 @@ public class QueueExecutionPool {
 
     private static void shutdownThreadPool(@Nonnull ShardPoolInstance poolInstance) {
         Objects.requireNonNull(poolInstance);
+        Objects.requireNonNull(poolInstance.queueShardThreadPool);
         log.info("waiting queue threads to respond to interrupt request: location={}, shardId={}, timeout={}",
                 poolInstance.queueConsumer.getQueueConfig().getLocation(),
                 poolInstance.queueDao.getShardId(), TERMINATION_TIMEOUT);

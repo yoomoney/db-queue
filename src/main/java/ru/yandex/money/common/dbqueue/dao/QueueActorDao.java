@@ -8,7 +8,10 @@ import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
 import java.sql.ResultSet;
+import java.time.Duration;
 import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Управление и получение информации о задачах по полю actor.
@@ -67,10 +70,6 @@ public class QueueActorDao {
 
     /**
      * Проверить, что в очереди есть задачи по заданному actor.
-     * <p>
-     * Может применяться, чтобы исключить повторную вставку задачи на обработку.
-     * При подобном использовании не гарантирует, что задача не вставится дважды.
-     * Для использования в подобном ключе, внешний код должен использовать блокировки.
      *
      * @param location местоположение очереди
      * @param actor    бизнесовый идентификатор
@@ -87,6 +86,31 @@ public class QueueActorDao {
                         .addValue("actor", actor),
                 ResultSet::next
         );
+    }
+
+    /**
+     * Переставить выполнение задачи на заданный промежуток времени
+     *
+     * @param location       местоположение очереди
+     * @param actor          бизнесовый идентификатор
+     * @param executionDelay промежуток времени
+     * @param resetAttempts  признак, что следует сбросить попытки выполнения задачи
+     * @return true, если задача была переставлена, false, если задача не найдена.
+     */
+    public boolean reenqueue(@Nonnull QueueLocation location, @Nonnull String actor, @Nonnull Duration executionDelay,
+                             boolean resetAttempts) {
+        requireNonNull(location);
+        requireNonNull(executionDelay);
+        int updatedRows = jdbcTemplate.update(String.format("UPDATE %s " +
+                        "SET" +
+                        "  process_time = now() + :executionDelay * INTERVAL '1 SECOND'" +
+                        (resetAttempts ? ",  attempt = 0 " : "") +
+                        "WHERE actor = :actor AND queue_name = :queueName", location.getTableName()),
+                new MapSqlParameterSource()
+                        .addValue("actor", actor)
+                        .addValue("queueName", location.getQueueName())
+                        .addValue("executionDelay", executionDelay.getSeconds()));
+        return updatedRows != 0;
     }
 
     /**
