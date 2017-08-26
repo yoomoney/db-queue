@@ -29,6 +29,11 @@ public final class QueueSettings {
 
         private final String name;
 
+        /**
+         * Конструктор
+         *
+         * @param name имя настройки
+         */
         AdditionalSetting(@Nonnull String name) {
             this.name = Objects.requireNonNull(name);
         }
