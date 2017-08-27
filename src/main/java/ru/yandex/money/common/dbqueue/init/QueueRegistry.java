@@ -8,6 +8,7 @@ import ru.yandex.money.common.dbqueue.api.QueueProducer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
+import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
@@ -41,6 +42,7 @@ public class QueueRegistry {
 
     private final Map<QueueLocation, QueueConsumer> consumers = new LinkedHashMap<>();
     private final Map<QueueLocation, TaskLifecycleListener> taskListeners = new LinkedHashMap<>();
+    private final Map<QueueLocation, ThreadLifecycleListener> threadListeners = new LinkedHashMap<>();
     private final Map<QueueLocation, QueueExternalExecutor> externalExecutors = new LinkedHashMap<>();
     private final Map<QueueShardId, QueueDao> shards = new LinkedHashMap<>();
     private final Collection<String> errorMessages = new ArrayList<>();
@@ -101,12 +103,27 @@ public class QueueRegistry {
      */
     public synchronized void registerTaskLifecycleListener(
             @Nonnull QueueLocation location, @Nonnull TaskLifecycleListener taskLifecycleListener) {
-
         Objects.requireNonNull(location);
         Objects.requireNonNull(taskLifecycleListener);
         ensureConstructionInProgress();
         if (taskListeners.putIfAbsent(location, taskLifecycleListener) != null) {
             errorMessages.add("duplicate task lifecycle listener: location=" + location);
+        }
+    }
+
+    /**
+     * Зарегистрировать слушатель потоков заданной очереди
+     *
+     * @param location                идентификатор очереди
+     * @param threadLifecycleListener слушатель потоков
+     */
+    public synchronized void registerThreadLifecycleListener(
+            @Nonnull QueueLocation location, @Nonnull ThreadLifecycleListener threadLifecycleListener) {
+        Objects.requireNonNull(location);
+        Objects.requireNonNull(threadLifecycleListener);
+        ensureConstructionInProgress();
+        if (threadListeners.putIfAbsent(location, threadLifecycleListener) != null) {
+            errorMessages.add("duplicate thread lifecycle listener: location=" + location);
         }
     }
 
@@ -133,6 +150,7 @@ public class QueueRegistry {
         isRegistrationFinished = true;
         validateShards();
         validateTaskListeners();
+        validateThreadListeners();
         validateExternalExecutors();
         validateQueueNames();
         if (!errorMessages.isEmpty()) {
@@ -144,6 +162,8 @@ public class QueueRegistry {
         externalExecutors.keySet().forEach(location -> log.info("registered external executor: location={}", location));
         taskListeners.keySet().forEach(location ->
                 log.info("registered task lifecycle listener: location={}", location));
+        threadListeners.keySet().forEach(location ->
+                log.info("registered thread lifecycle listener: location={}", location));
 
     }
 
@@ -193,6 +213,14 @@ public class QueueRegistry {
         }
     }
 
+    private void validateThreadListeners() {
+        for (QueueLocation location : threadListeners.keySet()) {
+            if (!consumers.containsKey(location)) {
+                errorMessages.add("no matching queue for thread listener: location=" + location);
+            }
+        }
+    }
+
     private void validateExternalExecutors() {
         for (QueueLocation location : externalExecutors.keySet()) {
             if (!consumers.containsKey(location)) {
@@ -229,12 +257,23 @@ public class QueueRegistry {
     /**
      * Получить зарегестрированные слушатели задач
      *
-     * @return Map: key - местоположение очереди, value - слушатель данной очереди
+     * @return Map: key - местоположение очереди, value - слушатель задач данной очереди
      */
     @Nonnull
     Map<QueueLocation, TaskLifecycleListener> getTaskListeners() {
         ensureConstructionFinished();
         return Collections.unmodifiableMap(taskListeners);
+    }
+
+    /**
+     * Получить зарегестрированные слушатели потоков
+     *
+     * @return Map: key - местоположение очереди, value - слушатель потоков данной очереди
+     */
+    @Nonnull
+    Map<QueueLocation, ThreadLifecycleListener> getThreadListeners() {
+        ensureConstructionFinished();
+        return Collections.unmodifiableMap(threadListeners);
     }
 
     /**

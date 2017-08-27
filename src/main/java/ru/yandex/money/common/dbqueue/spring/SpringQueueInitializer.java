@@ -68,7 +68,8 @@ public class SpringQueueInitializer implements
         throwIfHasErrors();
         wireQueueConfig();
         queueCollector.getShards().values().forEach(queueRegistry::registerShard);
-        queueCollector.getListeners().forEach(queueRegistry::registerTaskLifecycleListener);
+        queueCollector.getTaskListeners().forEach(queueRegistry::registerTaskLifecycleListener);
+        queueCollector.getThreadListeners().forEach(queueRegistry::registerThreadLifecycleListener);
         queueCollector.getExecutors().forEach(queueRegistry::registerExternalExecutor);
         queueRegistry.finishRegistration();
     }

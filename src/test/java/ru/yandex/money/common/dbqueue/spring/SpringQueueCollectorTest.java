@@ -47,6 +47,7 @@ public class SpringQueueCollectorTest {
                     "duplicate bean: name=testShardRouter2, class=SpringQueueShardRouter, location={queue=test_queue,table=queue_test}" + System.lineSeparator() +
                     "duplicate bean: name=queueDao2, class=QueueDao, shardId={id=1}" + System.lineSeparator() +
                     "duplicate bean: name=springTaskLifecycleListener2, class=SpringTaskLifecycleListener, location={queue=test_queue,table=queue_test}" + System.lineSeparator() +
+                    "duplicate bean: name=springThreadLifecycleListener2, class=SpringThreadLifecycleListener, location={queue=test_queue,table=queue_test}" + System.lineSeparator() +
                     "duplicate bean: name=springQueueExternalExecutor2, class=SpringQueueExternalExecutor, location={queue=test_queue,table=queue_test}"));
             return;
         }
@@ -62,7 +63,8 @@ public class SpringQueueCollectorTest {
         assertThat(collector.getTransformers().size(), equalTo(2));
         assertThat(collector.getShardRouters().size(), equalTo(2));
         assertThat(collector.getShards().size(), equalTo(2));
-        assertThat(collector.getListeners().size(), equalTo(2));
+        assertThat(collector.getTaskListeners().size(), equalTo(2));
+        assertThat(collector.getThreadListeners().size(), equalTo(2));
         assertThat(collector.getExecutors().size(), equalTo(2));
     }
 
@@ -165,6 +167,18 @@ public class SpringQueueCollectorTest {
         }
 
         @DependsOn("springTaskLifecycleListener2")
+        @Bean
+        SpringThreadLifecycleListener springThreadLifecycleListener1() {
+            return new NoopSpringThreadLifecycleListener(testLocation1);
+        }
+
+        @DependsOn("springThreadLifecycleListener1")
+        @Bean
+        SpringThreadLifecycleListener springThreadLifecycleListener2() {
+            return new NoopSpringThreadLifecycleListener(testLocation2);
+        }
+
+        @DependsOn("springThreadLifecycleListener2")
         @Bean
         SpringQueueExternalExecutor springQueueExternalExecutor1() {
             SpringQueueExternalExecutor mock = mock(SpringQueueExternalExecutor.class);
@@ -283,6 +297,18 @@ public class SpringQueueCollectorTest {
 
         @DependsOn("springTaskLifecycleListener2")
         @Bean
+        SpringThreadLifecycleListener springThreadLifecycleListener1() {
+            return new NoopSpringThreadLifecycleListener(testLocation);
+        }
+
+        @DependsOn("springThreadLifecycleListener1")
+        @Bean
+        SpringThreadLifecycleListener springThreadLifecycleListener2() {
+            return new NoopSpringThreadLifecycleListener(testLocation);
+        }
+
+        @DependsOn("springThreadLifecycleListener2")
+        @Bean
         SpringQueueExternalExecutor springQueueExternalExecutor1() {
             SpringQueueExternalExecutor mock = mock(SpringQueueExternalExecutor.class);
             doReturn(testLocation).when(mock).getQueueLocation();
@@ -331,6 +357,33 @@ public class SpringQueueCollectorTest {
 
         @Override
         public void crashed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord, @Nonnull Exception exc) {
+
+        }
+    }
+
+    private static class NoopSpringThreadLifecycleListener extends SpringThreadLifecycleListener {
+
+        protected NoopSpringThreadLifecycleListener(QueueLocation queueLocation) {
+            super(queueLocation);
+        }
+
+        @Override
+        public void started(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location) {
+
+        }
+
+        @Override
+        public void executed(QueueShardId shardId, QueueLocation location, boolean taskProcessed, long threadBusyTime) {
+
+        }
+
+        @Override
+        public void finished(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location) {
+
+        }
+
+        @Override
+        public void crashed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull Throwable exc) {
 
         }
     }

@@ -26,7 +26,8 @@ import java.util.stream.Collectors;
 public class SpringQueueCollector implements BeanPostProcessor, ApplicationListener<ContextRefreshedEvent> {
     private final Map<QueueLocation, SpringQueueProducer> producers = new LinkedHashMap<>();
     private final Map<QueueLocation, SpringQueueConsumer> queueConsumers = new LinkedHashMap<>();
-    private final Map<QueueLocation, SpringTaskLifecycleListener> listeners = new LinkedHashMap<>();
+    private final Map<QueueLocation, SpringTaskLifecycleListener> taskListeners = new LinkedHashMap<>();
+    private final Map<QueueLocation, SpringThreadLifecycleListener> threadListeners = new LinkedHashMap<>();
     private final Map<QueueLocation, SpringQueueExternalExecutor> executors = new LinkedHashMap<>();
     private final Map<QueueLocation, SpringTaskPayloadTransformer> transformers = new LinkedHashMap<>();
     private final Map<QueueLocation, SpringQueueShardRouter> shardRouters = new LinkedHashMap<>();
@@ -70,7 +71,8 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         collectBeanIfPossible(SpringQueueConsumer.class, bean, queueConsumers, beanName);
         collectBeanIfPossible(SpringQueueProducer.class, bean, producers, beanName);
-        collectBeanIfPossible(SpringTaskLifecycleListener.class, bean, listeners, beanName);
+        collectBeanIfPossible(SpringTaskLifecycleListener.class, bean, taskListeners, beanName);
+        collectBeanIfPossible(SpringThreadLifecycleListener.class, bean, threadListeners, beanName);
         collectBeanIfPossible(SpringQueueExternalExecutor.class, bean, executors, beanName);
         collectBeanIfPossible(SpringTaskPayloadTransformer.class, bean, transformers, beanName);
         collectBeanIfPossible(SpringQueueShardRouter.class, bean, shardRouters, beanName);
@@ -109,8 +111,18 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
      * @return Map: key - местоположение очереди, value - слушатель задач данной очереди
      */
     @Nonnull
-    Map<QueueLocation, SpringTaskLifecycleListener> getListeners() {
-        return Collections.unmodifiableMap(listeners);
+    Map<QueueLocation, SpringTaskLifecycleListener> getTaskListeners() {
+        return Collections.unmodifiableMap(taskListeners);
+    }
+
+    /**
+     * Получить слушателей потоков в данной очереди, найденных в spring контексте.
+     *
+     * @return Map: key - местоположение очереди, value - слушатель потоков данной очереди
+     */
+    @Nonnull
+    Map<QueueLocation, SpringThreadLifecycleListener> getThreadListeners() {
+        return Collections.unmodifiableMap(threadListeners);
     }
 
     /**

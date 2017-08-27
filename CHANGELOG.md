@@ -15,6 +15,7 @@ Given version x.y.z
 ### [0.0.10]() (27-08-2017)
 
 * Added ThreadLifecycleListener#executed to measure overall queue performance.
+* Specifying ThreadLifecycleListener per queue
 
 ### [0.0.9]() (26-08-2017)
 

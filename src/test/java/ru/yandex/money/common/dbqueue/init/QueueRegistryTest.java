@@ -12,6 +12,7 @@ import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
+import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
@@ -47,11 +48,13 @@ public class QueueRegistryTest {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
                 "no matching queue for task listener: location={queue=test_queue1,table=queue_test}" + System.lineSeparator() +
+                "no matching queue for thread listener: location={queue=test_queue1,table=queue_test}" + System.lineSeparator() +
                 "no matching queue for external executor: location={queue=test_queue1,table=queue_test}"));
 
         QueueRegistry queueRegistry = new QueueRegistry();
         queueRegistry.registerExternalExecutor(testLocation1, mock(QueueExternalExecutor.class));
         queueRegistry.registerTaskLifecycleListener(testLocation1, mock(TaskLifecycleListener.class));
+        queueRegistry.registerThreadLifecycleListener(testLocation1, mock(ThreadLifecycleListener.class));
         queueRegistry.finishRegistration();
     }
 
@@ -152,7 +155,9 @@ public class QueueRegistryTest {
         thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
                 "duplicate external executor: location={queue=test_queue1,table=queue_test}" + System.lineSeparator() +
                 "duplicate shard: shardId={id=s1}" + System.lineSeparator() +
-                "duplicate task lifecycle listener: location={queue=test_queue1,table=queue_test}"));
+                "duplicate task lifecycle listener: location={queue=test_queue1,table=queue_test}" + System.lineSeparator() +
+                "duplicate thread lifecycle listener: location={queue=test_queue1,table=queue_test}"
+        ));
 
         QueueRegistry queueRegistry = new QueueRegistry();
 
@@ -176,6 +181,8 @@ public class QueueRegistryTest {
         queueRegistry.registerShard(queueDao);
         queueRegistry.registerTaskLifecycleListener(testLocation1, mock(TaskLifecycleListener.class));
         queueRegistry.registerTaskLifecycleListener(testLocation1, mock(TaskLifecycleListener.class));
+        queueRegistry.registerThreadLifecycleListener(testLocation1, mock(ThreadLifecycleListener.class));
+        queueRegistry.registerThreadLifecycleListener(testLocation1, mock(ThreadLifecycleListener.class));
         queueRegistry.finishRegistration();
     }
 
@@ -290,11 +297,14 @@ public class QueueRegistryTest {
         queueRegistry.registerShard(queueDao);
         TaskLifecycleListener taskLifecycleListener = mock(TaskLifecycleListener.class);
         queueRegistry.registerTaskLifecycleListener(testLocation1, taskLifecycleListener);
+        ThreadLifecycleListener threadLifecycleListener = mock(ThreadLifecycleListener.class);
+        queueRegistry.registerThreadLifecycleListener(testLocation1, threadLifecycleListener);
         queueRegistry.finishRegistration();
 
         Assert.assertThat(queueRegistry.getExternalExecutors(), equalTo(Collections.singletonMap(testLocation1, externalExecutor)));
         Assert.assertThat(queueRegistry.getShards(), equalTo(Collections.singletonMap(shardId, queueDao)));
         Assert.assertThat(queueRegistry.getTaskListeners(), equalTo(Collections.singletonMap(testLocation1, taskLifecycleListener)));
+        Assert.assertThat(queueRegistry.getThreadListeners(), equalTo(Collections.singletonMap(testLocation1, threadLifecycleListener)));
         Assert.assertThat(queueRegistry.getConsumers(), hasItem(consumer));
     }
 
@@ -311,6 +321,12 @@ public class QueueRegistryTest {
         }
         try {
             queueRegistry.registerTaskLifecycleListener(testLocation1, mock(TaskLifecycleListener.class));
+            Assert.fail("should not do registration");
+        } catch (Exception e) {
+            Assert.assertThat(e.getMessage(), equalTo("cannot update property. construction is finished"));
+        }
+        try {
+            queueRegistry.registerThreadLifecycleListener(testLocation1, mock(ThreadLifecycleListener.class));
             Assert.fail("should not do registration");
         } catch (Exception e) {
             Assert.assertThat(e.getMessage(), equalTo("cannot update property. construction is finished"));
@@ -334,6 +350,12 @@ public class QueueRegistryTest {
         QueueRegistry queueRegistry = new QueueRegistry();
         try {
             queueRegistry.getTaskListeners();
+            Assert.fail("should not get properties");
+        } catch (Exception e) {
+            Assert.assertThat(e.getMessage(), equalTo("cannot get registry property. construction is not finished"));
+        }
+        try {
+            queueRegistry.getThreadListeners();
             Assert.fail("should not get properties");
         } catch (Exception e) {
             Assert.assertThat(e.getMessage(), equalTo("cannot get registry property. construction is not finished"));

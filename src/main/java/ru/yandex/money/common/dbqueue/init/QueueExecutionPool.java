@@ -48,7 +48,7 @@ public class QueueExecutionPool {
     @Nonnull
     private final TaskLifecycleListener defaultTaskLifecycleListener;
     @Nonnull
-    private final ThreadLifecycleListener threadLifecycleListener;
+    private final ThreadLifecycleListener defaultThreadLifecycleListener;
     @Nonnull
     private final BiFunction<QueueLocation, QueueShardId, ThreadFactory> threadFactoryProvider;
     @Nonnull
@@ -65,14 +65,14 @@ public class QueueExecutionPool {
     /**
      * Конструктор
      *
-     * @param queueRegistry                хранилище очередей
-     * @param defaultTaskLifecycleListener слушатель жизненного цикла задачи
-     * @param threadLifecycleListener      слушатель жизненного цикла потока очереди
+     * @param queueRegistry                  хранилище очередей
+     * @param defaultTaskLifecycleListener   слушатель жизненного цикла задачи
+     * @param defaultThreadLifecycleListener слушатель жизненного цикла потока очереди
      */
     public QueueExecutionPool(@Nonnull QueueRegistry queueRegistry,
                               @Nonnull TaskLifecycleListener defaultTaskLifecycleListener,
-                              @Nonnull ThreadLifecycleListener threadLifecycleListener) {
-        this(queueRegistry, defaultTaskLifecycleListener, threadLifecycleListener,
+                              @Nonnull ThreadLifecycleListener defaultThreadLifecycleListener) {
+        this(queueRegistry, defaultTaskLifecycleListener, defaultThreadLifecycleListener,
                 QueueThreadFactory::new,
                 (threadCount, factory) -> new ThreadPoolExecutor(threadCount, threadCount,
                         0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(threadCount), factory),
@@ -85,24 +85,24 @@ public class QueueExecutionPool {
     /**
      * Конструктор для тестирования
      *
-     * @param queueRegistry                хранилище очередей
-     * @param defaultTaskLifecycleListener слушатель жизненного цикла задачи
-     * @param threadLifecycleListener      слушатель жизненного цикла потока очереди
-     * @param threadFactoryProvider        фабрика фабрик создания потоков
-     * @param queueThreadPoolFactory       фабрика для создания пула обработки очередей
-     * @param queueLoopFactory             фабрика для создания {@link QueueLoop}
-     * @param queueRunnerFactory           фабрика для создания {@link QueueRunner}
+     * @param queueRegistry                  хранилище очередей
+     * @param defaultTaskLifecycleListener   слушатель жизненного цикла задачи
+     * @param defaultThreadLifecycleListener слушатель жизненного цикла потока очереди
+     * @param threadFactoryProvider          фабрика фабрик создания потоков
+     * @param queueThreadPoolFactory         фабрика для создания пула обработки очередей
+     * @param queueLoopFactory               фабрика для создания {@link QueueLoop}
+     * @param queueRunnerFactory             фабрика для создания {@link QueueRunner}
      */
     QueueExecutionPool(@Nonnull QueueRegistry queueRegistry,
                        @Nonnull TaskLifecycleListener defaultTaskLifecycleListener,
-                       @Nonnull ThreadLifecycleListener threadLifecycleListener,
+                       @Nonnull ThreadLifecycleListener defaultThreadLifecycleListener,
                        @Nonnull BiFunction<QueueLocation, QueueShardId, ThreadFactory> threadFactoryProvider,
                        @Nonnull BiFunction<Integer, ThreadFactory, ExecutorService> queueThreadPoolFactory,
                        @Nonnull Function<ThreadLifecycleListener, QueueLoop> queueLoopFactory,
                        @Nonnull Function<ShardPoolInstance, QueueRunner> queueRunnerFactory) {
         this.queueRegistry = Objects.requireNonNull(queueRegistry);
         this.defaultTaskLifecycleListener = Objects.requireNonNull(defaultTaskLifecycleListener);
-        this.threadLifecycleListener = Objects.requireNonNull(threadLifecycleListener);
+        this.defaultThreadLifecycleListener = Objects.requireNonNull(defaultThreadLifecycleListener);
         this.queueThreadPoolFactory = Objects.requireNonNull(queueThreadPoolFactory);
         this.threadFactoryProvider = Objects.requireNonNull(threadFactoryProvider);
         this.queueLoopFactory = Objects.requireNonNull(queueLoopFactory);
@@ -128,12 +128,15 @@ public class QueueExecutionPool {
         Objects.requireNonNull(queueConsumer);
         TaskLifecycleListener taskListener = queueRegistry.getTaskListeners()
                 .getOrDefault(queueConsumer.getQueueConfig().getLocation(), defaultTaskLifecycleListener);
+        ThreadLifecycleListener threadListener = queueRegistry.getThreadListeners()
+                .getOrDefault(queueConsumer.getQueueConfig().getLocation(), defaultThreadLifecycleListener);
         Executor externalExecutor = queueRegistry.getExternalExecutors().get(
                 queueConsumer.getQueueConfig().getLocation());
         Collection<QueueShardId> shards = queueConsumer.getShardRouter().getShardsId();
         for (QueueShardId shardId : shards) {
             QueueDao queueDao = queueRegistry.getShards().get(shardId);
-            poolInstances.add(new ShardPoolInstance(queueConsumer, queueDao, taskListener, externalExecutor));
+            poolInstances.add(new ShardPoolInstance(queueConsumer, queueDao, taskListener, threadListener,
+                    externalExecutor));
         }
     }
 
@@ -160,7 +163,7 @@ public class QueueExecutionPool {
                 ExecutorService shardThreadPool = queueThreadPoolFactory.apply(threadCount, threadFactory);
                 poolInstance.queueShardThreadPool = shardThreadPool;
 
-                QueueLoop queueLoop = queueLoopFactory.apply(threadLifecycleListener);
+                QueueLoop queueLoop = queueLoopFactory.apply(poolInstance.threadListener);
                 QueueRunner queueRunner = queueRunnerFactory.apply(poolInstance);
                 shardThreadPool.execute(() -> queueLoop.start(poolInstance.queueDao.getShardId(),
                         poolInstance.queueConsumer, queueRunner));
@@ -230,9 +233,13 @@ public class QueueExecutionPool {
          */
         final QueueDao queueDao;
         /**
-         * Слушатель
+         * Слушатель задач
          */
         final TaskLifecycleListener taskListener;
+        /**
+         * Слушатель потоков
+         */
+        final ThreadLifecycleListener threadListener;
         /**
          * Внешний исполнитель
          */
@@ -241,10 +248,11 @@ public class QueueExecutionPool {
         private ExecutorService queueShardThreadPool;
 
         private ShardPoolInstance(QueueConsumer queueConsumer, QueueDao queueDao, TaskLifecycleListener taskListener,
-                                  Executor externalExecutor) {
+                                  ThreadLifecycleListener threadListener, Executor externalExecutor) {
             this.queueConsumer = queueConsumer;
             this.queueDao = queueDao;
             this.taskListener = taskListener;
+            this.threadListener = threadListener;
             this.externalExecutor = externalExecutor;
         }
     }

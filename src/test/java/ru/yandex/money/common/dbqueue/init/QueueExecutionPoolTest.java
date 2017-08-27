@@ -177,13 +177,16 @@ public class QueueExecutionPoolTest {
             add(shardId1);
             add(shardId2);
         }});
-        TaskLifecycleListener queueShardListener = mock(TaskLifecycleListener.class);
+        TaskLifecycleListener taskListener = mock(TaskLifecycleListener.class);
+        ThreadLifecycleListener threadListener = mock(ThreadLifecycleListener.class);
         QueueExternalExecutor externalExecutor = mock(QueueExternalExecutor.class);
 
         when(queueConsumer.getShardRouter()).thenReturn(shardRouter);
         when(queueRegistry.getConsumers()).thenReturn(Collections.singletonList(queueConsumer));
         when(queueRegistry.getTaskListeners()).thenReturn(
-                Collections.singletonMap(location1, queueShardListener));
+                Collections.singletonMap(location1, taskListener));
+        when(queueRegistry.getThreadListeners()).thenReturn(
+                Collections.singletonMap(location1, threadListener));
         when(queueRegistry.getExternalExecutors()).thenReturn(
                 Collections.singletonMap(location1, externalExecutor));
         when(queueRegistry.getShards()).thenReturn(new HashMap<QueueShardId, QueueDao>() {{
@@ -193,14 +196,14 @@ public class QueueExecutionPoolTest {
 
         ThreadFactory threadFactory = mock(ThreadFactory.class);
         TaskLifecycleListener defaultTaskListener = mock(TaskLifecycleListener.class);
-        ThreadLifecycleListener threadListener = mock(ThreadLifecycleListener.class);
+        ThreadLifecycleListener defaltThreadListener = mock(ThreadLifecycleListener.class);
         ExecutorService queueThreadExecutor = spy(MoreExecutors.newDirectExecutorService());
 
         QueueLoop queueLoop = mock(QueueLoop.class);
         QueueRunner queueRunner = mock(QueueRunner.class);
 
         QueueExecutionPool queueExecutionPool = new QueueExecutionPool(queueRegistry,
-                defaultTaskListener, threadListener,
+                defaultTaskListener, defaltThreadListener,
                 (location, shardId) -> threadFactory,
                 (threadCount, factory) -> {
                     new ArrayBlockingQueue<>(threadCount);
@@ -215,7 +218,8 @@ public class QueueExecutionPoolTest {
                 poolInstance -> {
                     assertThat(poolInstance.queueConsumer, sameInstance(queueConsumer));
                     assertThat(poolInstance.externalExecutor, sameInstance(externalExecutor));
-                    assertThat(poolInstance.taskListener, sameInstance(queueShardListener));
+                    assertThat(poolInstance.taskListener, sameInstance(taskListener));
+                    assertThat(poolInstance.threadListener, sameInstance(threadListener));
                     return queueRunner;
                 });
         queueExecutionPool.init();

@@ -178,13 +178,16 @@ public class SpringQueueInitializerTest {
         SpringQueueExternalExecutor externalExecutor = new SimpleExternalExecutor(testLocation1);
         SpringTaskLifecycleListener taskLifecycleListener = mock(SpringTaskLifecycleListener.class);
         when(taskLifecycleListener.getQueueLocation()).thenReturn(testLocation1);
+        SpringThreadLifecycleListener threadLifecycleListener = mock(SpringThreadLifecycleListener.class);
+        when(threadLifecycleListener.getQueueLocation()).thenReturn(testLocation1);
 
         when(queueCollector.getConsumers()).thenReturn(singletonMap(testLocation1, consumer));
         when(queueCollector.getProducers()).thenReturn(singletonMap(testLocation1, producer));
         when(queueCollector.getShardRouters()).thenReturn(singletonMap(testLocation1, shardRouter));
         when(queueCollector.getTransformers()).thenReturn(singletonMap(testLocation1, payloadTransformer));
         when(queueCollector.getExecutors()).thenReturn(singletonMap(testLocation1, externalExecutor));
-        when(queueCollector.getListeners()).thenReturn(singletonMap(testLocation1, taskLifecycleListener));
+        when(queueCollector.getTaskListeners()).thenReturn(singletonMap(testLocation1, taskLifecycleListener));
+        when(queueCollector.getThreadListeners()).thenReturn(singletonMap(testLocation1, threadLifecycleListener));
         when(queueCollector.getShards()).thenReturn(new HashMap<QueueShardId, QueueDao>() {{
             put(shardId, queueDao);
             put(unusedShardId, unusedQueueDao);
@@ -202,6 +205,7 @@ public class SpringQueueInitializerTest {
         verify(queueRegistry).registerShard(queueDao);
         verify(queueRegistry).registerQueue(consumer, producer);
         verify(queueRegistry).registerTaskLifecycleListener(testLocation1, taskLifecycleListener);
+        verify(queueRegistry).registerThreadLifecycleListener(testLocation1, threadLifecycleListener);
         verify(queueRegistry).registerExternalExecutor(testLocation1, externalExecutor);
         verify(queueRegistry).finishRegistration();
 
