@@ -49,8 +49,10 @@ public class SpringLifecycleTest {
                         "processing task" + lineSeparator() +
                         "task executed on example payload=first" + lineSeparator() +
                         "task finished on example payload=first" + lineSeparator() +
+                        "queue executed=true" + lineSeparator() +
                         "queue finished" + lineSeparator() +
                         "queue started" + lineSeparator() +
+                        "queue executed=false" + lineSeparator() +
                         "queue finished" + lineSeparator() +
                         "shutting down external executor"));
     }

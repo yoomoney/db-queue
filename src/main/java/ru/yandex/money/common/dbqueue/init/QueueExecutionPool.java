@@ -9,6 +9,7 @@ import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.internal.LoopPolicy;
+import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
 import ru.yandex.money.common.dbqueue.internal.QueueLoop;
 import ru.yandex.money.common.dbqueue.internal.runner.QueueRunner;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
@@ -75,7 +76,8 @@ public class QueueExecutionPool {
                 QueueThreadFactory::new,
                 (threadCount, factory) -> new ThreadPoolExecutor(threadCount, threadCount,
                         0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(threadCount), factory),
-                listener -> new QueueLoop(new LoopPolicy.ThreadLoopPolicy(), listener),
+                listener -> new QueueLoop(new LoopPolicy.ThreadLoopPolicy(), listener,
+                        new MillisTimeProvider.SystemMillisTimeProvider()),
                 poolInstance -> QueueRunner.Factory.createQueueRunner(poolInstance.queueConsumer,
                         poolInstance.queueDao, poolInstance.taskListener, poolInstance.externalExecutor));
     }

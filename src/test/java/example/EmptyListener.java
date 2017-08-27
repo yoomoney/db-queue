@@ -17,6 +17,10 @@ class EmptyListener implements ThreadLifecycleListener {
     }
 
     @Override
+    public void executed(QueueShardId shardId, QueueLocation location, boolean taskProcessed, long threadBusyTime) {
+    }
+
+    @Override
     public void finished(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location) {
     }
 

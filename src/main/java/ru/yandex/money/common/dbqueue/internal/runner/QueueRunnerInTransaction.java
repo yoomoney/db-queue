@@ -1,13 +1,11 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
-import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
+import ru.yandex.money.common.dbqueue.internal.QueueProcessingStatus;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
-import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 
 import javax.annotation.Nonnull;
-import java.time.Duration;
 import java.util.Objects;
 
 /**
@@ -22,10 +20,7 @@ class QueueRunnerInTransaction implements QueueRunner {
 
     @Nonnull
     private final QueueDao queueDao;
-    @Nonnull
-    private final TaskPicker taskPicker;
-    @Nonnull
-    private final TaskProcessor taskProcessor;
+    private final BaseQueueRunner baseQueueRunner;
 
     /**
      * Конструктор
@@ -37,21 +32,13 @@ class QueueRunnerInTransaction implements QueueRunner {
     QueueRunnerInTransaction(@Nonnull TaskPicker taskPicker, @Nonnull TaskProcessor taskProcessor,
                              @Nonnull QueueDao queueDao) {
         this.queueDao = Objects.requireNonNull(queueDao);
-        this.taskPicker = Objects.requireNonNull(taskPicker);
-        this.taskProcessor = Objects.requireNonNull(taskProcessor);
+        baseQueueRunner = new BaseQueueRunner(taskPicker, taskProcessor, Runnable::run);
     }
 
     @Override
     @Nonnull
-    public Duration runQueue(@Nonnull QueueConsumer queueConsumer) {
-        return queueDao.getTransactionTemplate().execute(status -> {
-            QueueConfig config = queueConsumer.getQueueConfig();
-            TaskRecord taskRecord = taskPicker.pickTask(queueConsumer);
-            if (taskRecord == null) {
-                return config.getSettings().getNoTaskTimeout();
-            }
-            taskProcessor.processTask(queueConsumer, taskRecord);
-            return config.getSettings().getBetweenTaskTimeout();
-        });
+    public QueueProcessingStatus runQueue(@Nonnull QueueConsumer queueConsumer) {
+        return queueDao.getTransactionTemplate().execute(status ->
+                baseQueueRunner.runQueue(queueConsumer));
     }
 }

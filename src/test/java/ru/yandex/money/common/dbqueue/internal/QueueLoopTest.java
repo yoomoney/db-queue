@@ -8,6 +8,7 @@ import ru.yandex.money.common.dbqueue.internal.runner.QueueRunner;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
+import ru.yandex.money.common.dbqueue.stub.FakeMillisTimeProvider;
 
 import java.time.Duration;
 
@@ -30,20 +31,23 @@ public class QueueLoopTest {
         QueueShardId shardId = new QueueShardId("s1");
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
         QueueLocation location = QueueLocation.builder().withTableName("table").withQueueName("queue").build();
+        Duration waitDuration = Duration.ofMillis(100L);
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
                 QueueSettings.builder()
                         .withBetweenTaskTimeout(Duration.ZERO)
-                        .withNoTaskTimeout(Duration.ZERO)
+                        .withNoTaskTimeout(waitDuration)
                         .build()));
         QueueRunner queueRunner = mock(QueueRunner.class);
-        Duration waitDuration = Duration.ofMillis(100L);
-        when(queueRunner.runQueue(queueConsumer)).thenReturn(waitDuration);
+        when(queueRunner.runQueue(queueConsumer)).thenReturn(QueueProcessingStatus.SKIPPED);
 
-        new QueueLoop(loopPolicy, listener).start(shardId, queueConsumer, queueRunner);
+        FakeMillisTimeProvider millisTimeProvider = new FakeMillisTimeProvider(7, 11);
+
+        new QueueLoop(loopPolicy, listener, millisTimeProvider).start(shardId, queueConsumer, queueRunner);
 
         verify(loopPolicy).doRun(any());
         verify(listener).started(shardId, location);
         verify(queueRunner).runQueue(queueConsumer);
+        verify(listener).executed(shardId, location, false, 4);
         verify(loopPolicy).doWait(waitDuration);
         verify(listener).finished(shardId, location);
     }
@@ -66,7 +70,7 @@ public class QueueLoopTest {
         RuntimeException exception = new RuntimeException("exc");
         when(queueRunner.runQueue(queueConsumer)).thenThrow(exception);
 
-        new QueueLoop(loopPolicy, listener).start(shardId, queueConsumer, queueRunner);
+        new QueueLoop(loopPolicy, listener, mock(MillisTimeProvider.class)).start(shardId, queueConsumer, queueRunner);
 
         verify(loopPolicy).doRun(any());
         verify(listener).started(shardId, location);

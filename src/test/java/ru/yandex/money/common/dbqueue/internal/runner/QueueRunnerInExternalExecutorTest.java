@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.mockito.Matchers;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
+import ru.yandex.money.common.dbqueue.internal.QueueProcessingStatus;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
@@ -43,9 +44,9 @@ public class QueueRunnerInExternalExecutorTest {
 
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
-        Duration waitTimeout = new QueueRunnerInExternalExecutor(taskPicker, taskProcessor, executor).runQueue(queueConsumer);
+        QueueProcessingStatus status = new QueueRunnerInExternalExecutor(taskPicker, taskProcessor, executor).runQueue(queueConsumer);
 
-        assertThat(waitTimeout, equalTo(noTaskTimeout));
+        assertThat(status, equalTo(QueueProcessingStatus.SKIPPED));
 
         verifyZeroInteractions(executor);
         verify(taskPicker).pickTask(queueConsumer);
@@ -68,9 +69,9 @@ public class QueueRunnerInExternalExecutorTest {
 
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
-        Duration waitTimeout = new QueueRunnerInExternalExecutor(taskPicker, taskProcessor, executor).runQueue(queueConsumer);
+        QueueProcessingStatus status = new QueueRunnerInExternalExecutor(taskPicker, taskProcessor, executor).runQueue(queueConsumer);
 
-        assertThat(waitTimeout, equalTo(betweenTaskTimeout));
+        assertThat(status, equalTo(QueueProcessingStatus.PROCESSED));
 
         verify(executor).execute(Matchers.any());
         verify(taskPicker).pickTask(queueConsumer);

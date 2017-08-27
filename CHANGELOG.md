@@ -12,6 +12,10 @@ Given version x.y.z
 
 **In case of x == 0 backward compatibility is not guaranteed.**
 
+### [0.0.10]() (27-08-2017)
+
+* Added ThreadLifecycleListener#executed to measure overall queue performance.
+
 ### [0.0.9]() (26-08-2017)
 
 * Fixed ability to disable queue processing via thread count

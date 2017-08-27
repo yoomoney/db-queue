@@ -207,6 +207,11 @@ public class SpringLifecycleConfiguration {
         }
 
         @Override
+        public void executed(QueueShardId shardId, QueueLocation location, boolean taskProcessed, long threadBusyTime) {
+            EVENTS.add("queue executed=" + taskProcessed);
+        }
+
+        @Override
         public void finished(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location) {
             EVENTS.add("queue finished");
         }

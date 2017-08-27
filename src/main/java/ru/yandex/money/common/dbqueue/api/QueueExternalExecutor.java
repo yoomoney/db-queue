@@ -1,6 +1,5 @@
 package ru.yandex.money.common.dbqueue.api;
 
-import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueInitializer;
 
@@ -11,7 +10,7 @@ import java.util.concurrent.Executor;
  * <p>
  * Используется в режиме {@link ProcessingMode#USE_EXTERNAL_EXECUTOR}.
  * <p>
- * Завершением работы исполнителей управляет {@link QueueExecutionPool}.
+ * Завершением работы исполнителей управляет {@link ru.yandex.money.common.dbqueue.init.QueueRegistry}.
  * Это важно, поскольку при неправильном порядке завершения, задачи по прежнему будут братся, но
  * исполнитель не сможет их принять.
  *

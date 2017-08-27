@@ -1,13 +1,10 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
-import ru.yandex.money.common.dbqueue.api.TaskRecord;
+import ru.yandex.money.common.dbqueue.internal.QueueProcessingStatus;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
-import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 
 import javax.annotation.Nonnull;
-import java.time.Duration;
-import java.util.Objects;
 import java.util.concurrent.Executor;
 
 /**
@@ -20,12 +17,7 @@ import java.util.concurrent.Executor;
 @SuppressWarnings({"rawtypes", "unchecked"})
 class QueueRunnerInExternalExecutor implements QueueRunner {
 
-    @Nonnull
-    private final TaskPicker taskPicker;
-    @Nonnull
-    private final TaskProcessor taskProcessor;
-    @Nonnull
-    private final Executor externalExecutor;
+    private final BaseQueueRunner baseQueueRunner;
 
     /**
      * Конструктор
@@ -37,21 +29,13 @@ class QueueRunnerInExternalExecutor implements QueueRunner {
     QueueRunnerInExternalExecutor(@Nonnull TaskPicker taskPicker,
                                   @Nonnull TaskProcessor taskProcessor,
                                   @Nonnull Executor externalExecutor) {
-        this.taskPicker = Objects.requireNonNull(taskPicker);
-        this.taskProcessor = Objects.requireNonNull(taskProcessor);
-        this.externalExecutor = Objects.requireNonNull(externalExecutor);
+        baseQueueRunner = new BaseQueueRunner(taskPicker, taskProcessor, externalExecutor);
     }
 
     @Override
     @Nonnull
-    public Duration runQueue(@Nonnull QueueConsumer queueConsumer) {
-        QueueConfig config = queueConsumer.getQueueConfig();
-        TaskRecord taskRecord = taskPicker.pickTask(queueConsumer);
-        if (taskRecord == null) {
-            return config.getSettings().getNoTaskTimeout();
-        }
-        externalExecutor.execute(() -> taskProcessor.processTask(queueConsumer, taskRecord));
-        return config.getSettings().getBetweenTaskTimeout();
+    public QueueProcessingStatus runQueue(@Nonnull QueueConsumer queueConsumer) {
+        return baseQueueRunner.runQueue(queueConsumer);
     }
 
 }

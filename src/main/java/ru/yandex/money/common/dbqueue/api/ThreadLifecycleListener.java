@@ -26,7 +26,21 @@ public interface ThreadLifecycleListener {
     void started(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location);
 
     /**
-     * Завершение обработки задачи в очереди и старт нового цикла обработки.
+     * Поток завершил полезную работу по обработке задачи.
+     *
+     * Вызывается в случае штатного завершения обработки.
+     *
+     * Может быть использовано для того, чтобы замерить изменение общей производительности обработки очередей.
+     *
+     * @param shardId идентификатор шарда на котором происходит обработка
+     * @param location местоположение очереди
+     * @param taskProcessed признак что задача была взята и обработана, в противном случае - не было задач на обработку.
+     * @param threadBusyTime время нахождения потока в активном состоянии перед тем как заснуть.
+     */
+    void executed(QueueShardId shardId, QueueLocation location, boolean taskProcessed, long threadBusyTime);
+
+    /**
+     * Завершение цикла обработки задачи в очереди и старт нового цикла обработки.
      * <p>
      * Вызывается всегда, даже после {@link #crashed}
      * <p>
@@ -51,5 +65,4 @@ public interface ThreadLifecycleListener {
      * @param exc      исключение приведшее к неуспеху обработки
      */
     void crashed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull Throwable exc);
-
 }

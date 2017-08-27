@@ -3,6 +3,7 @@ package ru.yandex.money.common.dbqueue.internal.runner;
 import org.junit.Test;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
+import ru.yandex.money.common.dbqueue.internal.QueueProcessingStatus;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
@@ -38,9 +39,9 @@ public class QueueRunnerInSeparateTransactionsTest {
 
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
-        Duration waitTimeout = new QueueRunnerInSeparateTransactions(taskPicker, taskProcessor).runQueue(queueConsumer);
+        QueueProcessingStatus status = new QueueRunnerInSeparateTransactions(taskPicker, taskProcessor).runQueue(queueConsumer);
 
-        assertThat(waitTimeout, equalTo(noTaskTimeout));
+        assertThat(status, equalTo(QueueProcessingStatus.SKIPPED));
 
         verify(taskPicker).pickTask(queueConsumer);
         verifyZeroInteractions(taskProcessor);
@@ -61,9 +62,9 @@ public class QueueRunnerInSeparateTransactionsTest {
 
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
-        Duration waitTimeout = new QueueRunnerInSeparateTransactions(taskPicker, taskProcessor).runQueue(queueConsumer);
+        QueueProcessingStatus status = new QueueRunnerInSeparateTransactions(taskPicker, taskProcessor).runQueue(queueConsumer);
 
-        assertThat(waitTimeout, equalTo(betweenTaskTimeout));
+        assertThat(status, equalTo(QueueProcessingStatus.PROCESSED));
 
         verify(taskPicker).pickTask(queueConsumer);
         verify(taskProcessor).processTask(queueConsumer, taskRecord);

@@ -4,12 +4,12 @@ import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
+import ru.yandex.money.common.dbqueue.internal.QueueProcessingStatus;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.time.Duration;
 import java.util.concurrent.Executor;
 
 import static java.util.Objects.requireNonNull;
@@ -28,10 +28,10 @@ public interface QueueRunner {
      * Единократно обработать заданную очередь
      *
      * @param queueConsumer очередь для обработки
-     * @return таймаут ожидания после обработки задачи в очереди
+     * @return тип результата выполнения задачи
      */
     @Nonnull
-    Duration runQueue(@Nonnull QueueConsumer queueConsumer);
+    QueueProcessingStatus runQueue(@Nonnull QueueConsumer queueConsumer);
 
     /**
      * Фабрика исполнителей задач в очереди
@@ -70,6 +70,7 @@ public interface QueueRunner {
             TaskProcessor taskProcessor = new TaskProcessor(queueDao, taskLifecycleListener,
                     new MillisTimeProvider.SystemMillisTimeProvider(), taskResultHandler);
             QueueSettings settings = queueConsumer.getQueueConfig().getSettings();
+
             switch (settings.getProcessingMode()) {
                 case SEPARATE_TRANSACTIONS:
                     return new QueueRunnerInSeparateTransactions(taskPicker, taskProcessor);
