@@ -26,12 +26,12 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 
 1. You have a task that you want to process later. 
 2. You tell QueueProducer to schedule the task. 
-3. QueueProducer chooses a database shard through ShardRouter.
+3. QueueProducer chooses a database shard through QueueShardRouter.
 4. QueueProducer converts the task payload to string representation through TaskPayloadTransformer. 
 5. QueueProducer inserts the task in the database through QueueDao.
 6. ... the task has been selected from database in specified time ... 
 7. The task payload is converted to typed representation through TaskPayloadTransformer.
-8. The task is passed to the Queue instance in order to be processed. 
+8. The task is passed to the QueueConsumer instance in order to be processed. 
 9. You process the task and return processing result. 
 
 ## Features
