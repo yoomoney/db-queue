@@ -161,7 +161,7 @@ public class SpringQueueInitializerTest {
         QueueShardId unusedShardId = new QueueShardId("unused");
         when(unusedQueueDao.getShardId()).thenReturn(unusedShardId);
 
-        SimpleQueueConsumer<String> consumer = new SimpleQueueConsumer<>(String.class);
+        SimpleQueueConsumer<String> consumer = spy(new SimpleQueueConsumer<>(String.class));
         SpringQueueProducer<String> producer = spy(new SpringTransactionalProducer<>(testLocation1, String.class));
         SpringQueueShardRouter<String> shardRouter = new SpringQueueShardRouter<String>(testLocation1, String.class) {
             @Override
@@ -208,6 +208,8 @@ public class SpringQueueInitializerTest {
         verify(queueRegistry).registerThreadLifecycleListener(testLocation1, threadLifecycleListener);
         verify(queueRegistry).registerExternalExecutor(testLocation1, externalExecutor);
         verify(queueRegistry).finishRegistration();
+        verify(consumer).onInitialized();
+        verify(producer).onInitialized();
 
         assertThat(consumer.getShardRouter(), equalTo(shardRouter));
         assertThat(consumer.getPayloadTransformer(), equalTo(payloadTransformer));

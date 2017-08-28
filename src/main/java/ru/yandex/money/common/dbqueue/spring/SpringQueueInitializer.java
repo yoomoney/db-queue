@@ -72,6 +72,8 @@ public class SpringQueueInitializer implements
         queueCollector.getThreadListeners().forEach(queueRegistry::registerThreadLifecycleListener);
         queueCollector.getExecutors().forEach(queueRegistry::registerExternalExecutor);
         queueRegistry.finishRegistration();
+        queueCollector.getConsumers().values().forEach(SpringQueueConsumer::onInitialized);
+        queueCollector.getProducers().values().forEach(SpringQueueProducer::onInitialized);
     }
 
     private void throwIfHasErrors() {
@@ -103,8 +105,6 @@ public class SpringQueueInitializer implements
             producer.setShardRouter(shardRouter);
             producer.setQueueConfig(queueConfig);
             producer.setShards(queueShards);
-
-
             queueRegistry.registerQueue(consumer, producer);
         });
     }
@@ -193,7 +193,6 @@ public class SpringQueueInitializer implements
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-
         init();
         executionPool.init();
         executionPool.start();

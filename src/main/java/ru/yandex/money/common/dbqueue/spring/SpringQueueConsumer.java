@@ -1,5 +1,6 @@
 package ru.yandex.money.common.dbqueue.spring;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
@@ -11,7 +12,10 @@ import java.util.Objects;
 
 /**
  * Класс обработки очереди, используемый в spring конфигурации
+ * <p>
  * Класс не Immutable.
+ * <p>
+ * При окончании инициализации вызывается {@link #onInitialized()}
  *
  * @param <T> тип данных задачи
  * @author Oleg Kandaurov
@@ -97,6 +101,14 @@ public abstract class SpringQueueConsumer<T> implements QueueConsumer<T>, Spring
      */
     void setQueueConfig(@Nonnull QueueConfig queueConfig) {
         this.queueConfig = Objects.requireNonNull(queueConfig);
+    }
+
+    /**
+     * Все поля обработчика очереди инициализированы.
+     * Может быть использовано для валидации настроек.
+     */
+    @SuppressFBWarnings("ACEM_ABSTRACT_CLASS_EMPTY_METHODS")
+    protected void onInitialized() {
     }
 
 }

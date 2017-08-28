@@ -1,5 +1,6 @@
 package ru.yandex.money.common.dbqueue.spring;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import ru.yandex.money.common.dbqueue.api.QueueProducer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
@@ -18,6 +19,8 @@ import java.util.Objects;
  * Постановщик задач в очередь используемый в spring конфигурации.
  * <p>
  * Класс не Immutable.
+ * <p>
+ * При окончании инициализации вызывается {@link #onInitialized()}
  *
  * @param <T> тип данных задачи
  * @author Oleg Kandaurov
@@ -123,6 +126,14 @@ public abstract class SpringQueueProducer<T> implements QueueProducer<T>, Spring
      */
     public void setShardRouter(@Nonnull QueueShardRouter<T> shardRouter) {
         this.shardRouter = Objects.requireNonNull(shardRouter);
+    }
+
+    /**
+     * Все поля постановщика задач очереди инициализированы.
+     * Может быть использовано для валидации настроек.
+     */
+    @SuppressFBWarnings("ACEM_ABSTRACT_CLASS_EMPTY_METHODS")
+    protected void onInitialized() {
     }
 
 }
