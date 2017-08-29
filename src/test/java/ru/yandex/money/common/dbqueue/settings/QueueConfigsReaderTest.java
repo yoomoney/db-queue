@@ -52,6 +52,19 @@ public class QueueConfigsReaderTest {
     }
 
     @Test
+    public void should_read_simple_config_with_null_override_file() throws Exception {
+        QueueConfigsReader queueConfigsReader = new QueueConfigsReader("q");
+        Collection<QueueConfig> configs = queueConfigsReader.parse(fileSystem.write(
+                "q.testQueue.table=foo",
+                "q.testQueue.between-task-timeout=PT0.1S",
+                "q.testQueue.no-task-timeout=PT5S"), null, null);
+        assertThat(configs, equalTo(Collections.singletonList(
+                createConfig("foo", "testQueue",
+                        QueueSettings.builder().withBetweenTaskTimeout(Duration.ofMillis(100L))
+                                .withNoTaskTimeout(Duration.ofSeconds(5L)).build()))));
+    }
+
+    @Test
     public void should_read_full_config() throws Exception {
         QueueConfigsReader queueConfigsReader = new QueueConfigsReader("q");
         Collection<QueueConfig> configs = queueConfigsReader.parse(fileSystem.write(

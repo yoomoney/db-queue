@@ -4,6 +4,7 @@
 [![Codebeat](https://codebeat.co/badges/ff7a4c21-72fb-446c-b245-ba739240fe49)](https://codebeat.co/projects/github-com-yandex-money-db-queue-master)
 [![Codacy](https://api.codacy.com/project/badge/Grade/3a0e23fae44843c284540929d750b65c)](https://www.codacy.com/app/f0y/db-queue?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=yandex-money/db-queue&amp;utm_campaign=Badge_Grade)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Javadocs](http://javadoc.io/badge/ru.yandex.money.common/db-queue.svg?color=blue)](http://javadoc.io/doc/ru.yandex.money.common/db-queue)
 [![Download](https://api.bintray.com/packages/yandex-money/maven/db-queue/images/download.svg)](https://bintray.com/yandex-money/maven/db-queue/_latestVersion)
 
 # Database Queue
@@ -36,11 +37,12 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 
 ## Features
 
+* Persistence working-queue
 * Support for PostgreSQL with version higher or equal to 9.5.
 * Storing queue tasks in a separate tables or in the same table (QueueLocation).
 * Storing queue tasks in a separate databases for horizontal scaling (QueueShardRouter).
-* At-least-once task processing semantic (exactly-once in some cases).
 * Delayed task execution.
+* At-least-once task processing semantic.
 * Several retry strategies in case of a task processing error (TaskRetryType).
 * Task event listeners (TaskLifecycleListener, ThreadLifecycleListener).
 * Strong-typed api for task processing and enqueuing (TaskPayloadTransformer).
@@ -68,7 +70,7 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 <dependency>
   <groupId>ru.yandex.money.common</groupId>
   <artifactId>db-queue</artifactId>
-  <version>0.0.11</version>
+  <version>0.0.12</version>
 </dependency>
 ```
 

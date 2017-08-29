@@ -172,7 +172,7 @@ public class QueueConfigsReader {
         Objects.requireNonNull(configPath, "config path is empty");
         Map<String, String> rawSettings = readRawSettings(configPath);
         if (overrideConfigPath != null) {
-            Arrays.stream(overrideConfigPath).forEach(path ->
+            Arrays.stream(overrideConfigPath).filter(Objects::nonNull).forEach(path ->
                     overrideExistingSettings(rawSettings, readRawSettings(path)));
         }
 
