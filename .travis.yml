@@ -11,11 +11,16 @@ env:
 install:
  - true
 
+before_script:
+  - git config --global user.email "travis@travis-ci.org"
+  - git config --global user.name "travis-ci"
+
 script:
   - ./gradlew clean build bintrayUpload --info
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+  - ./publish_doc.sh
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
