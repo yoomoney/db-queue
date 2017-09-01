@@ -10,7 +10,9 @@ Given version x.y.z
 * y - Minor version. Backward compatibile with previous version. New features.
 * z - Patch version. Backward compatibile with previous version. Bug fix or small features. 
 
-**In case of x == 0 backward compatibility is not guaranteed.**
+### [1.0.0]() (01-09-2017)
+
+* Stable version
 
 ### [0.0.11]() (29-08-2017)
 
