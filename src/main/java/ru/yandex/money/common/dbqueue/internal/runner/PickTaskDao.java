@@ -12,7 +12,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
@@ -57,16 +56,13 @@ class PickTaskDao {
         requireNonNull(location);
         MapSqlParameterSource placeholders = new MapSqlParameterSource()
                 .addValue("queueName", location.getQueueName())
-                .addValue("currentTime", new Timestamp(System.currentTimeMillis()));
-        if (retryTaskStrategy.getPlaceholders() != null) {
-            placeholders.addValues(retryTaskStrategy.getPlaceholders().getValues());
-        }
+                .addValue("retryInterval", retryTaskStrategy.getBaseRetryInterval().toString());
         return jdbcTemplate.execute(String.format(
                 "WITH cte AS (" +
                         "SELECT id " +
                         "FROM %s " +
                         "WHERE queue_name = :queueName " +
-                        "  AND process_time <= :currentTime " +
+                        "  AND process_time <= now() " +
                         "LIMIT 1 " +
                         "FOR UPDATE SKIP LOCKED) " +
                         "UPDATE %s q " +
@@ -77,7 +73,8 @@ class PickTaskDao {
                         "WHERE q.id = cte.id " +
                         "RETURNING q.id, q.task, q.attempt, q.create_time, q.process_time, " +
                         "q.log_timestamp, q.actor",
-                location.getTableName(), location.getTableName(), retryTaskStrategy.getNextProcessTimeSql()),
+                location.getTableName(), location.getTableName(),
+                retryTaskStrategy.getNextProcessTimeSql()),
                 placeholders,
                 (PreparedStatement ps) -> {
                     try (ResultSet rs = ps.executeQuery()) {

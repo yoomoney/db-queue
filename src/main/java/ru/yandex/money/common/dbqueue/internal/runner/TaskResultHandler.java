@@ -50,11 +50,9 @@ class TaskResultHandler {
             case REENQUEUE:
                 queueDao.getTransactionTemplate().execute(
                         status -> queueDao.reenqueue(location, taskRecord.getId(),
-                                executionResult.getExecutionDelayOrThrow(), true));
+                                executionResult.getExecutionDelayOrThrow()));
                 return;
             case FAIL:
-                executionResult.getExecutionDelay().ifPresent(delay -> queueDao.getTransactionTemplate()
-                        .execute(status -> queueDao.reenqueue(location, taskRecord.getId(), delay, false)));
                 return;
             default:
                 throw new IllegalStateException("unknown action type: " + executionResult.getActionType());

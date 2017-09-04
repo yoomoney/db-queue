@@ -36,7 +36,7 @@ public class TaskResultHandlerTest {
         new TaskResultHandler(location, queueDao).handleResult(taskRecord, result);
 
         verify(queueDao).getTransactionTemplate();
-        verify(queueDao).reenqueue(location, taskId, reenqueueDelay, true);
+        verify(queueDao).reenqueue(location, taskId, reenqueueDelay);
     }
 
     @Test
@@ -54,24 +54,6 @@ public class TaskResultHandlerTest {
 
         verify(queueDao).getTransactionTemplate();
         verify(queueDao).deleteTask(location, taskId);
-    }
-
-    @Test
-    public void should_fail_task_when_delay_is_specified() throws Exception {
-        long taskId = 5L;
-        Duration executionDelay = Duration.ofMillis(500L);
-        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
-
-        TaskRecord taskRecord = new TaskRecord(taskId, null, 0, ZonedDateTime.now(),
-                ZonedDateTime.now(), null, null);
-        QueueDao queueDao = mock(QueueDao.class);
-        when(queueDao.getTransactionTemplate()).thenReturn(new FakeTransactionTemplate());
-        TaskExecutionResult result = TaskExecutionResult.fail(executionDelay);
-
-        new TaskResultHandler(location, queueDao).handleResult(taskRecord, result);
-
-        verify(queueDao).getTransactionTemplate();
-        verify(queueDao).reenqueue(location, taskId, executionDelay, false);
     }
 
     @Test

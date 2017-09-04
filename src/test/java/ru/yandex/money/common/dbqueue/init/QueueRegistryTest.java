@@ -62,7 +62,7 @@ public class QueueRegistryTest {
     public void should_fail_when_producer_does_not_match_consumer() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
-                "queue config must be the same: location={queue=test_queue1,table=queue_test}, producer={location={queue=test_queue1,table=queue_test}, settings={threadCount=1, betweenTaskTimeout=PT0.1S, noTaskTimeout=PT0S, fatalCrashTimeout=PT2S, retryType=GEOMETRIC_BACKOFF, processingMode=SEPARATE_TRANSACTIONS}}, consumer={location={queue=test_queue1,table=queue_test}, settings={threadCount=1, betweenTaskTimeout=PT0S, noTaskTimeout=PT0S, fatalCrashTimeout=PT2S, retryType=GEOMETRIC_BACKOFF, processingMode=SEPARATE_TRANSACTIONS}}" + System.lineSeparator() +
+                "queue config must be the same: location={queue=test_queue1,table=queue_test}, producer={location={queue=test_queue1,table=queue_test}, settings={threadCount=1, betweenTaskTimeout=PT0.1S, noTaskTimeout=PT0S, processingMode=SEPARATE_TRANSACTIONS, retryType=GEOMETRIC_BACKOFF, retryInterval=PT1M, fatalCrashTimeout=PT1S}}, consumer={location={queue=test_queue1,table=queue_test}, settings={threadCount=1, betweenTaskTimeout=PT0S, noTaskTimeout=PT0S, processingMode=SEPARATE_TRANSACTIONS, retryType=GEOMETRIC_BACKOFF, retryInterval=PT1M, fatalCrashTimeout=PT1S}}" + System.lineSeparator() +
                 "payload transformers must be the same: location={queue=test_queue1,table=queue_test}" + System.lineSeparator() +
                 "shard routers must be the same: location={queue=test_queue1,table=queue_test}"));
         QueueRegistry queueRegistry = new QueueRegistry();

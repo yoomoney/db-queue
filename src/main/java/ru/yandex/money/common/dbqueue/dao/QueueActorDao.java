@@ -94,17 +94,14 @@ public class QueueActorDao {
      * @param location       местоположение очереди
      * @param actor          бизнесовый идентификатор
      * @param executionDelay промежуток времени
-     * @param resetAttempts  признак, что следует сбросить попытки выполнения задачи
      * @return true, если задача была переставлена, false, если задача не найдена.
      */
-    public boolean reenqueue(@Nonnull QueueLocation location, @Nonnull String actor, @Nonnull Duration executionDelay,
-                             boolean resetAttempts) {
+    public boolean reenqueue(@Nonnull QueueLocation location, @Nonnull String actor, @Nonnull Duration executionDelay) {
         requireNonNull(location);
         requireNonNull(executionDelay);
         int updatedRows = jdbcTemplate.update(String.format("UPDATE %s " +
                         "SET" +
-                        "  process_time = now() + :executionDelay * INTERVAL '1 SECOND'" +
-                        (resetAttempts ? ",  attempt = 0 " : "") +
+                        "  process_time = now() + :executionDelay * INTERVAL '1 SECOND',  attempt = 0 " +
                         "WHERE actor = :actor AND queue_name = :queueName", location.getTableName()),
                 new MapSqlParameterSource()
                         .addValue("actor", actor)

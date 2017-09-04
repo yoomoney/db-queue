@@ -107,18 +107,6 @@ public final class TaskExecutionResult {
     }
 
     /**
-     * Указание повторить задачу позже через фиксированное время
-     *
-     * @param delay значение задержки
-     * @return действие
-     */
-    @Nonnull
-    public static TaskExecutionResult fail(@Nonnull Duration delay) {
-        Objects.requireNonNull(delay);
-        return new TaskExecutionResult(Type.FAIL, delay);
-    }
-
-    /**
      * Указание завершить обработку задачи
      *
      * @return действие

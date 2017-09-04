@@ -1,11 +1,9 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.settings.TaskRetryType;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.Objects;
 
@@ -26,12 +24,11 @@ interface RetryTaskStrategy {
     String getNextProcessTimeSql();
 
     /**
-     * Получить placeholders для подстановки в sql со временем обработки
-     *
-     * @return параметры подстановки sql
+     * Получить базовый интервал повтора
+     * @return интервал повтора
      */
-    @Nullable
-    MapSqlParameterSource getPlaceholders();
+    @Nonnull
+    Duration getBaseRetryInterval();
 
     /**
      * Фабрика для создания стратегий откладывания задач при повторе
@@ -52,17 +49,16 @@ interface RetryTaskStrategy {
             Objects.requireNonNull(settings);
             switch (settings.getRetryType()) {
                 case GEOMETRIC_BACKOFF:
-                    return new GeometricBackoff();
+                    return new GeometricBackoff(settings);
                 case ARITHMETIC_BACKOFF:
-                    return new ArithmeticBackoff();
-                case FIXED_INTERVAL:
-                    return new FixedInterval(settings);
+                    return new ArithmeticBackoff(settings);
+                case LINEAR_BACKOFF:
+                    return new LinearBackoff(settings);
                 default:
                     throw new IllegalStateException("unknown growth type: " + settings.getRetryType());
             }
         }
     }
-
 
     /**
      * Реализация стратегии откладывания для
@@ -70,17 +66,29 @@ interface RetryTaskStrategy {
      */
     class GeometricBackoff implements RetryTaskStrategy {
 
+        private final QueueSettings queueSettings;
+
+        /**
+         * Конструктор
+         *
+         * @param queueSettings настройки очереди
+         */
+        GeometricBackoff(@Nonnull QueueSettings queueSettings) {
+            this.queueSettings = Objects.requireNonNull(queueSettings);
+        }
+
         @Nonnull
         @Override
         public String getNextProcessTimeSql() {
-            return "now() + power(2, attempt) * 60 * INTERVAL '1 SECOND'";
+            return "now() + power(2, attempt) * :retryInterval :: interval";
         }
 
-        @Nullable
+        @Nonnull
         @Override
-        public MapSqlParameterSource getPlaceholders() {
-            return null;
+        public Duration getBaseRetryInterval() {
+            return queueSettings.getRetryInterval();
         }
+
     }
 
     /**
@@ -89,55 +97,60 @@ interface RetryTaskStrategy {
      */
     class ArithmeticBackoff implements RetryTaskStrategy {
 
+        private final QueueSettings queueSettings;
+
+        /**
+         * Конструктор
+         *
+         * @param queueSettings настройки очереди
+         */
+        ArithmeticBackoff(@Nonnull QueueSettings queueSettings) {
+            this.queueSettings = Objects.requireNonNull(queueSettings);
+        }
+
         @Nonnull
         @Override
         public String getNextProcessTimeSql() {
-            return "now() + (1 + (attempt * 2)) * 60 * INTERVAL '1 SECOND'";
+            return "now() + (1 + (attempt * 2)) * :retryInterval :: interval";
         }
 
-        @Nullable
+        @Nonnull
         @Override
-        public MapSqlParameterSource getPlaceholders() {
-            return null;
+        public Duration getBaseRetryInterval() {
+            return queueSettings.getRetryInterval();
         }
 
     }
 
     /**
      * Реализация стратегии откладывания для
-     * {@link TaskRetryType#FIXED_INTERVAL}
+     * {@link TaskRetryType#LINEAR_BACKOFF}
      */
-    class FixedInterval implements RetryTaskStrategy {
+    class LinearBackoff implements RetryTaskStrategy {
 
-        private final MapSqlParameterSource placeholders;
+        private final QueueSettings queueSettings;
 
         /**
          * Конструктор стратегии с фиксированным интервалом откладывания
          *
-         * @param executionSettings настройки задачи. Требует наличия настройки
-         *                          {@link QueueSettings.AdditionalSetting#RETRY_FIXED_INTERVAL_DELAY}
+         * @param queueSettings настройки очереди.
          */
-        FixedInterval(@Nonnull QueueSettings executionSettings) {
-            Objects.requireNonNull(executionSettings);
-            Duration fixedDelay = executionSettings.getDurationProperty(
-                    QueueSettings.AdditionalSetting.RETRY_FIXED_INTERVAL_DELAY);
-            this.placeholders = new MapSqlParameterSource().addValue("delay", fixedDelay.getSeconds());
+        LinearBackoff(@Nonnull QueueSettings queueSettings) {
+            this.queueSettings = Objects.requireNonNull(queueSettings);
         }
 
         @Nonnull
         @Override
         public String getNextProcessTimeSql() {
-            return "now() + :delay * INTERVAL '1 SECOND'";
+            return "now() + :retryInterval :: interval";
         }
 
-        @Nullable
+        @Nonnull
         @Override
-        public MapSqlParameterSource getPlaceholders() {
-            return placeholders;
+        public Duration getBaseRetryInterval() {
+            return queueSettings.getRetryInterval();
         }
-
 
     }
-
 
 }

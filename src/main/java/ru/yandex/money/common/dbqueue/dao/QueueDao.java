@@ -52,11 +52,11 @@ public class QueueDao {
     public long enqueue(@Nonnull QueueLocation location, @Nonnull EnqueueParams<String> enqueueParams) {
         requireNonNull(location);
         requireNonNull(enqueueParams);
-        return jdbcTemplate.queryForObject(
-                String.format("INSERT INTO %s(queue_name, task, process_time, log_timestamp, actor) VALUES " +
-                                "(:queueName, :task, now() + :executionDelay * INTERVAL '1 SECOND', " +
-                                ":correlationId, :actor) RETURNING id",
-                        location.getTableName()),
+        return jdbcTemplate.queryForObject(String.format(
+                "INSERT INTO %s(queue_name, task, process_time, log_timestamp, actor) VALUES " +
+                        "(:queueName, :task, now() + :executionDelay * INTERVAL '1 SECOND', " +
+                        ":correlationId, :actor) RETURNING id",
+                location.getTableName()),
                 new MapSqlParameterSource()
                         .addValue("queueName", location.getQueueName())
                         .addValue("task", enqueueParams.getPayload())
@@ -75,8 +75,8 @@ public class QueueDao {
      */
     public boolean deleteTask(@Nonnull QueueLocation location, long taskId) {
         requireNonNull(location);
-        int updatedRows = jdbcTemplate.update(String.format("DELETE FROM %s " +
-                        "WHERE queue_name = :queueName AND id = :id", location.getTableName()),
+        int updatedRows = jdbcTemplate.update(String.format(
+                "DELETE FROM %s WHERE queue_name = :queueName AND id = :id", location.getTableName()),
                 new MapSqlParameterSource()
                         .addValue("id", taskId)
                         .addValue("queueName", location.getQueueName()));
@@ -89,17 +89,13 @@ public class QueueDao {
      * @param location       местоположение очереди
      * @param taskId         идентификатор (sequence id) задами
      * @param executionDelay промежуток времени
-     * @param resetAttempts  признак, что следует сбросить попытки выполнения задачи
      * @return true, если задача была переставлена, false, если задача не найдена.
      */
-    public boolean reenqueue(@Nonnull QueueLocation location, long taskId, @Nonnull Duration executionDelay,
-                             boolean resetAttempts) {
+    public boolean reenqueue(@Nonnull QueueLocation location, long taskId, @Nonnull Duration executionDelay) {
         requireNonNull(location);
         requireNonNull(executionDelay);
-        int updatedRows = jdbcTemplate.update(String.format("UPDATE %s " +
-                        "SET" +
-                        "  process_time = now() + :executionDelay * INTERVAL '1 SECOND'" +
-                        (resetAttempts ? ",  attempt = 0 " : "") +
+        int updatedRows = jdbcTemplate.update(String.format(
+                "UPDATE %s SET  process_time = now() + :executionDelay * INTERVAL '1 SECOND',  attempt = 0 " +
                         "WHERE id = :id AND queue_name = :queueName", location.getTableName()),
                 new MapSqlParameterSource()
                         .addValue("id", taskId)

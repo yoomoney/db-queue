@@ -42,7 +42,10 @@ public class PickTaskDaoTest extends BaseDaoTest {
         QueueLocation location = generateUniqueLocation();
         executeInTransaction(() ->
                 queueDao.enqueue(location, new EnqueueParams<String>().withExecutionDelay(Duration.ofHours(1))));
-        TaskRecord taskRecord = pickTaskDao.pickTask(location, new RetryTaskStrategy.ArithmeticBackoff());
+        TaskRecord taskRecord = pickTaskDao.pickTask(location, new RetryTaskStrategy.ArithmeticBackoff(
+                QueueSettings.builder().withNoTaskTimeout(Duration.ZERO)
+                        .withBetweenTaskTimeout(Duration.ZERO).build()
+        ));
         Assert.assertThat(taskRecord, is(nullValue()));
     }
 
@@ -59,7 +62,10 @@ public class PickTaskDaoTest extends BaseDaoTest {
         TaskRecord taskRecord = null;
         while (taskRecord == null) {
             taskRecord = executeInTransaction(
-                    () -> pickTaskDao.pickTask(location, new RetryTaskStrategy.ArithmeticBackoff()));
+                    () -> pickTaskDao.pickTask(location, new RetryTaskStrategy.ArithmeticBackoff(
+                            QueueSettings.builder().withNoTaskTimeout(Duration.ZERO)
+                                    .withBetweenTaskTimeout(Duration.ZERO).build()
+                    )));
             try {
                 Thread.sleep(20);
             } catch (InterruptedException e) {
@@ -80,18 +86,17 @@ public class PickTaskDaoTest extends BaseDaoTest {
     }
 
     @Test
-    public void pick_task_should_delay_with_fixed_interval_strategy() {
+    public void pick_task_should_delay_with_linear_strategy() {
         QueueLocation location = generateUniqueLocation();
         Duration expectedDelay = Duration.ofMinutes(3L);
         ZonedDateTime beforePickingTask;
         ZonedDateTime afterPickingTask;
         TaskRecord taskRecord;
-        RetryTaskStrategy retryTaskStrategy = new RetryTaskStrategy.FixedInterval(
+        RetryTaskStrategy retryTaskStrategy = new RetryTaskStrategy.LinearBackoff(
                 QueueSettings.builder().withNoTaskTimeout(Duration.ZERO)
                         .withBetweenTaskTimeout(Duration.ZERO)
-                        .putSetting(QueueSettings.AdditionalSetting.RETRY_FIXED_INTERVAL_DELAY, "PT3M")
+                        .withRetryInterval(Duration.ofMinutes(3))
                         .build());
-
 
         Long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, new EnqueueParams<>()));
 
@@ -112,7 +117,12 @@ public class PickTaskDaoTest extends BaseDaoTest {
         ZonedDateTime beforePickingTask;
         ZonedDateTime afterPickingTask;
         TaskRecord taskRecord;
-        RetryTaskStrategy retryTaskStrategy = new RetryTaskStrategy.ArithmeticBackoff();
+
+        RetryTaskStrategy retryTaskStrategy = new RetryTaskStrategy.ArithmeticBackoff(
+                QueueSettings.builder().withNoTaskTimeout(Duration.ZERO)
+                        .withBetweenTaskTimeout(Duration.ZERO)
+                        .build()
+        );
 
 
         Long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, new EnqueueParams<>()));
@@ -136,7 +146,10 @@ public class PickTaskDaoTest extends BaseDaoTest {
         ZonedDateTime afterPickingTask;
         TaskRecord taskRecord;
 
-        RetryTaskStrategy retryTaskStrategy = new RetryTaskStrategy.GeometricBackoff();
+        RetryTaskStrategy retryTaskStrategy = new RetryTaskStrategy.GeometricBackoff(
+                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
+                        .withNoTaskTimeout(Duration.ZERO).build()
+        );
 
         Long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, new EnqueueParams<>()));
 
@@ -153,7 +166,8 @@ public class PickTaskDaoTest extends BaseDaoTest {
 
     private TaskRecord resetProcessTimeAndPick(QueueLocation location, RetryTaskStrategy retryTaskStrategy, Long enqueueId) {
         executeInTransaction(() -> {
-            jdbcTemplate.update("update " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " set process_time=? where id=" + enqueueId, new Timestamp(new Date().getTime()));
+            jdbcTemplate.update("update " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME +
+                    " set process_time=? where id=" + enqueueId, new Timestamp(new Date().getTime()));
         });
 
         TaskRecord taskRecord = null;

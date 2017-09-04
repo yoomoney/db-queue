@@ -73,9 +73,9 @@ public class QueueConfigsReaderTest {
                 "q.testQueue.no-task-timeout=PT5S",
                 "q.testQueue.fatal-crash-timeout=PT1H",
                 "q.testQueue.thread-count=3",
-                "q.testQueue.retry-type=fixed-interval",
+                "q.testQueue.retry-type=linear",
+                "q.testQueue.retry-interval=PT30S",
                 "q.testQueue.processing-mode=use-external-executor",
-                "q.testQueue.additional-settings.retry-fixed-interval-delay=PT3H",
                 "q.testQueue.additional-settings.custom=val1"
         ));
         assertThat(configs, equalTo(Collections.singletonList(
@@ -85,10 +85,10 @@ public class QueueConfigsReaderTest {
                                 .withNoTaskTimeout(Duration.ofSeconds(5L))
                                 .withThreadCount(3)
                                 .withFatalCrashTimeout(Duration.ofHours(1))
-                                .withRetryType(TaskRetryType.FIXED_INTERVAL)
+                                .withRetryType(TaskRetryType.LINEAR_BACKOFF)
+                                .withRetryInterval(Duration.ofSeconds(30))
                                 .withProcessingMode(ProcessingMode.USE_EXTERNAL_EXECUTOR)
                                 .withAdditionalSettings(new LinkedHashMap<String, String>() {{
-                                    put(QueueSettings.AdditionalSetting.RETRY_FIXED_INTERVAL_DELAY.getName(), "PT3H");
                                     put("custom", "val1");
                                 }})
                                 .build()))));
@@ -112,6 +112,7 @@ public class QueueConfigsReaderTest {
                 "cannot parse setting: name=between-task-timeout, value=between-task" + System.lineSeparator() +
                 "cannot parse setting: name=fatal-crash-timeout, value=fatal-crash" + System.lineSeparator() +
                 "cannot parse setting: name=no-task-timeout, value=no-task" + System.lineSeparator() +
+                "cannot parse setting: name=retry-interval, value=retry-interval" + System.lineSeparator() +
                 "cannot parse setting: name=thread-count, value=count" + System.lineSeparator() +
                 "unknown processing mode: name=unknown-mode2" + System.lineSeparator() +
                 "unknown retry type: name=unknown-retry-type" + System.lineSeparator() +
@@ -124,6 +125,7 @@ public class QueueConfigsReaderTest {
                 "q.testQueue.fatal-crash-timeout=fatal-crash",
                 "q.testQueue.thread-count=count",
                 "q.testQueue.retry-type=unknown-retry-type",
+                "q.testQueue.retry-interval=retry-interval",
                 "q.testQueue.processing-mode=unknown-mode1",
                 "q.testQueue.processing-mode=unknown-mode2",
                 "q.testQueue.unknown1=unknown-val"
@@ -187,7 +189,7 @@ public class QueueConfigsReaderTest {
                 "q.testQueue3.table=foo",
                 "q.testQueue3.between-task-timeout=PT0S",
                 "q.testQueue3.no-task-timeout=PT0S",
-                "q.testQueue3.retry-type=fixed-interval"
+                "q.testQueue3.retry-type=linear"
         ));
         assertThat(configs.stream().collect(Collectors.toMap(
                 config -> config.getLocation().getQueueName(),
@@ -195,7 +197,7 @@ public class QueueConfigsReaderTest {
                 equalTo(new LinkedHashMap<String, TaskRetryType>() {{
                     put("testQueue1", TaskRetryType.GEOMETRIC_BACKOFF);
                     put("testQueue2", TaskRetryType.ARITHMETIC_BACKOFF);
-                    put("testQueue3", TaskRetryType.FIXED_INTERVAL);
+                    put("testQueue3", TaskRetryType.LINEAR_BACKOFF);
                 }}));
     }
 

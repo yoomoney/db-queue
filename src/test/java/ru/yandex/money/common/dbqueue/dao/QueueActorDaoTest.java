@@ -53,7 +53,7 @@ public class QueueActorDaoTest extends BaseDaoTest {
 
         ZonedDateTime beforeExecution = ZonedDateTime.now();
         Duration executionDelay = Duration.ofHours(1L);
-        Boolean reenqueueResult = executeInTransaction(() -> queueActorDao.reenqueue(location, actor, executionDelay, true));
+        Boolean reenqueueResult = executeInTransaction(() -> queueActorDao.reenqueue(location, actor, executionDelay));
         Assert.assertThat(reenqueueResult, equalTo(true));
         jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
             ZonedDateTime afterExecution = ZonedDateTime.now();
@@ -84,7 +84,7 @@ public class QueueActorDaoTest extends BaseDaoTest {
         });
 
         Boolean reenqueueResult = executeInTransaction(() ->
-                queueActorDao.reenqueue(location, actor, Duration.ofHours(1L), true));
+                queueActorDao.reenqueue(location, actor, Duration.ofHours(1L)));
 
         Assert.assertThat(reenqueueResult, equalTo(true));
         jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
@@ -95,38 +95,10 @@ public class QueueActorDaoTest extends BaseDaoTest {
     }
 
     @Test
-    public void reenqueue_should_not_reset_attempts() throws Exception {
-        QueueLocation location = generateUniqueLocation();
-        String actor = "abc123";
-        Long enqueueId = executeInTransaction(() ->
-                queueDao.enqueue(location, new EnqueueParams<String>().withActor(actor)));
-        executeInTransaction(() -> {
-            jdbcTemplate.update("update " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " set attempt=10 where id=" + enqueueId);
-        });
-
-        jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
-            Assert.assertThat(rs.next(), equalTo(true));
-            Assert.assertThat(rs.getLong("attempt"), equalTo(10L));
-            return new Object();
-        });
-
-        Boolean reenqueueResult = executeInTransaction(() ->
-                queueActorDao.reenqueue(location, actor, Duration.ofHours(1L), false));
-
-        Assert.assertThat(reenqueueResult, equalTo(true));
-        jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
-            Assert.assertThat(rs.next(), equalTo(true));
-            Assert.assertThat(rs.getLong("attempt"), equalTo(10L));
-            return new Object();
-        });
-    }
-
-
-    @Test
     public void reenqueue_should_return_false_when_no_update() throws Exception {
         QueueLocation location = generateUniqueLocation();
         Boolean reenqueueResult = executeInTransaction(() ->
-                queueActorDao.reenqueue(location, "...", Duration.ofHours(1L), true));
+                queueActorDao.reenqueue(location, "...", Duration.ofHours(1L)));
         Assert.assertThat(reenqueueResult, equalTo(false));
     }
 }

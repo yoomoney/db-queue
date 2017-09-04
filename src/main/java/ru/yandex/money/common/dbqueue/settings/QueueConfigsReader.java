@@ -58,8 +58,11 @@ import java.util.stream.IntStream;
  * # values are:
  * # {@link QueueConfigsReader#VALUE_TASK_RETRY_TYPE_ARITHMETIC}
  * # {@link QueueConfigsReader#VALUE_TASK_RETRY_TYPE_GEOMETRIC}
- * # {@link QueueConfigsReader#VALUE_TASK_RETRY_TYPE_FIXED_INTERVAL}
- * queue-prefix.testQueue.retry-type=fixed-interval
+ * # {@link QueueConfigsReader#VALUE_TASK_RETRY_TYPE_LINEAR}
+ * queue-prefix.testQueue.retry-type=linear
+ *
+ * # see {@link QueueConfigsReader#SETTING_RETRY_INTERVAL}
+ * queue-prefix.testQueue.retry-interval=PT30S
  *
  * # see {@link QueueConfigsReader#SETTING_PROCESSING_MODE}
  * # values are:
@@ -69,8 +72,8 @@ import java.util.stream.IntStream;
  * queue-prefix.testQueue.processing-mode=use-external-executor
  *
  * # see {@link QueueConfigsReader#SETTING_ADDITIONAL}
- * # see {@link QueueSettings.AdditionalSetting}
- * queue-prefix.testQueue.additional-settings.retry-fixed-interval-delay=PT30S
+ * # see {@link QueueSettings#getAdditionalSettings()}
+ * queue-prefix.testQueue.additional-settings.custom-val=custom-key
  *
  * # you can define custom settings to use it in enqueueing or processing
  * queue-prefix.testQueue.additional-settings.custom=val1
@@ -97,9 +100,9 @@ public class QueueConfigsReader {
      */
     public static final String VALUE_TASK_RETRY_TYPE_ARITHMETIC = "arithmetic";
     /**
-     * Representation of {@link TaskRetryType#FIXED_INTERVAL}
+     * Representation of {@link TaskRetryType#LINEAR_BACKOFF}
      */
-    public static final String VALUE_TASK_RETRY_TYPE_FIXED_INTERVAL = "fixed-interval";
+    public static final String VALUE_TASK_RETRY_TYPE_LINEAR = "linear";
     /**
      * Representation of {@link ProcessingMode#USE_EXTERNAL_EXECUTOR}
      */
@@ -120,6 +123,10 @@ public class QueueConfigsReader {
      * Representation of {@link QueueSettings#getRetryType()}
      */
     public static final String SETTING_RETRY_TYPE = "retry-type";
+    /**
+     * Representation of {@link QueueSettings#getRetryInterval()}
+     */
+    public static final String SETTING_RETRY_INTERVAL = "retry-interval";
     /**
      * Representation of {@link QueueSettings#getThreadCount()}
      */
@@ -306,6 +313,9 @@ public class QueueConfigsReader {
                 case SETTING_RETRY_TYPE:
                     queueSetting.withRetryType(parseRetryType(value).orElse(null));
                     return;
+                case SETTING_RETRY_INTERVAL:
+                    queueSetting.withRetryInterval(Duration.parse(value));
+                    return;
                 case SETTING_PROCESSING_MODE:
                     queueSetting.withProcessingMode(parseProcessingMode(value).orElse(null));
                     return;
@@ -340,8 +350,8 @@ public class QueueConfigsReader {
                 return Optional.of(TaskRetryType.GEOMETRIC_BACKOFF);
             case VALUE_TASK_RETRY_TYPE_ARITHMETIC:
                 return Optional.of(TaskRetryType.ARITHMETIC_BACKOFF);
-            case VALUE_TASK_RETRY_TYPE_FIXED_INTERVAL:
-                return Optional.of(TaskRetryType.FIXED_INTERVAL);
+            case VALUE_TASK_RETRY_TYPE_LINEAR:
+                return Optional.of(TaskRetryType.LINEAR_BACKOFF);
             default:
                 errorMessages.add(String.format("unknown retry type: name=%s", name));
                 return Optional.empty();

@@ -10,6 +10,18 @@ Given version x.y.z
 * y - Minor version. Backward compatibile with previous version. New features.
 * z - Patch version. Backward compatibile with previous version. Bug fix or small features. 
 
+### [2.0.0]() (04-09-2017)
+
+* Removed TaskExecutionResult#fail(delay)
+* Removed QueueSettings.AdditionalSetting
+* Changed signature QueueDao#reenqueue
+* Changed signature QueueActorDao#reenqueue
+* Replaced AdditionalSetting#RETRY_FIXED_INTERVAL_DELAY with QueueSettings#getRetryInterval
+* Added QueueSettings#getRetryInterval and QueueConfigsReader#SETTING_RETRY_INTERVAL
+* Renamed TaskRetryType#FIXED_INTERVAL to TaskRetryType#LINEAR_BACKOFF
+* Renamed QueueConfigsReader#VALUE_TASK_RETRY_TYPE_FIXED_INTERVAL to QueueConfigsReader#VALUE_TASK_RETRY_TYPE_LINEAR
+* Changed value of QueueConfigsReader#VALUE_TASK_RETRY_TYPE_LINEAR to "linear"
+
 ### [1.0.0]() (01-09-2017)
 
 * Stable version

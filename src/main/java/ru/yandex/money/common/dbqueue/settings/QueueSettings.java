@@ -18,41 +18,10 @@ import java.util.function.Function;
  */
 public final class QueueSettings {
 
-    /**
-     * Дополнительные настройки очереди
-     */
-    public enum AdditionalSetting {
-        /**
-         * Значение фиксированной задержки при стратегии {@link TaskRetryType#FIXED_INTERVAL}
-         */
-        RETRY_FIXED_INTERVAL_DELAY("retry-fixed-interval-delay");
-
-        private final String name;
-
-        /**
-         * Конструктор
-         *
-         * @param name имя настройки
-         */
-        AdditionalSetting(@Nonnull String name) {
-            this.name = Objects.requireNonNull(name);
-        }
-
-        /**
-         * Получить имя настройки
-         *
-         * @return имя настройки
-         */
-        @Nonnull
-        public String getName() {
-            return name;
-        }
-    }
-
     private static final Function<String, Duration> DURATION_CONVERTER =
             Memoizer.memoize(Duration::parse);
 
-    private static final Duration DEFAULT_TIMEOUT_ON_FATAL_CRASH = Duration.ofSeconds(2L);
+    private static final Duration DEFAULT_TIMEOUT_ON_FATAL_CRASH = Duration.ofSeconds(1L);
 
     private final int threadCount;
     @Nonnull
@@ -61,6 +30,8 @@ public final class QueueSettings {
     private final Duration betweenTaskTimeout;
     @Nonnull
     private final Duration fatalCrashTimeout;
+    @Nonnull
+    private final Duration retryInterval;
     @Nonnull
     private final TaskRetryType retryType;
     @Nonnull
@@ -73,6 +44,7 @@ public final class QueueSettings {
                           @Nullable Duration fatalCrashTimeout,
                           @Nullable Integer threadCount,
                           @Nullable TaskRetryType retryType,
+                          @Nullable Duration retryInterval,
                           @Nullable ProcessingMode processingMode,
                           @Nullable Map<String, String> additionalSettings) {
         this.noTaskTimeout = Objects.requireNonNull(noTaskTimeout);
@@ -80,6 +52,7 @@ public final class QueueSettings {
         this.threadCount = threadCount == null ? 1 : threadCount;
         this.fatalCrashTimeout = fatalCrashTimeout == null ? DEFAULT_TIMEOUT_ON_FATAL_CRASH : fatalCrashTimeout;
         this.retryType = retryType == null ? TaskRetryType.GEOMETRIC_BACKOFF : retryType;
+        this.retryInterval = retryInterval == null ? Duration.ofMinutes(1) : retryInterval;
         this.processingMode = processingMode == null ? ProcessingMode.SEPARATE_TRANSACTIONS : processingMode;
         this.additionalSettings = additionalSettings == null ? Collections.emptyMap() :
                 Collections.unmodifiableMap(new HashMap<>(additionalSettings));
@@ -93,6 +66,17 @@ public final class QueueSettings {
     @Nonnull
     public TaskRetryType getRetryType() {
         return retryType;
+    }
+
+    /**
+     * Получить базовый интервал повтора задачи
+     *
+     * @return интервал повтора задачи
+     * @see TaskRetryType
+     */
+    @Nonnull
+    public Duration getRetryInterval() {
+        return retryInterval;
     }
 
     /**
@@ -170,18 +154,6 @@ public final class QueueSettings {
     /**
      * Получить значение настройки в формате Duration
      *
-     * @param setting имя настройки
-     * @return значение настройки
-     */
-    @Nonnull
-    public Duration getDurationProperty(@Nonnull AdditionalSetting setting) {
-        Objects.requireNonNull(setting);
-        return getDurationProperty(setting.getName());
-    }
-
-    /**
-     * Получить значение настройки в формате Duration
-     *
      * @param settingName имя настройки
      * @return значение настройки
      */
@@ -205,9 +177,10 @@ public final class QueueSettings {
                 "threadCount=" + threadCount +
                 ", betweenTaskTimeout=" + betweenTaskTimeout +
                 ", noTaskTimeout=" + noTaskTimeout +
-                ", fatalCrashTimeout=" + fatalCrashTimeout +
-                ", retryType=" + retryType +
                 ", processingMode=" + processingMode +
+                ", retryType=" + retryType +
+                ", retryInterval=" + retryInterval +
+                ", fatalCrashTimeout=" + fatalCrashTimeout +
                 (additionalSettings.isEmpty() ? "" : ", additionalSettings=" + additionalSettings) +
                 '}';
     }
@@ -227,13 +200,14 @@ public final class QueueSettings {
                 Objects.equals(noTaskTimeout, that.noTaskTimeout) &&
                 Objects.equals(betweenTaskTimeout, that.betweenTaskTimeout) &&
                 Objects.equals(fatalCrashTimeout, that.fatalCrashTimeout) &&
+                Objects.equals(retryInterval, that.retryInterval) &&
                 Objects.equals(additionalSettings, that.additionalSettings);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(threadCount, noTaskTimeout, betweenTaskTimeout, fatalCrashTimeout, retryType,
-                processingMode, additionalSettings);
+                processingMode, retryInterval, additionalSettings);
     }
 
     /**
@@ -245,6 +219,7 @@ public final class QueueSettings {
         private Duration fatalCrashTimeout;
         private Integer threadCount;
         private TaskRetryType retryType;
+        private Duration retryInterval;
         private ProcessingMode processingMode;
         private final Map<String, String> additionalSettings = new HashMap<>();
 
@@ -307,6 +282,17 @@ public final class QueueSettings {
         }
 
         /**
+         * Установить базовый интервал повтора задачи
+         *
+         * @param retryInterval интервал повтора
+         * @return билдер настроек очереди
+         */
+        public Builder withRetryInterval(@Nullable Duration retryInterval) {
+            this.retryInterval = retryInterval;
+            return this;
+        }
+
+        /**
          * Режим обработки задач в очереди
          *
          * @param processingMode режим обработки
@@ -342,24 +328,13 @@ public final class QueueSettings {
         }
 
         /**
-         * Установить значение дополнительной настройки
-         *
-         * @param setting имя настройки
-         * @param value   значение
-         * @return билдер настроек очереди
-         */
-        public Builder putSetting(AdditionalSetting setting, String value) {
-            return putSetting(setting.getName(), value);
-        }
-
-        /**
          * Сконструировать объект настроек.
          *
          * @return объект настроек
          */
         public QueueSettings build() {
             return new QueueSettings(noTaskTimeout, betweenTaskTimeout, fatalCrashTimeout, threadCount,
-                    retryType, processingMode, additionalSettings);
+                    retryType, retryInterval, processingMode, additionalSettings);
         }
     }
 
