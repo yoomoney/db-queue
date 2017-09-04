@@ -70,7 +70,7 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 <dependency>
   <groupId>ru.yandex.money.common</groupId>
   <artifactId>db-queue</artifactId>
-  <version>0.0.11</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 
