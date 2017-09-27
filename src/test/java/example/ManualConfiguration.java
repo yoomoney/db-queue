@@ -14,6 +14,7 @@ import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
@@ -33,7 +34,8 @@ public class ManualConfiguration {
         QueueDatabaseInitializer.createTable("example_manual_table");
         QueueDao queueDao = new QueueDao(new QueueShardId("master"), QueueDatabaseInitializer.getJdbcTemplate(),
                 QueueDatabaseInitializer.getTransactionTemplate());
-        QueueConfig config = new QueueConfig(QueueLocation.builder().withTableName("example_manual_table").withQueueName("example_queue").build(),
+        QueueConfig config = new QueueConfig(QueueLocation.builder().withTableName("example_manual_table")
+                .withQueueId(new QueueId("example_queue")).build(),
                 QueueSettings.builder()
                         .withBetweenTaskTimeout(Duration.ofMillis(100))
                         .withNoTaskTimeout(Duration.ofSeconds(1))

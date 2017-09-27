@@ -4,7 +4,7 @@ import ru.yandex.money.common.dbqueue.api.EnqueueParams;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.impl.SingleShardRouter;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
-import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueShardRouter;
 
 import java.util.Collection;
@@ -26,12 +26,12 @@ public class SpringSingleShardRouter<T> extends SpringQueueShardRouter<T> {
     /**
      * Конструктор
      *
-     * @param queueLocation местоположение очереди
+     * @param queueId идентификатор очереди
      * @param payloadClass  класс данных задачи
      * @param queueDao      шард на котором размещены задачи
      */
-    public SpringSingleShardRouter(QueueLocation queueLocation, Class<T> payloadClass, QueueDao queueDao) {
-        super(queueLocation, payloadClass);
+    public SpringSingleShardRouter(QueueId queueId, Class<T> payloadClass, QueueDao queueDao) {
+        super(queueId, payloadClass);
         this.queueDao = queueDao;
     }
 

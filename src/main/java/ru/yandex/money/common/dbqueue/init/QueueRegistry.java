@@ -11,19 +11,16 @@ import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
-import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -40,10 +37,10 @@ public class QueueRegistry {
 
     private static final Logger log = LoggerFactory.getLogger(QueueRegistry.class);
 
-    private final Map<QueueLocation, QueueConsumer> consumers = new LinkedHashMap<>();
-    private final Map<QueueLocation, TaskLifecycleListener> taskListeners = new LinkedHashMap<>();
-    private final Map<QueueLocation, ThreadLifecycleListener> threadListeners = new LinkedHashMap<>();
-    private final Map<QueueLocation, QueueExternalExecutor> externalExecutors = new LinkedHashMap<>();
+    private final Map<QueueId, QueueConsumer> consumers = new LinkedHashMap<>();
+    private final Map<QueueId, TaskLifecycleListener> taskListeners = new LinkedHashMap<>();
+    private final Map<QueueId, ThreadLifecycleListener> threadListeners = new LinkedHashMap<>();
+    private final Map<QueueId, QueueExternalExecutor> externalExecutors = new LinkedHashMap<>();
     private final Map<QueueShardId, QueueDao> shards = new LinkedHashMap<>();
     private final Collection<String> errorMessages = new ArrayList<>();
 
@@ -61,23 +58,23 @@ public class QueueRegistry {
         Objects.requireNonNull(queueConsumer);
         Objects.requireNonNull(queueProducer);
         ensureConstructionInProgress();
-        QueueLocation location = queueConsumer.getQueueConfig().getLocation();
+        QueueId queueId = queueConsumer.getQueueConfig().getLocation().getQueueId();
 
         if (!Objects.equals(queueConsumer.getQueueConfig(), queueProducer.getQueueConfig())) {
-            errorMessages.add(String.format("queue config must be the same: location=%s, producer=%s, " +
-                    "consumer=%s", location, queueProducer.getQueueConfig(), queueConsumer.getQueueConfig()));
+            errorMessages.add(String.format("queue config must be the same: queueId=%s, producer=%s, " +
+                    "consumer=%s", queueId, queueProducer.getQueueConfig(), queueConsumer.getQueueConfig()));
         }
 
         if (!Objects.equals(queueProducer.getPayloadTransformer(), queueConsumer.getPayloadTransformer())) {
-            errorMessages.add(String.format("payload transformers must be the same: location=%s", location));
+            errorMessages.add(String.format("payload transformers must be the same: queueId=%s", queueId));
         }
 
         if (!Objects.equals(queueProducer.getShardRouter(), queueConsumer.getShardRouter())) {
-            errorMessages.add(String.format("shard routers must be the same: location=%s", location));
+            errorMessages.add(String.format("shard routers must be the same: queueId=%s", queueId));
         }
 
-        if (consumers.putIfAbsent(location, queueConsumer) != null) {
-            errorMessages.add("duplicate queue: location=" + location);
+        if (consumers.putIfAbsent(queueId, queueConsumer) != null) {
+            errorMessages.add("duplicate queue: queueId=" + queueId);
         }
     }
 
@@ -98,48 +95,48 @@ public class QueueRegistry {
     /**
      * Зарегистрировать слушатель задач заданной очереди
      *
-     * @param location              идентификатор очереди
+     * @param queueId              идентификатор очереди
      * @param taskLifecycleListener слушатель задач
      */
     public synchronized void registerTaskLifecycleListener(
-            @Nonnull QueueLocation location, @Nonnull TaskLifecycleListener taskLifecycleListener) {
-        Objects.requireNonNull(location);
+            @Nonnull QueueId queueId, @Nonnull TaskLifecycleListener taskLifecycleListener) {
+        Objects.requireNonNull(queueId);
         Objects.requireNonNull(taskLifecycleListener);
         ensureConstructionInProgress();
-        if (taskListeners.putIfAbsent(location, taskLifecycleListener) != null) {
-            errorMessages.add("duplicate task lifecycle listener: location=" + location);
+        if (taskListeners.putIfAbsent(queueId, taskLifecycleListener) != null) {
+            errorMessages.add("duplicate task lifecycle listener: queueId=" + queueId);
         }
     }
 
     /**
      * Зарегистрировать слушатель потоков заданной очереди
      *
-     * @param location                идентификатор очереди
+     * @param queueId                идентификатор очереди
      * @param threadLifecycleListener слушатель потоков
      */
     public synchronized void registerThreadLifecycleListener(
-            @Nonnull QueueLocation location, @Nonnull ThreadLifecycleListener threadLifecycleListener) {
-        Objects.requireNonNull(location);
+            @Nonnull QueueId queueId, @Nonnull ThreadLifecycleListener threadLifecycleListener) {
+        Objects.requireNonNull(queueId);
         Objects.requireNonNull(threadLifecycleListener);
         ensureConstructionInProgress();
-        if (threadListeners.putIfAbsent(location, threadLifecycleListener) != null) {
-            errorMessages.add("duplicate thread lifecycle listener: location=" + location);
+        if (threadListeners.putIfAbsent(queueId, threadLifecycleListener) != null) {
+            errorMessages.add("duplicate thread lifecycle listener: queueId=" + queueId);
         }
     }
 
     /**
      * Зарегистрировать исполнителя задач для заданной очереди
      *
-     * @param location         идентификатор очереди
+     * @param queueId         идентификатор очереди
      * @param externalExecutor исполнитель задач очереди
      */
     public synchronized void registerExternalExecutor(
-            @Nonnull QueueLocation location, @Nonnull QueueExternalExecutor externalExecutor) {
-        Objects.requireNonNull(location);
+            @Nonnull QueueId queueId, @Nonnull QueueExternalExecutor externalExecutor) {
+        Objects.requireNonNull(queueId);
         Objects.requireNonNull(externalExecutor);
         ensureConstructionInProgress();
-        if (externalExecutors.putIfAbsent(location, externalExecutor) != null) {
-            errorMessages.add("duplicate external executor: location=" + location);
+        if (externalExecutors.putIfAbsent(queueId, externalExecutor) != null) {
+            errorMessages.add("duplicate external executor: queueId=" + queueId);
         }
     }
 
@@ -152,35 +149,18 @@ public class QueueRegistry {
         validateTaskListeners();
         validateThreadListeners();
         validateExternalExecutors();
-        validateQueueNames();
         if (!errorMessages.isEmpty()) {
             throw new IllegalArgumentException("Invalid queue configuration:" + System.lineSeparator() +
                     errorMessages.stream().collect(Collectors.joining(System.lineSeparator())));
         }
         consumers.values().forEach(consumer -> log.info("registered consumer: config={}", consumer.getQueueConfig()));
         shards.values().forEach(shard -> log.info("registered shard: shardId={}", shard.getShardId()));
-        externalExecutors.keySet().forEach(location -> log.info("registered external executor: location={}", location));
-        taskListeners.keySet().forEach(location ->
-                log.info("registered task lifecycle listener: location={}", location));
-        threadListeners.keySet().forEach(location ->
-                log.info("registered thread lifecycle listener: location={}", location));
+        externalExecutors.keySet().forEach(queueId -> log.info("registered external executor: queueId={}", queueId));
+        taskListeners.keySet().forEach(queueId ->
+                log.info("registered task lifecycle listener: queueId={}", queueId));
+        threadListeners.keySet().forEach(queueId ->
+                log.info("registered thread lifecycle listener: queueId={}", queueId));
 
-    }
-
-    private void validateQueueNames() {
-        Map<String, Set<String>> queueTablesMap = new HashMap<>();
-        for (QueueLocation queueLocation : consumers.keySet()) {
-            if (!queueTablesMap.containsKey(queueLocation.getQueueName())) {
-                queueTablesMap.put(queueLocation.getQueueName(), new LinkedHashSet<>());
-            }
-            queueTablesMap.get(queueLocation.getQueueName()).add(queueLocation.getTableName());
-        }
-        queueTablesMap.forEach((queueName, tableNames) -> {
-            if (tableNames.size() > 1) {
-                errorMessages.add(String.format("queue name must be unique across all tables: " +
-                        "queueName=%s, tables=%s", queueName, tableNames));
-            }
-        });
     }
 
     private void validateShards() {
@@ -201,43 +181,43 @@ public class QueueRegistry {
                 .filter(inUse -> !inUse.getValue()).map(Map.Entry::getKey).collect(Collectors.toList());
         if (!unusedShards.isEmpty()) {
             errorMessages.add("shards is not used: shardIds=" +
-                    unusedShards.stream().map(QueueShardId::getId).collect(Collectors.joining(",")));
+                    unusedShards.stream().map(QueueShardId::asString).collect(Collectors.joining(",")));
         }
     }
 
     private void validateTaskListeners() {
-        for (QueueLocation location : taskListeners.keySet()) {
-            if (!consumers.containsKey(location)) {
-                errorMessages.add("no matching queue for task listener: location=" + location);
+        for (QueueId queueId : taskListeners.keySet()) {
+            if (!consumers.containsKey(queueId)) {
+                errorMessages.add("no matching queue for task listener: queueId=" + queueId);
             }
         }
     }
 
     private void validateThreadListeners() {
-        for (QueueLocation location : threadListeners.keySet()) {
-            if (!consumers.containsKey(location)) {
-                errorMessages.add("no matching queue for thread listener: location=" + location);
+        for (QueueId queueId : threadListeners.keySet()) {
+            if (!consumers.containsKey(queueId)) {
+                errorMessages.add("no matching queue for thread listener: queueId=" + queueId);
             }
         }
     }
 
     private void validateExternalExecutors() {
-        for (QueueLocation location : externalExecutors.keySet()) {
-            if (!consumers.containsKey(location)) {
-                errorMessages.add("no matching queue for external executor: location=" + location);
+        for (QueueId queueId : externalExecutors.keySet()) {
+            if (!consumers.containsKey(queueId)) {
+                errorMessages.add("no matching queue for external executor: queueId=" + queueId);
             }
         }
-        for (Map.Entry<QueueLocation, QueueConsumer> entry : consumers.entrySet()) {
+        for (Map.Entry<QueueId, QueueConsumer> entry : consumers.entrySet()) {
             boolean isUseExternalExecutor = entry.getValue().getQueueConfig()
                     .getSettings().getProcessingMode() == ProcessingMode.USE_EXTERNAL_EXECUTOR;
             boolean hasExternalExecutor = externalExecutors.containsKey(entry.getKey());
             if (isUseExternalExecutor && !hasExternalExecutor) {
                 errorMessages.add("external executor missing " +
-                        "for processing mode " + ProcessingMode.USE_EXTERNAL_EXECUTOR + ": location=" + entry.getKey());
+                        "for processing mode " + ProcessingMode.USE_EXTERNAL_EXECUTOR + ": queueId=" + entry.getKey());
             }
             if (!isUseExternalExecutor && hasExternalExecutor) {
                 errorMessages.add("external executor must be specified only " +
-                        "for processing mode " + ProcessingMode.USE_EXTERNAL_EXECUTOR + ": location=" + entry.getKey());
+                        "for processing mode " + ProcessingMode.USE_EXTERNAL_EXECUTOR + ": queueId=" + entry.getKey());
             }
         }
 
@@ -257,10 +237,10 @@ public class QueueRegistry {
     /**
      * Получить зарегестрированные слушатели задач
      *
-     * @return Map: key - местоположение очереди, value - слушатель задач данной очереди
+     * @return Map: key - идентификатор очереди, value - слушатель задач данной очереди
      */
     @Nonnull
-    Map<QueueLocation, TaskLifecycleListener> getTaskListeners() {
+    Map<QueueId, TaskLifecycleListener> getTaskListeners() {
         ensureConstructionFinished();
         return Collections.unmodifiableMap(taskListeners);
     }
@@ -268,10 +248,10 @@ public class QueueRegistry {
     /**
      * Получить зарегестрированные слушатели потоков
      *
-     * @return Map: key - местоположение очереди, value - слушатель потоков данной очереди
+     * @return Map: key - идентификатор очереди, value - слушатель потоков данной очереди
      */
     @Nonnull
-    Map<QueueLocation, ThreadLifecycleListener> getThreadListeners() {
+    Map<QueueId, ThreadLifecycleListener> getThreadListeners() {
         ensureConstructionFinished();
         return Collections.unmodifiableMap(threadListeners);
     }
@@ -279,10 +259,10 @@ public class QueueRegistry {
     /**
      * Получить исполнителей задач
      *
-     * @return Map: key - местоположение очереди, value - исполнитель данной очереди
+     * @return Map: key - идентификатор очереди, value - исполнитель данной очереди
      */
     @Nonnull
-    Map<QueueLocation, QueueExternalExecutor> getExternalExecutors() {
+    Map<QueueId, QueueExternalExecutor> getExternalExecutors() {
         ensureConstructionFinished();
         return Collections.unmodifiableMap(externalExecutors);
     }

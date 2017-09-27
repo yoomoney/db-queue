@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.spring;
 
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
-import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 
 import javax.annotation.Nonnull;
 
@@ -13,21 +13,21 @@ import javax.annotation.Nonnull;
  */
 public abstract class SpringTaskLifecycleListener implements TaskLifecycleListener, SpringQueueIdentifiable {
 
-    private final QueueLocation queueLocation;
+    private final QueueId queueId;
 
     /**
      * Конструктор
      *
-     * @param queueLocation местоположение очереди
+     * @param queueId идентификатор очереди
      */
-    protected SpringTaskLifecycleListener(QueueLocation queueLocation) {
-        this.queueLocation = queueLocation;
+    protected SpringTaskLifecycleListener(QueueId queueId) {
+        this.queueId = queueId;
     }
 
     @Nonnull
     @Override
-    public QueueLocation getQueueLocation() {
-        return queueLocation;
+    public QueueId getQueueId() {
+        return queueId;
     }
 
 }

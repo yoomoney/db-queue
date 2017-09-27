@@ -27,13 +27,13 @@ public class SpringLifecycleTest {
                 QueueDatabaseInitializer.getTransactionTemplate());
         QueueActorDao actorDao = new QueueActorDao(QueueDatabaseInitializer.getJdbcTemplate(),
                 QueueDatabaseInitializer.getTransactionTemplate());
-        queueDao.enqueue(SpringLifecycleConfiguration.TEST_QUEUE,
+        queueDao.enqueue(SpringLifecycleConfiguration.TEST_QUEUE_LOCATION,
                 EnqueueParams.create("first").withActor("1"));
 
         AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext();
         applicationContext.register(SpringLifecycleConfiguration.class);
         applicationContext.refresh();
-        while (actorDao.isTasksExist(SpringLifecycleConfiguration.TEST_QUEUE, "1")) {
+        while (actorDao.isTasksExist(SpringLifecycleConfiguration.TEST_QUEUE_LOCATION, "1")) {
             Thread.sleep(20);
         }
         Thread.sleep(20 * 2);

@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.spring;
 
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
-import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -16,25 +16,25 @@ import java.util.Objects;
 public abstract class SpringTaskPayloadTransformer<T> implements TaskPayloadTransformer<T>, SpringQueueIdentifiable {
 
     @Nonnull
-    private final QueueLocation queueLocation;
+    private final QueueId queueId;
     @Nonnull
     private final Class<T> payloadClass;
 
     /**
      * Конструктор преобразователя данных задачи
      *
-     * @param queueLocation местоположение очереди
+     * @param queueId идентификатор очереди
      * @param payloadClass  класс данных задачи
      */
-    protected SpringTaskPayloadTransformer(@Nonnull QueueLocation queueLocation, @Nonnull Class<T> payloadClass) {
-        this.queueLocation = Objects.requireNonNull(queueLocation);
+    protected SpringTaskPayloadTransformer(@Nonnull QueueId queueId, @Nonnull Class<T> payloadClass) {
+        this.queueId = Objects.requireNonNull(queueId);
         this.payloadClass = Objects.requireNonNull(payloadClass);
     }
 
     @Nonnull
     @Override
-    public QueueLocation getQueueLocation() {
-        return queueLocation;
+    public QueueId getQueueId() {
+        return queueId;
     }
 
     /**

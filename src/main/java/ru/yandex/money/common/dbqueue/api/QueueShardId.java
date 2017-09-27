@@ -26,7 +26,7 @@ public final class QueueShardId {
      *
      * @return идентификатор шарда
      */
-    public String getId() {
+    public String asString() {
         return id;
     }
 
@@ -49,6 +49,6 @@ public final class QueueShardId {
 
     @Override
     public String toString() {
-        return '{' + "id=" + id + '}';
+        return id;
     }
 }

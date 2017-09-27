@@ -6,6 +6,7 @@ import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.internal.QueueProcessingStatus;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 
@@ -29,7 +30,8 @@ import static org.mockito.Mockito.when;
 public class QueueRunnerInExternalExecutorTest {
 
     private static final QueueLocation testLocation1 =
-            QueueLocation.builder().withTableName("queue_test").withQueueName("test_queue1").build();
+            QueueLocation.builder().withTableName("queue_test")
+                    .withQueueId(new QueueId("test_queue1")).build();
 
     @Test
     public void should_wait_notasktimeout_when_no_task_found() throws Exception {

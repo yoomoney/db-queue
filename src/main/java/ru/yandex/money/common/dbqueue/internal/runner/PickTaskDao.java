@@ -55,7 +55,7 @@ class PickTaskDao {
         requireNonNull(retryTaskStrategy);
         requireNonNull(location);
         MapSqlParameterSource placeholders = new MapSqlParameterSource()
-                .addValue("queueName", location.getQueueName())
+                .addValue("queueName", location.getQueueId().asString())
                 .addValue("retryInterval", retryTaskStrategy.getBaseRetryInterval().toString());
         return jdbcTemplate.execute(String.format(
                 "WITH cte AS (" +

@@ -1,6 +1,6 @@
 package ru.yandex.money.common.dbqueue.spring;
 
-import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 
 import javax.annotation.Nonnull;
 
@@ -14,11 +14,11 @@ import javax.annotation.Nonnull;
 interface SpringQueueIdentifiable {
 
     /**
-     * Получить местоположение очереди
+     * Получить идентификатор очереди
      *
-     * @return местоположение очереди
+     * @return идентификатор очереди
      */
     @Nonnull
-    QueueLocation getQueueLocation();
+    QueueId getQueueId();
 
 }

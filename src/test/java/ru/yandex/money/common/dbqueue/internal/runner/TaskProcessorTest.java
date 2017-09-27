@@ -12,6 +12,7 @@ import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.stub.FakeMillisTimeProvider;
@@ -37,7 +38,8 @@ public class TaskProcessorTest {
 
     @Test
     public void should_succesfully_process_task() throws Exception {
-        QueueLocation location = QueueLocation.builder().withTableName("testLocation").withQueueName("testQueue").build();
+        QueueLocation location = QueueLocation.builder().withTableName("testLocation")
+                .withQueueId(new QueueId("testQueue")).build();
         TaskRecord taskRecord = new TaskRecord(1L, "testPayload", 3L,
                 ofSeconds(1), ofSeconds(5), "testcorid", "testactor");
         QueueShardId shardId = new QueueShardId("s1");
@@ -72,7 +74,8 @@ public class TaskProcessorTest {
 
     @Test
     public void should_handle_exception_when_queue_failed() throws Exception {
-        QueueLocation location = QueueLocation.builder().withTableName("testLocation").withQueueName("testQueue").build();
+        QueueLocation location = QueueLocation.builder().withTableName("testLocation")
+                .withQueueId(new QueueId("testQueue")).build();
         TaskRecord taskRecord = new TaskRecord(1L, "testPayload", 3L,
                 ofSeconds(1), ofSeconds(5), "testcorid", "testactor");
         QueueShardId shardId = new QueueShardId("s1");
@@ -104,7 +107,8 @@ public class TaskProcessorTest {
 
     @Test
     public void should_handle_exception_when_result_handler_failed() throws Exception {
-        QueueLocation location = QueueLocation.builder().withTableName("testLocation").withQueueName("testQueue").build();
+        QueueLocation location = QueueLocation.builder().withTableName("testLocation")
+                .withQueueId(new QueueId("testQueue")).build();
         TaskRecord taskRecord = new TaskRecord(1L, "testPayload", 3L,
                 ofSeconds(1), ofSeconds(5), "testcorid", "testactor");
         QueueShardId shardId = new QueueShardId("s1");

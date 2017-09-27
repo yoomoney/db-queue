@@ -6,6 +6,7 @@ import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.stub.FakeMillisTimeProvider;
@@ -31,7 +32,8 @@ public class TaskPickerTest {
 
     @Test
     public void should_successfully_pick_task() throws Exception {
-        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
+        QueueLocation location = QueueLocation.builder().withTableName("testTable")
+                .withQueueId(new QueueId("testQueue")).build();
         QueueShardId shardId = new QueueShardId("s1");
 
         RetryTaskStrategy retryTaskStrategy = mock(RetryTaskStrategy.class);
@@ -61,7 +63,8 @@ public class TaskPickerTest {
 
     @Test
     public void should_not_notify_when_task_not_picked() throws Exception {
-        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
+        QueueLocation location = QueueLocation.builder().withTableName("testTable")
+                .withQueueId(new QueueId("testQueue")).build();
 
         RetryTaskStrategy retryTaskStrategy = mock(RetryTaskStrategy.class);
         FakeTransactionTemplate transactionTemplate = spy(new FakeTransactionTemplate());
@@ -87,7 +90,8 @@ public class TaskPickerTest {
 
     @Test(expected = IllegalStateException.class)
     public void should_not_catch_exception() throws Exception {
-        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
+        QueueLocation location = QueueLocation.builder().withTableName("testTable")
+                .withQueueId(new QueueId("testQueue")).build();
 
         RetryTaskStrategy retryTaskStrategy = mock(RetryTaskStrategy.class);
         FakeTransactionTemplate transactionTemplate = spy(new FakeTransactionTemplate());

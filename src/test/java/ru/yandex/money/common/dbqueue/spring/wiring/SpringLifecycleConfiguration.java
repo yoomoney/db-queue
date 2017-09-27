@@ -19,6 +19,7 @@ import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueCollector;
@@ -47,13 +48,15 @@ import java.util.List;
 public class SpringLifecycleConfiguration {
     static final List<String> EVENTS = new ArrayList<>();
 
-    static final QueueLocation TEST_QUEUE =
-            QueueLocation.builder().withTableName("lifecycle_table").withQueueName("lifecycle_queue").build();
+    private static final QueueId TEST_QUEUE_ID = new QueueId("lifecycle_queue");
+    static final QueueLocation TEST_QUEUE_LOCATION =
+            QueueLocation.builder().withTableName("lifecycle_table")
+                    .withQueueId(TEST_QUEUE_ID).build();
 
     @Bean
     SpringQueueConfigContainer springQueueConfigContainer() {
         return new SpringQueueConfigContainer(Collections.singletonList(new QueueConfig(
-                TEST_QUEUE,
+                TEST_QUEUE_LOCATION,
                 QueueSettings.builder()
                         .withBetweenTaskTimeout(Duration.ofMillis(20L))
                         .withNoTaskTimeout(Duration.ofMinutes(5L))
@@ -97,12 +100,12 @@ public class SpringLifecycleConfiguration {
 
     @Bean
     QueueProducer<String> exampleProducer() {
-        return new SpringTransactionalProducer<>(TEST_QUEUE, String.class);
+        return new SpringTransactionalProducer<>(TEST_QUEUE_ID, String.class);
     }
 
     @Bean
     QueueConsumer<String> exampleQueue() {
-        return new SpringQueueConsumer<String>(TEST_QUEUE, String.class) {
+        return new SpringQueueConsumer<String>(TEST_QUEUE_ID, String.class) {
             @Nonnull
             @Override
             public TaskExecutionResult execute(@Nonnull Task<String> task) {
@@ -114,7 +117,7 @@ public class SpringLifecycleConfiguration {
 
     @Bean
     TaskPayloadTransformer<String> exampleTransformer() {
-        return new SpringNoopPayloadTransformer(TEST_QUEUE) {
+        return new SpringNoopPayloadTransformer(TEST_QUEUE_ID) {
             @Nullable
             @Override
             public String toObject(@Nullable String payload) {
@@ -133,7 +136,7 @@ public class SpringLifecycleConfiguration {
 
     @Bean
     QueueShardRouter<String> exampleShardRouter(QueueDao queueDao) {
-        return new SpringSingleShardRouter<String>(TEST_QUEUE, String.class, queueDao) {
+        return new SpringSingleShardRouter<String>(TEST_QUEUE_ID, String.class, queueDao) {
             @Override
             public QueueShardId resolveShardId(EnqueueParams<String> enqueueParams) {
                 QueueShardId queueShardId = super.resolveShardId(enqueueParams);
@@ -160,15 +163,15 @@ public class SpringLifecycleConfiguration {
 
             @Nonnull
             @Override
-            public QueueLocation getQueueLocation() {
-                return TEST_QUEUE;
+            public QueueId getQueueId() {
+                return TEST_QUEUE_ID;
             }
         };
     }
 
     @Bean
     TaskLifecycleListener exampleListener() {
-        return new SpringTaskLifecycleListener(TEST_QUEUE) {
+        return new SpringTaskLifecycleListener(TEST_QUEUE_ID) {
 
             private final TaskLifecycleListener delegate = new CustomTaskLifecycleListener("example");
 

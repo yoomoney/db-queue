@@ -183,12 +183,12 @@ public class QueueConfigsReader {
                     overrideExistingSettings(rawSettings, readRawSettings(path)));
         }
 
-        Map<String, Map<String, String>> queues = splitRawSettingsByQueueName(rawSettings);
+        Map<String, Map<String, String>> queues = splitRawSettingsByQueueId(rawSettings);
 
         List<QueueLocation> queueLocations = new ArrayList<>();
         List<QueueSettings.Builder> queueSettings = new ArrayList<>();
-        queues.forEach((queueName, settings) -> {
-            queueLocations.add(buildQueueLocation(queueName, settings));
+        queues.forEach((queueId, settings) -> {
+            queueLocations.add(buildQueueLocation(queueId, settings));
             queueSettings.add(buildQueueSettings(settings)
                     .withAdditionalSettings(buildAdditionalSettings(settings)));
         });
@@ -212,7 +212,7 @@ public class QueueConfigsReader {
         }
     }
 
-    private Map<String, Map<String, String>> splitRawSettingsByQueueName(Map<String, String> rawSettings) {
+    private Map<String, Map<String, String>> splitRawSettingsByQueueId(Map<String, String> rawSettings) {
         Map<String, Map<String, String>> result = new HashMap<>();
         Pattern settingPattern = Pattern.compile(settingsPrefix + "\\.([A-Za-z0-9\\-_]+)\\.(.*)");
         rawSettings.forEach((setting, value) -> {
@@ -220,10 +220,10 @@ public class QueueConfigsReader {
             if (!matcher.matches()) {
                 errorMessages.add(String.format("unrecognized setting name: setting=%s", setting));
             } else {
-                String queueName = matcher.group(1);
+                String queueId = matcher.group(1);
                 String settingName = matcher.group(2);
-                result.computeIfAbsent(queueName, s -> new HashMap<>());
-                result.get(queueName).put(settingName, value);
+                result.computeIfAbsent(queueId, s -> new HashMap<>());
+                result.get(queueId).put(settingName, value);
             }
         });
         validateSettings(result);
@@ -233,12 +233,12 @@ public class QueueConfigsReader {
 
 
     @Nonnull
-    private QueueLocation buildQueueLocation(String queueName, Map<String, String> settings) {
+    private QueueLocation buildQueueLocation(String queueId, Map<String, String> settings) {
         return Objects.requireNonNull(settings.entrySet().stream()
                 .filter(property -> SETTING_TABLE.equals(property.getKey()))
                 .findFirst()
                 .map(property -> QueueLocation.builder().withTableName(property.getValue())
-                        .withQueueName(queueName).build())
+                        .withQueueId(new QueueId(queueId)).build())
                 .orElse(null));
     }
 
@@ -289,10 +289,10 @@ public class QueueConfigsReader {
     private void validateSettings(Map<String, Map<String, String>> queuesSettings) {
         List<String> requiredSettings = Arrays.asList(SETTING_NO_TASK_TIMEOUT, SETTING_BETWEEN_TASK_TIMEOUT,
                 SETTING_TABLE);
-        queuesSettings.forEach((queueName, settings) -> requiredSettings.stream()
+        queuesSettings.forEach((queueId, settings) -> requiredSettings.stream()
                 .filter(requiredSetting -> !settings.containsKey(requiredSetting))
                 .forEach(requiredSetting -> errorMessages.add(
-                        String.format("%s setting is required: queueName=%s", requiredSetting, queueName))));
+                        String.format("%s setting is required: queueId=%s", requiredSetting, queueId))));
     }
 
     private void tryFillSetting(QueueSettings.Builder queueSetting, String name, String value) {

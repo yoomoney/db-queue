@@ -6,6 +6,7 @@ import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
 import ru.yandex.money.common.dbqueue.internal.runner.QueueRunner;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.stub.FakeMillisTimeProvider;
@@ -30,7 +31,8 @@ public class QueueLoopTest {
         ThreadLifecycleListener listener = mock(ThreadLifecycleListener.class);
         QueueShardId shardId = new QueueShardId("s1");
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
-        QueueLocation location = QueueLocation.builder().withTableName("table").withQueueName("queue").build();
+        QueueLocation location = QueueLocation.builder().withTableName("table")
+                .withQueueId(new QueueId("queue")).build();
         Duration waitDuration = Duration.ofMillis(100L);
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
                 QueueSettings.builder()
@@ -58,7 +60,8 @@ public class QueueLoopTest {
         ThreadLifecycleListener listener = mock(ThreadLifecycleListener.class);
         QueueShardId shardId = new QueueShardId("s1");
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
-        QueueLocation location = QueueLocation.builder().withTableName("table").withQueueName("queue").build();
+        QueueLocation location = QueueLocation.builder().withTableName("table")
+                .withQueueId(new QueueId("queue")).build();
         Duration fatalCrashTimeout = Duration.ofDays(1L);
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
                 QueueSettings.builder()

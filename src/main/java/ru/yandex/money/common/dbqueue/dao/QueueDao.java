@@ -58,7 +58,7 @@ public class QueueDao {
                         ":correlationId, :actor) RETURNING id",
                 location.getTableName()),
                 new MapSqlParameterSource()
-                        .addValue("queueName", location.getQueueName())
+                        .addValue("queueName", location.getQueueId().asString())
                         .addValue("task", enqueueParams.getPayload())
                         .addValue("executionDelay", enqueueParams.getExecutionDelay().getSeconds())
                         .addValue("correlationId", enqueueParams.getCorrelationId())
@@ -79,7 +79,7 @@ public class QueueDao {
                 "DELETE FROM %s WHERE queue_name = :queueName AND id = :id", location.getTableName()),
                 new MapSqlParameterSource()
                         .addValue("id", taskId)
-                        .addValue("queueName", location.getQueueName()));
+                        .addValue("queueName", location.getQueueId().asString()));
         return updatedRows != 0;
     }
 
@@ -99,7 +99,7 @@ public class QueueDao {
                         "WHERE id = :id AND queue_name = :queueName", location.getTableName()),
                 new MapSqlParameterSource()
                         .addValue("id", taskId)
-                        .addValue("queueName", location.getQueueName())
+                        .addValue("queueName", location.getQueueId().asString())
                         .addValue("executionDelay", executionDelay.getSeconds()));
         return updatedRows != 0;
     }

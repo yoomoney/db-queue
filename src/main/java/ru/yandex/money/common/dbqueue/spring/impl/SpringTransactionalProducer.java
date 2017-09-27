@@ -2,7 +2,7 @@ package ru.yandex.money.common.dbqueue.spring.impl;
 
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
 import ru.yandex.money.common.dbqueue.api.impl.TransactionalProducer;
-import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueProducer;
 
 import javax.annotation.Nonnull;
@@ -21,11 +21,11 @@ public class SpringTransactionalProducer<T> extends SpringQueueProducer<T> {
     /**
      * Конструктор постановщика задач
      *
-     * @param queueLocation местоположение очереди
+     * @param queueId идентификатор очереди
      * @param payloadClass  класс данных задачи
      */
-    public SpringTransactionalProducer(@Nonnull QueueLocation queueLocation, @Nonnull Class<T> payloadClass) {
-        super(queueLocation, payloadClass);
+    public SpringTransactionalProducer(@Nonnull QueueId queueId, @Nonnull Class<T> payloadClass) {
+        super(queueId, payloadClass);
     }
 
     @Override

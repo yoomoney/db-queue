@@ -4,6 +4,7 @@ import org.junit.Test;
 import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.stub.FakeTransactionTemplate;
 
@@ -25,7 +26,8 @@ public class TaskResultHandlerTest {
     public void should_reenqueue_task() throws Exception {
         long taskId = 5L;
         Duration reenqueueDelay = Duration.ofMillis(500L);
-        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
+        QueueLocation location = QueueLocation.builder().withTableName("testTable")
+                .withQueueId(new QueueId("testQueue")).build();
 
         TaskRecord taskRecord = new TaskRecord(taskId, null, 0, ZonedDateTime.now(),
                 ZonedDateTime.now(), null, null);
@@ -42,7 +44,8 @@ public class TaskResultHandlerTest {
     @Test
     public void should_finish_task() throws Exception {
         long taskId = 5L;
-        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
+        QueueLocation location = QueueLocation.builder().withTableName("testTable")
+                .withQueueId(new QueueId("testQueue")).build();
 
         TaskRecord taskRecord = new TaskRecord(taskId, null, 0, ZonedDateTime.now(),
                 ZonedDateTime.now(), null, null);
@@ -58,7 +61,8 @@ public class TaskResultHandlerTest {
 
     @Test
     public void should_fail_task_when_no_delay() throws Exception {
-        QueueLocation location = QueueLocation.builder().withTableName("testTable").withQueueName("testQueue").build();
+        QueueLocation location = QueueLocation.builder().withTableName("testTable")
+                .withQueueId(new QueueId("testQueue")).build();
 
         TaskRecord taskRecord = new TaskRecord(0, null, 0, ZonedDateTime.now(),
                 ZonedDateTime.now(), null, null);

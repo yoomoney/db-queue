@@ -10,6 +10,11 @@ Given version x.y.z
 * y - Minor version. Backward compatibile with previous version. New features.
 * z - Patch version. Backward compatibile with previous version. Bug fix or small features. 
 
+### [3.0.0]() (27-09-2017)
+
+* QueueLocation replaced with QueueId wherever possible in order to identify particular queue.
+
+
 ### [2.0.0]() (04-09-2017)
 
 * Removed TaskExecutionResult#fail(delay)

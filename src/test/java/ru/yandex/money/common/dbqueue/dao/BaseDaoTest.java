@@ -6,6 +6,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
@@ -33,7 +34,7 @@ public class BaseDaoTest {
 
     protected static QueueLocation generateUniqueLocation() {
         return QueueLocation.builder().withTableName(QueueDatabaseInitializer.DEFAULT_TABLE_NAME)
-                .withQueueName("test-queue-" + queueCounter.incrementAndGet()).build();
+                .withQueueId(new QueueId("test-queue-" + queueCounter.incrementAndGet())).build();
     }
 
     protected static String generateUniqueTable() {

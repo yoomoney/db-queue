@@ -12,6 +12,8 @@ import ru.yandex.money.common.dbqueue.internal.LoopPolicy;
 import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
 import ru.yandex.money.common.dbqueue.internal.QueueLoop;
 import ru.yandex.money.common.dbqueue.internal.runner.QueueRunner;
+import ru.yandex.money.common.dbqueue.settings.QueueConfig;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
@@ -126,12 +128,12 @@ public class QueueExecutionPool {
 
     private synchronized void initQueue(@Nonnull QueueConsumer queueConsumer) {
         Objects.requireNonNull(queueConsumer);
+        QueueId queueId = queueConsumer.getQueueConfig().getLocation().getQueueId();
         TaskLifecycleListener taskListener = queueRegistry.getTaskListeners()
-                .getOrDefault(queueConsumer.getQueueConfig().getLocation(), defaultTaskLifecycleListener);
+                .getOrDefault(queueId, defaultTaskLifecycleListener);
         ThreadLifecycleListener threadListener = queueRegistry.getThreadListeners()
-                .getOrDefault(queueConsumer.getQueueConfig().getLocation(), defaultThreadLifecycleListener);
-        Executor externalExecutor = queueRegistry.getExternalExecutors().get(
-                queueConsumer.getQueueConfig().getLocation());
+                .getOrDefault(queueId, defaultThreadLifecycleListener);
+        Executor externalExecutor = queueRegistry.getExternalExecutors().get(queueId);
         Collection<QueueShardId> shards = queueConsumer.getShardRouter().getShardsId();
         for (QueueShardId shardId : shards) {
             QueueDao queueDao = queueRegistry.getShards().get(shardId);
@@ -153,16 +155,17 @@ public class QueueExecutionPool {
         started = true;
         log.info("starting queues");
         poolInstances.forEach(poolInstance -> {
-            ThreadFactory threadFactory = threadFactoryProvider.apply(
-                    poolInstance.queueConsumer.getQueueConfig().getLocation(),
+            QueueConfig queueConfig = poolInstance.queueConsumer.getQueueConfig();
+
+            ThreadFactory threadFactory = threadFactoryProvider.apply(queueConfig.getLocation(),
                     poolInstance.queueDao.getShardId());
-            int threadCount = poolInstance.queueConsumer.getQueueConfig().getSettings().getThreadCount();
+            int threadCount = queueConfig.getSettings().getThreadCount();
             if (threadCount <= 0) {
-                log.info("queue is turned off: location={}", poolInstance.queueConsumer.getQueueConfig().getLocation());
+                log.info("queue is turned off: queueId={}",
+                        queueConfig.getLocation().getQueueId());
             } else {
                 ExecutorService shardThreadPool = queueThreadPoolFactory.apply(threadCount, threadFactory);
                 poolInstance.queueShardThreadPool = shardThreadPool;
-
                 QueueLoop queueLoop = queueLoopFactory.apply(poolInstance.threadListener);
                 QueueRunner queueRunner = queueRunnerFactory.apply(poolInstance);
                 shardThreadPool.execute(() -> queueLoop.start(poolInstance.queueDao.getShardId(),
@@ -189,12 +192,14 @@ public class QueueExecutionPool {
         // который не сможет их принять.
         poolInstances.parallelStream().forEach(poolInstance -> {
             if (poolInstance.queueShardThreadPool != null) {
-                log.info("shutting down queue: location={}", poolInstance.queueConsumer.getQueueConfig().getLocation());
+                log.info("shutting down queue: queueId={}, shardId={}",
+                        poolInstance.queueConsumer.getQueueConfig().getLocation(),
+                        poolInstance.queueDao.getShardId());
                 shutdownThreadPool(poolInstance);
             }
         });
         queueRegistry.getExternalExecutors().entrySet().parallelStream().forEach(entry -> {
-            log.info("shutting down external executor: location={}", entry.getKey());
+            log.info("shutting down external executor: queueId={}", entry.getKey().asString());
             entry.getValue().shutdownQueueExecutor();
         });
         log.info("all queue threads stopped");
@@ -203,15 +208,15 @@ public class QueueExecutionPool {
     private static void shutdownThreadPool(@Nonnull ShardPoolInstance poolInstance) {
         Objects.requireNonNull(poolInstance);
         Objects.requireNonNull(poolInstance.queueShardThreadPool);
-        log.info("waiting queue threads to respond to interrupt request: location={}, shardId={}, timeout={}",
-                poolInstance.queueConsumer.getQueueConfig().getLocation(),
+        log.info("waiting queue threads to respond to interrupt request: queueId={}, shardId={}, timeout={}",
+                poolInstance.queueConsumer.getQueueConfig().getLocation().getQueueId(),
                 poolInstance.queueDao.getShardId(), TERMINATION_TIMEOUT);
         try {
             poolInstance.queueShardThreadPool.shutdownNow();
             if (!poolInstance.queueShardThreadPool.awaitTermination(
                     TERMINATION_TIMEOUT.getSeconds(), TimeUnit.SECONDS)) {
-                log.error("several queue threads are still not terminated: location={}, shardId={}",
-                        poolInstance.queueConsumer.getQueueConfig().getLocation(),
+                log.error("several queue threads are still not terminated: queueId={}, shardId={}",
+                        poolInstance.queueConsumer.getQueueConfig().getLocation().getQueueId(),
                         poolInstance.queueDao.getShardId());
             }
         } catch (InterruptedException ignored) {

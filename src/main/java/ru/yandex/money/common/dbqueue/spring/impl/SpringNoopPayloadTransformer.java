@@ -1,6 +1,6 @@
 package ru.yandex.money.common.dbqueue.spring.impl;
 
-import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.spring.SpringTaskPayloadTransformer;
 
 import javax.annotation.Nonnull;
@@ -17,10 +17,10 @@ public class SpringNoopPayloadTransformer extends SpringTaskPayloadTransformer<S
     /**
      * Конструктор преобразователя данных задачи
      *
-     * @param queueLocation местоположение очереди
+     * @param queueId идентификатор очереди
      */
-    public SpringNoopPayloadTransformer(@Nonnull QueueLocation queueLocation) {
-        super(queueLocation, String.class);
+    public SpringNoopPayloadTransformer(@Nonnull QueueId queueId) {
+        super(queueId, String.class);
     }
 
     @Nullable

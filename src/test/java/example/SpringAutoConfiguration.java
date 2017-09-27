@@ -17,6 +17,7 @@ import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueCollector;
@@ -40,8 +41,7 @@ import java.util.Collections;
 @ContextConfiguration(classes = {SpringAutoConfiguration.Base.class, SpringAutoConfiguration.Client.class})
 public class SpringAutoConfiguration {
 
-    private static final QueueLocation EXAMPLE_QUEUE =
-            QueueLocation.builder().withTableName("example_spring_table").withQueueName("example_queue").build();
+    private static final QueueId EXAMPLE_QUEUE = new QueueId("example_queue");
 
     @Test
     public void spring_auto_config() throws Exception {
@@ -83,7 +83,8 @@ public class SpringAutoConfiguration {
         @Bean
         SpringQueueConfigContainer springQueueConfigContainer() {
             return new SpringQueueConfigContainer(Collections.singletonList(new QueueConfig(
-                    EXAMPLE_QUEUE,
+                    QueueLocation.builder().withTableName("example_spring_table")
+                            .withQueueId(EXAMPLE_QUEUE).build(),
                     QueueSettings.builder()
                             .withBetweenTaskTimeout(Duration.ofMillis(100L))
                             .withNoTaskTimeout(Duration.ofSeconds(1L))

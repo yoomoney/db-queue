@@ -13,6 +13,7 @@ import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.internal.QueueLoop;
 import ru.yandex.money.common.dbqueue.internal.runner.QueueRunner;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 
@@ -84,8 +85,9 @@ public class QueueExecutionPoolTest {
 
     @Test
     public void should_not_start_queue_when_thread_count_is_zero() throws Exception {
+        QueueId queueId1 = new QueueId("testQueue1");
         QueueLocation location1 = QueueLocation.builder().withTableName("testTable")
-                .withQueueName("testQueue1").build();
+                .withQueueId(queueId1).build();
         QueueShardId shardId1 = new QueueShardId("s1");
         QueueDao queueDao1 = mock(QueueDao.class);
         when(queueDao1.getShardId()).thenReturn(shardId1);
@@ -108,9 +110,9 @@ public class QueueExecutionPoolTest {
         when(queueConsumer.getShardRouter()).thenReturn(shardRouter);
         when(queueRegistry.getConsumers()).thenReturn(Collections.singletonList(queueConsumer));
         when(queueRegistry.getTaskListeners()).thenReturn(
-                Collections.singletonMap(location1, queueShardListener));
+                Collections.singletonMap(queueId1, queueShardListener));
         when(queueRegistry.getExternalExecutors()).thenReturn(
-                Collections.singletonMap(location1, externalExecutor));
+                Collections.singletonMap(queueId1, externalExecutor));
         when(queueRegistry.getShards()).thenReturn(new HashMap<QueueShardId, QueueDao>() {{
             put(shardId1, queueDao1);
         }});
@@ -155,8 +157,9 @@ public class QueueExecutionPoolTest {
 
     @Test
     public void should_start_and_stop_queue_on_two_shards_and_three_threads() throws Exception {
+        QueueId queueId1 = new QueueId("testQueue1");
         QueueLocation location1 = QueueLocation.builder().withTableName("testTable")
-                .withQueueName("testQueue1").build();
+                .withQueueId(queueId1).build();
         QueueShardId shardId1 = new QueueShardId("s1");
         QueueShardId shardId2 = new QueueShardId("s2");
         QueueDao queueDao1 = mock(QueueDao.class);
@@ -184,11 +187,11 @@ public class QueueExecutionPoolTest {
         when(queueConsumer.getShardRouter()).thenReturn(shardRouter);
         when(queueRegistry.getConsumers()).thenReturn(Collections.singletonList(queueConsumer));
         when(queueRegistry.getTaskListeners()).thenReturn(
-                Collections.singletonMap(location1, taskListener));
+                Collections.singletonMap(queueId1, taskListener));
         when(queueRegistry.getThreadListeners()).thenReturn(
-                Collections.singletonMap(location1, threadListener));
+                Collections.singletonMap(queueId1, threadListener));
         when(queueRegistry.getExternalExecutors()).thenReturn(
-                Collections.singletonMap(location1, externalExecutor));
+                Collections.singletonMap(queueId1, externalExecutor));
         when(queueRegistry.getShards()).thenReturn(new HashMap<QueueShardId, QueueDao>() {{
             put(shardId1, queueDao1);
             put(shardId2, queueDao2);

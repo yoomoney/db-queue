@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.spring;
 
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
-import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class SpringQueueConfigContainer {
 
     @Nonnull
-    private final Map<QueueLocation, QueueConfig> queueConfigs;
+    private final Map<QueueId, QueueConfig> queueConfigs;
 
     /**
      * Конструктор
@@ -31,28 +31,28 @@ public class SpringQueueConfigContainer {
     public SpringQueueConfigContainer(@Nonnull Collection<QueueConfig> queueConfigs) {
         Objects.requireNonNull(queueConfigs);
         this.queueConfigs = queueConfigs.stream()
-                .collect(Collectors.toMap(QueueConfig::getLocation, Function.identity()));
+                .collect(Collectors.toMap(conf -> conf.getLocation().getQueueId(), Function.identity()));
     }
 
     /**
      * Получить конфигурацию требуемой очереди
      *
-     * @param queueLocation местоположение очереди
+     * @param queueId идентификатор очереди
      * @return настройки очереди
      */
     @Nonnull
-    public Optional<QueueConfig> getQueueConfig(@Nonnull QueueLocation queueLocation) {
-        Objects.requireNonNull(queueLocation);
-        return Optional.ofNullable(queueConfigs.get(queueLocation));
+    public Optional<QueueConfig> getQueueConfig(@Nonnull QueueId queueId) {
+        Objects.requireNonNull(queueId);
+        return Optional.ofNullable(queueConfigs.get(queueId));
     }
 
     /**
      * Получить конфигурацию всех очередей
      *
-     * @return Map: key - местоположение очереди, value - конфигурация данной очереди
+     * @return Map: key - идентификатор очереди, value - конфигурация данной очереди
      */
     @Nonnull
-    public Map<QueueLocation, QueueConfig> getQueueConfigs() {
+    public Map<QueueId, QueueConfig> getQueueConfigs() {
         return Collections.unmodifiableMap(queueConfigs);
     }
 

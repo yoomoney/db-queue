@@ -5,7 +5,7 @@ import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
-import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -24,7 +24,7 @@ import java.util.Objects;
 public abstract class SpringQueueConsumer<T> implements QueueConsumer<T>, SpringQueueIdentifiable {
 
     @Nonnull
-    private final QueueLocation queueLocation;
+    private final QueueId queueId;
     @Nonnull
     private final Class<T> payloadClass;
     private TaskPayloadTransformer<T> payloadTransformer;
@@ -34,18 +34,18 @@ public abstract class SpringQueueConsumer<T> implements QueueConsumer<T>, Spring
     /**
      * Конструктор очереди
      *
-     * @param queueLocation местоположение очереди
+     * @param queueId идентификатор очереди
      * @param payloadClass  класс данных задачи
      */
-    protected SpringQueueConsumer(@Nonnull QueueLocation queueLocation, @Nonnull Class<T> payloadClass) {
-        this.queueLocation = Objects.requireNonNull(queueLocation);
+    protected SpringQueueConsumer(@Nonnull QueueId queueId, @Nonnull Class<T> payloadClass) {
+        this.queueId = Objects.requireNonNull(queueId);
         this.payloadClass = Objects.requireNonNull(payloadClass);
     }
 
     @Nonnull
     @Override
-    public QueueLocation getQueueLocation() {
-        return queueLocation;
+    public QueueId getQueueId() {
+        return queueId;
     }
 
     @Nonnull

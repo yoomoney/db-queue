@@ -33,9 +33,9 @@ public class QueueConfigsReaderTest {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    private QueueConfig createConfig(String tableName, String queueName, QueueSettings settings) {
+    private QueueConfig createConfig(String tableName, String queueId, QueueSettings settings) {
         return new QueueConfig(QueueLocation.builder().withTableName(tableName)
-                .withQueueName(queueName).build(), settings);
+                .withQueueId(new QueueId(queueId)).build(), settings);
     }
 
     @Test
@@ -155,9 +155,9 @@ public class QueueConfigsReaderTest {
     public void should_validate_for_required_settings() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Cannot parse queue settings:" + System.lineSeparator() +
-                "between-task-timeout setting is required: queueName=testQueue" + System.lineSeparator() +
-                "no-task-timeout setting is required: queueName=testQueue" + System.lineSeparator() +
-                "table setting is required: queueName=testQueue"));
+                "between-task-timeout setting is required: queueId=testQueue" + System.lineSeparator() +
+                "no-task-timeout setting is required: queueId=testQueue" + System.lineSeparator() +
+                "table setting is required: queueId=testQueue"));
 
         QueueConfigsReader queueConfigsReader = new QueueConfigsReader("q");
         queueConfigsReader.parse(fileSystem.write("q.testQueue.threads=1"));
@@ -192,7 +192,7 @@ public class QueueConfigsReaderTest {
                 "q.testQueue3.retry-type=linear"
         ));
         assertThat(configs.stream().collect(Collectors.toMap(
-                config -> config.getLocation().getQueueName(),
+                config -> config.getLocation().getQueueId().asString(),
                 config -> config.getSettings().getRetryType())),
                 equalTo(new LinkedHashMap<String, TaskRetryType>() {{
                     put("testQueue1", TaskRetryType.GEOMETRIC_BACKOFF);
@@ -221,7 +221,7 @@ public class QueueConfigsReaderTest {
                 "q.testQueue3.processing-mode=use-external-executor"
         ));
         assertThat(configs.stream().collect(Collectors.toMap(
-                config -> config.getLocation().getQueueName(),
+                config -> config.getLocation().getQueueId().asString(),
                 config -> config.getSettings().getProcessingMode())),
                 equalTo(new LinkedHashMap<String, ProcessingMode>() {{
                     put("testQueue1", ProcessingMode.SEPARATE_TRANSACTIONS);

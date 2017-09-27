@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
-import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -24,26 +24,26 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SpringQueueCollector implements BeanPostProcessor, ApplicationListener<ContextRefreshedEvent> {
-    private final Map<QueueLocation, SpringQueueProducer> producers = new LinkedHashMap<>();
-    private final Map<QueueLocation, SpringQueueConsumer> queueConsumers = new LinkedHashMap<>();
-    private final Map<QueueLocation, SpringTaskLifecycleListener> taskListeners = new LinkedHashMap<>();
-    private final Map<QueueLocation, SpringThreadLifecycleListener> threadListeners = new LinkedHashMap<>();
-    private final Map<QueueLocation, SpringQueueExternalExecutor> executors = new LinkedHashMap<>();
-    private final Map<QueueLocation, SpringTaskPayloadTransformer> transformers = new LinkedHashMap<>();
-    private final Map<QueueLocation, SpringQueueShardRouter> shardRouters = new LinkedHashMap<>();
+    private final Map<QueueId, SpringQueueProducer> producers = new LinkedHashMap<>();
+    private final Map<QueueId, SpringQueueConsumer> queueConsumers = new LinkedHashMap<>();
+    private final Map<QueueId, SpringTaskLifecycleListener> taskListeners = new LinkedHashMap<>();
+    private final Map<QueueId, SpringThreadLifecycleListener> threadListeners = new LinkedHashMap<>();
+    private final Map<QueueId, SpringQueueExternalExecutor> executors = new LinkedHashMap<>();
+    private final Map<QueueId, SpringTaskPayloadTransformer> transformers = new LinkedHashMap<>();
+    private final Map<QueueId, SpringQueueShardRouter> shardRouters = new LinkedHashMap<>();
     private final Map<QueueShardId, QueueDao> shards = new LinkedHashMap<>();
     private final Collection<String> errorMessages = new ArrayList<>();
 
     private <T extends SpringQueueIdentifiable> void collectBeanIfPossible(
-            Class<T> clazz, Object bean, Map<QueueLocation, T> storage, String beanName) {
+            Class<T> clazz, Object bean, Map<QueueId, T> storage, String beanName) {
         if (clazz.isAssignableFrom(bean.getClass())) {
             T obj = clazz.cast(bean);
-            if (storage.containsKey(obj.getQueueLocation())) {
-                errorMessages.add(String.format("duplicate bean: name=%s, class=%s, location=%s",
-                        beanName, clazz.getSimpleName(), obj.getQueueLocation()));
+            if (storage.containsKey(obj.getQueueId())) {
+                errorMessages.add(String.format("duplicate bean: name=%s, class=%s, queueId=%s",
+                        beanName, clazz.getSimpleName(), obj.getQueueId()));
                 return;
             }
-            storage.put(obj.getQueueLocation(), obj);
+            storage.put(obj.getQueueId(), obj);
         }
     }
 
@@ -88,70 +88,70 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
     /**
      * Получить постановщики задач, найденные в spring контексте.
      *
-     * @return Map: key - местоположение очереди, value - постановщик задач данной очереди
+     * @return Map: key - идентификатор очереди, value - постановщик задач данной очереди
      */
     @Nonnull
-    Map<QueueLocation, SpringQueueProducer> getProducers() {
+    Map<QueueId, SpringQueueProducer> getProducers() {
         return Collections.unmodifiableMap(producers);
     }
 
     /**
      * Получить обработчиков очереди, найденные в spring контексте.
      *
-     * @return Map: key - местоположение очереди, value - обработчик очереди
+     * @return Map: key - идентификатор очереди, value - обработчик очереди
      */
     @Nonnull
-    Map<QueueLocation, SpringQueueConsumer> getConsumers() {
+    Map<QueueId, SpringQueueConsumer> getConsumers() {
         return Collections.unmodifiableMap(queueConsumers);
     }
 
     /**
      * Получить слушателей задач в данной очереди, найденных в spring контексте.
      *
-     * @return Map: key - местоположение очереди, value - слушатель задач данной очереди
+     * @return Map: key - идентификатор очереди, value - слушатель задач данной очереди
      */
     @Nonnull
-    Map<QueueLocation, SpringTaskLifecycleListener> getTaskListeners() {
+    Map<QueueId, SpringTaskLifecycleListener> getTaskListeners() {
         return Collections.unmodifiableMap(taskListeners);
     }
 
     /**
      * Получить слушателей потоков в данной очереди, найденных в spring контексте.
      *
-     * @return Map: key - местоположение очереди, value - слушатель потоков данной очереди
+     * @return Map: key - идентификатор очереди, value - слушатель потоков данной очереди
      */
     @Nonnull
-    Map<QueueLocation, SpringThreadLifecycleListener> getThreadListeners() {
+    Map<QueueId, SpringThreadLifecycleListener> getThreadListeners() {
         return Collections.unmodifiableMap(threadListeners);
     }
 
     /**
      * Получить исполнителей задач, найденных в spring контексте.
      *
-     * @return Map: key - местоположение очереди, value - исполнитель задач данной очереди
+     * @return Map: key - идентификатор очереди, value - исполнитель задач данной очереди
      */
     @Nonnull
-    Map<QueueLocation, SpringQueueExternalExecutor> getExecutors() {
+    Map<QueueId, SpringQueueExternalExecutor> getExecutors() {
         return Collections.unmodifiableMap(executors);
     }
 
     /**
      * Получить преобразователи данных задачи, найденные в spring контексте.
      *
-     * @return Map: key - местоположение очереди, value - преобразователь данных задачи для данной очереди
+     * @return Map: key - идентификатор очереди, value - преобразователь данных задачи для данной очереди
      */
     @Nonnull
-    Map<QueueLocation, SpringTaskPayloadTransformer> getTransformers() {
+    Map<QueueId, SpringTaskPayloadTransformer> getTransformers() {
         return Collections.unmodifiableMap(transformers);
     }
 
     /**
      * Получить правила шардирования, найденные в spring контексте.
      *
-     * @return Map: key - местоположение очереди, value - правила шардирования задач в очереди
+     * @return Map: key - идентификатор очереди, value - правила шардирования задач в очереди
      */
     @Nonnull
-    Map<QueueLocation, SpringQueueShardRouter> getShardRouters() {
+    Map<QueueId, SpringQueueShardRouter> getShardRouters() {
         return Collections.unmodifiableMap(shardRouters);
     }
 

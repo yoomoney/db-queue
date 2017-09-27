@@ -1,9 +1,10 @@
 package ru.yandex.money.common.dbqueue.spring;
 
 import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
-import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * Слушатель хода выполнения потока очереди, используемый в spring конфигурации
@@ -13,21 +14,21 @@ import javax.annotation.Nonnull;
  */
 public abstract class SpringThreadLifecycleListener implements ThreadLifecycleListener, SpringQueueIdentifiable {
 
-    private final QueueLocation queueLocation;
+    private final QueueId queueId;
 
     /**
      * Конструктор
      *
-     * @param queueLocation местоположение очереди
+     * @param queueId идентификатор очереди
      */
-    protected SpringThreadLifecycleListener(QueueLocation queueLocation) {
-        this.queueLocation = queueLocation;
+    protected SpringThreadLifecycleListener(@Nonnull QueueId queueId) {
+        this.queueId = Objects.requireNonNull(queueId);
     }
 
     @Nonnull
     @Override
-    public QueueLocation getQueueLocation() {
-        return queueLocation;
+    public QueueId getQueueId() {
+        return queueId;
     }
 
 }

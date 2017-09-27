@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.spring;
 
 import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
-import ru.yandex.money.common.dbqueue.settings.QueueLocation;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 
 import javax.annotation.Nonnull;
 
@@ -14,24 +14,24 @@ import javax.annotation.Nonnull;
  */
 public abstract class SpringQueueShardRouter<T> implements QueueShardRouter<T>, SpringQueueIdentifiable {
 
-    private final QueueLocation queueLocation;
+    private final QueueId queueId;
     private final Class<T> payloadClass;
 
     /**
      * Конструктор
      *
-     * @param queueLocation местоположение очереди
+     * @param queueId идентификатор очереди
      * @param payloadClass  класс данных задачи
      */
-    protected SpringQueueShardRouter(QueueLocation queueLocation, Class<T> payloadClass) {
-        this.queueLocation = queueLocation;
+    protected SpringQueueShardRouter(QueueId queueId, Class<T> payloadClass) {
+        this.queueId = queueId;
         this.payloadClass = payloadClass;
     }
 
     @Nonnull
     @Override
-    public QueueLocation getQueueLocation() {
-        return queueLocation;
+    public QueueId getQueueId() {
+        return queueId;
     }
 
     /**

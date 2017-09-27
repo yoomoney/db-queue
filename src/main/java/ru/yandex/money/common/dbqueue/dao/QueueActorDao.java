@@ -63,7 +63,7 @@ public class QueueActorDao {
                 String.format("DELETE FROM %s WHERE actor = :actor " +
                         "AND queue_name = :queue_name", location.getTableName()),
                 new MapSqlParameterSource()
-                        .addValue("queue_name", location.getQueueName())
+                        .addValue("queue_name", location.getQueueId().asString())
                         .addValue("actor", actor));
         return updatedRows != 0;
     }
@@ -82,7 +82,7 @@ public class QueueActorDao {
                 String.format("SELECT 1 FROM %s WHERE actor = :actor " +
                         "AND queue_name = :queueName LIMIT 1", location.getTableName()),
                 new MapSqlParameterSource()
-                        .addValue("queueName", location.getQueueName())
+                        .addValue("queueName", location.getQueueId().asString())
                         .addValue("actor", actor),
                 ResultSet::next
         );
@@ -105,7 +105,7 @@ public class QueueActorDao {
                         "WHERE actor = :actor AND queue_name = :queueName", location.getTableName()),
                 new MapSqlParameterSource()
                         .addValue("actor", actor)
-                        .addValue("queueName", location.getQueueName())
+                        .addValue("queueName", location.getQueueId().asString())
                         .addValue("executionDelay", executionDelay.getSeconds()));
         return updatedRows != 0;
     }

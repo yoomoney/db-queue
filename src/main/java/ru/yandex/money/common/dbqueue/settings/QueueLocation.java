@@ -13,10 +13,10 @@ public final class QueueLocation {
     @Nonnull
     private final String tableName;
     @Nonnull
-    private final String queueName;
+    private final QueueId queueId;
 
-    private QueueLocation(@Nonnull String queueName, @Nonnull String tableName) {
-        this.queueName = Objects.requireNonNull(queueName);
+    private QueueLocation(@Nonnull QueueId queueId, @Nonnull String tableName) {
+        this.queueId = Objects.requireNonNull(queueId);
         this.tableName = Objects.requireNonNull(tableName);
     }
 
@@ -31,19 +31,19 @@ public final class QueueLocation {
     }
 
     /**
-     * Получить название очереди
+     * Получить идентификатор очереди
      *
-     * @return название очереди
+     * @return идентификатор очереди
      */
     @Nonnull
-    public String getQueueName() {
-        return queueName;
+    public QueueId getQueueId() {
+        return queueId;
     }
 
     @Override
     public String toString() {
         return '{' +
-                "queue=" + queueName +
+                "id=" + queueId +
                 ",table=" + tableName +
                 '}';
     }
@@ -58,12 +58,12 @@ public final class QueueLocation {
         }
         QueueLocation that = (QueueLocation) obj;
         return Objects.equals(tableName, that.tableName) &&
-                Objects.equals(queueName, that.queueName);
+                Objects.equals(queueId, that.queueId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableName, queueName);
+        return Objects.hash(tableName, queueId);
     }
 
     /**
@@ -80,7 +80,7 @@ public final class QueueLocation {
      */
     public static class Builder {
         private String tableName;
-        private String queueName;
+        private QueueId queueId;
 
         private Builder(){
         }
@@ -97,13 +97,13 @@ public final class QueueLocation {
         }
 
         /**
-         * Задать имя очереди
+         * Задать идентификатор очереди
          *
-         * @param queueName имя очереди
+         * @param queueId идентификатор очереди
          * @return билдер
          */
-        public Builder withQueueName(@Nonnull String queueName) {
-            this.queueName = Objects.requireNonNull(queueName);
+        public Builder withQueueId(@Nonnull QueueId queueId) {
+            this.queueId = Objects.requireNonNull(queueId);
             return this;
         }
 
@@ -113,7 +113,7 @@ public final class QueueLocation {
          * @return местоположение очереди
          */
         public QueueLocation build() {
-            return new QueueLocation(queueName, tableName);
+            return new QueueLocation(queueId, tableName);
         }
     }
 }
