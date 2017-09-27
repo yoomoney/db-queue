@@ -82,7 +82,7 @@ public class SpringLifecycleConfiguration {
     @Bean
     SpringQueueInitializer springQueueInitializer() {
         return new SpringQueueInitializer(springQueueConfigContainer(), springQueueCollector(),
-                queueExecutionPool());
+                queueExecutionPool(), Collections.singletonList(queueDao()));
     }
 
     @Bean

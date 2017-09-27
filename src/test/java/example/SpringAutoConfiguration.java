@@ -105,10 +105,11 @@ public class SpringAutoConfiguration {
 
         @Bean
         SpringQueueInitializer springQueueInitializer(SpringQueueConfigContainer springQueueConfigContainer,
-                                                      SpringQueueCollector springQueueCollector) {
+                                                      SpringQueueCollector springQueueCollector,
+                                                      QueueDao queueDao) {
             return new SpringQueueInitializer(springQueueConfigContainer, springQueueCollector,
                     new QueueExecutionPool(new QueueRegistry(), new EmptyTaskListener(),
-                            new EmptyListener()));
+                            new EmptyListener()), Collections.singletonList(queueDao));
         }
     }
 

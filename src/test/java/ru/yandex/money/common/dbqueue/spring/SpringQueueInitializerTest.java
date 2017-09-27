@@ -21,6 +21,7 @@ import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalProducer;
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,7 +55,7 @@ public class SpringQueueInitializerTest {
         when(executionPool.getQueueRegistry()).thenReturn(new QueueRegistry());
         SpringQueueInitializer initializer = new SpringQueueInitializer(
                 new SpringQueueConfigContainer(Collections.emptyList()),
-                mock(SpringQueueCollector.class), executionPool);
+                mock(SpringQueueCollector.class), executionPool, Collections.emptyList());
         initializer.onApplicationEvent(null);
     }
 
@@ -64,7 +65,7 @@ public class SpringQueueInitializerTest {
         when(executionPool.getQueueRegistry()).thenReturn(new QueueRegistry());
         SpringQueueInitializer initializer = new SpringQueueInitializer(
                 new SpringQueueConfigContainer(Collections.emptyList()),
-                mock(SpringQueueCollector.class), executionPool);
+                mock(SpringQueueCollector.class), executionPool, Collections.emptyList());
         initializer.onApplicationEvent(null);
         verify(executionPool).init();
         verify(executionPool).start();
@@ -88,7 +89,7 @@ public class SpringQueueInitializerTest {
 
         SpringQueueInitializer initializer = new SpringQueueInitializer(
                 new SpringQueueConfigContainer(Collections.emptyList()),
-                queueCollector, executionPool);
+                queueCollector, executionPool, Collections.emptyList());
         initializer.onApplicationEvent(null);
     }
 
@@ -116,7 +117,7 @@ public class SpringQueueInitializerTest {
                 new SpringQueueConfigContainer(Collections.singletonList(new QueueConfig(testLocation1,
                         QueueSettings.builder().withNoTaskTimeout(Duration.ofMillis(1L))
                                 .withBetweenTaskTimeout(Duration.ofMillis(1L)).build()))),
-                queueCollector, executionPool);
+                queueCollector, executionPool, Collections.emptyList());
         initializer.onApplicationEvent(null);
     }
 
@@ -143,7 +144,7 @@ public class SpringQueueInitializerTest {
                 new SpringQueueConfigContainer(Collections.singletonList(new QueueConfig(testLocation1,
                         QueueSettings.builder().withNoTaskTimeout(Duration.ofMillis(1L))
                                 .withBetweenTaskTimeout(Duration.ofMillis(1L)).build()))),
-                queueCollector, executionPool);
+                queueCollector, executionPool, Collections.emptyList());
         initializer.onApplicationEvent(null);
     }
 
@@ -191,10 +192,6 @@ public class SpringQueueInitializerTest {
         when(queueCollector.getExecutors()).thenReturn(singletonMap(queueId1, externalExecutor));
         when(queueCollector.getTaskListeners()).thenReturn(singletonMap(queueId1, taskLifecycleListener));
         when(queueCollector.getThreadListeners()).thenReturn(singletonMap(queueId1, threadLifecycleListener));
-        when(queueCollector.getShards()).thenReturn(new HashMap<QueueShardId, QueueDao>() {{
-            put(shardId, queueDao);
-            put(unusedShardId, unusedQueueDao);
-        }});
 
         QueueRegistry queueRegistry = mock(QueueRegistry.class);
 
@@ -202,7 +199,7 @@ public class SpringQueueInitializerTest {
         when(executionPool.getQueueRegistry()).thenReturn(queueRegistry);
         SpringQueueInitializer initializer = new SpringQueueInitializer(
                 new SpringQueueConfigContainer(Collections.singletonList(queueConfig)),
-                queueCollector, executionPool);
+                queueCollector, executionPool, Arrays.asList(queueDao, unusedQueueDao));
         initializer.onApplicationEvent(null);
 
         verify(queueRegistry).registerShard(queueDao);

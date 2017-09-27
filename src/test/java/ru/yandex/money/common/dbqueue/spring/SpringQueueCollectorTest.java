@@ -46,7 +46,6 @@ public class SpringQueueCollectorTest {
                     "duplicate bean: name=testConsumer2, class=SpringQueueConsumer, queueId=test_queue" + System.lineSeparator() +
                     "duplicate bean: name=testTransformer2, class=SpringTaskPayloadTransformer, queueId=test_queue" + System.lineSeparator() +
                     "duplicate bean: name=testShardRouter2, class=SpringQueueShardRouter, queueId=test_queue" + System.lineSeparator() +
-                    "duplicate bean: name=queueDao2, class=QueueDao, shardId=1" + System.lineSeparator() +
                     "duplicate bean: name=springTaskLifecycleListener2, class=SpringTaskLifecycleListener, queueId=test_queue" + System.lineSeparator() +
                     "duplicate bean: name=springThreadLifecycleListener2, class=SpringThreadLifecycleListener, queueId=test_queue" + System.lineSeparator() +
                     "duplicate bean: name=springQueueExternalExecutor2, class=SpringQueueExternalExecutor, queueId=test_queue"));
@@ -63,7 +62,6 @@ public class SpringQueueCollectorTest {
         assertThat(collector.getConsumers().size(), equalTo(2));
         assertThat(collector.getTransformers().size(), equalTo(2));
         assertThat(collector.getShardRouters().size(), equalTo(2));
-        assertThat(collector.getShards().size(), equalTo(2));
         assertThat(collector.getTaskListeners().size(), equalTo(2));
         assertThat(collector.getThreadListeners().size(), equalTo(2));
         assertThat(collector.getExecutors().size(), equalTo(2));

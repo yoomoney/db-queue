@@ -36,6 +36,8 @@ public class SpringQueueInitializer implements
     @Nonnull
     private final QueueRegistry queueRegistry;
     @Nonnull
+    private final Collection<QueueDao> queueShards;
+    @Nonnull
     private final QueueExecutionPool executionPool;
     @Nonnull
     private final SpringQueueConfigContainer configContainer;
@@ -50,14 +52,17 @@ public class SpringQueueInitializer implements
      * @param configContainer настройки очередей
      * @param queueCollector  поставщик бинов, связанных с очередями
      * @param executionPool   менеджер запуска очередей
+     * @param queueShards     шарды на которых запускаются очереди
      */
     public SpringQueueInitializer(@Nonnull SpringQueueConfigContainer configContainer,
                                   @Nonnull SpringQueueCollector queueCollector,
-                                  @Nonnull QueueExecutionPool executionPool) {
+                                  @Nonnull QueueExecutionPool executionPool,
+                                  @Nonnull Collection<QueueDao> queueShards) {
         this.configContainer = requireNonNull(configContainer);
         this.queueCollector = requireNonNull(queueCollector);
         this.executionPool = requireNonNull(executionPool);
         this.queueRegistry = requireNonNull(executionPool.getQueueRegistry());
+        this.queueShards = requireNonNull(queueShards);
     }
 
     private void init() {
@@ -67,7 +72,8 @@ public class SpringQueueInitializer implements
         validatePayloadType();
         throwIfHasErrors();
         wireQueueConfig();
-        queueCollector.getShards().values().forEach(queueRegistry::registerShard);
+
+        queueShards.forEach(queueRegistry::registerShard);
         queueCollector.getTaskListeners().forEach(queueRegistry::registerTaskLifecycleListener);
         queueCollector.getThreadListeners().forEach(queueRegistry::registerThreadLifecycleListener);
         queueCollector.getExecutors().forEach(queueRegistry::registerExternalExecutor);
@@ -84,6 +90,8 @@ public class SpringQueueInitializer implements
     }
 
     private void wireQueueConfig() {
+        Map<QueueShardId, QueueDao> allShards = queueShards.stream().collect(Collectors.toMap(
+                QueueDao::getShardId, Function.identity()));
         queueCollector.getConsumers().forEach((queueId, consumer) -> {
             QueueConfig queueConfig = requireNonNull(configContainer.getQueueConfig(queueId).orElse(null));
             SpringTaskPayloadTransformer payloadTransformer = requireNonNull(
@@ -95,7 +103,6 @@ public class SpringQueueInitializer implements
             consumer.setShardRouter(shardRouter);
 
             Collection<QueueShardId> routerShards = shardRouter.getShardsId();
-            Map<QueueShardId, QueueDao> allShards = queueCollector.getShards();
             Map<QueueShardId, QueueDao> queueShards = routerShards.stream()
                     .filter(allShards::containsKey)
                     .map(allShards::get)

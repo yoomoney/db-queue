@@ -13,7 +13,7 @@ Given version x.y.z
 ### [3.0.0]() (27-09-2017)
 
 * QueueLocation replaced with QueueId wherever possible in order to identify particular queue.
-
+* QueueDao instances are directly passed to SpringQueueInitializer instead of retrieving it from SpringQueueCollector.
 
 ### [2.0.0]() (04-09-2017)
 

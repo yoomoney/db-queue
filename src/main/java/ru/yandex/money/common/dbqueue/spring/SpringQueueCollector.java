@@ -4,8 +4,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
-import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueId;
 
 import javax.annotation.Nonnull;
@@ -31,7 +29,6 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
     private final Map<QueueId, SpringQueueExternalExecutor> executors = new LinkedHashMap<>();
     private final Map<QueueId, SpringTaskPayloadTransformer> transformers = new LinkedHashMap<>();
     private final Map<QueueId, SpringQueueShardRouter> shardRouters = new LinkedHashMap<>();
-    private final Map<QueueShardId, QueueDao> shards = new LinkedHashMap<>();
     private final Collection<String> errorMessages = new ArrayList<>();
 
     private <T extends SpringQueueIdentifiable> void collectBeanIfPossible(
@@ -44,18 +41,6 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
                 return;
             }
             storage.put(obj.getQueueId(), obj);
-        }
-    }
-
-    private void collectShardIfPossible(Object bean, Map<QueueShardId, QueueDao> storage, String beanName) {
-        if (QueueDao.class.isAssignableFrom(bean.getClass())) {
-            QueueDao shard = QueueDao.class.cast(bean);
-            if (storage.containsKey(shard.getShardId())) {
-                errorMessages.add(String.format("duplicate bean: name=%s, class=%s, shardId=%s",
-                        beanName, QueueDao.class.getSimpleName(), shard.getShardId()));
-                return;
-            }
-            storage.put(shard.getShardId(), shard);
         }
     }
 
@@ -76,7 +61,6 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
         collectBeanIfPossible(SpringQueueExternalExecutor.class, bean, executors, beanName);
         collectBeanIfPossible(SpringTaskPayloadTransformer.class, bean, transformers, beanName);
         collectBeanIfPossible(SpringQueueShardRouter.class, bean, shardRouters, beanName);
-        collectShardIfPossible(bean, shards, beanName);
         return bean;
     }
 
@@ -153,16 +137,6 @@ public class SpringQueueCollector implements BeanPostProcessor, ApplicationListe
     @Nonnull
     Map<QueueId, SpringQueueShardRouter> getShardRouters() {
         return Collections.unmodifiableMap(shardRouters);
-    }
-
-    /**
-     * Получить шарды, найденные в spring контексте.
-     *
-     * @return Map: key - идентификатор шарды, value - dao для работы с данным шардом
-     */
-    @Nonnull
-    Map<QueueShardId, QueueDao> getShards() {
-        return Collections.unmodifiableMap(shards);
     }
 
 }
