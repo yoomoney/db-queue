@@ -10,6 +10,10 @@ Given version x.y.z
 * y - Minor version. Backward compatibile with previous version. New features.
 * z - Patch version. Backward compatibile with previous version. Bug fix or small features. 
 
+## [3.0.1]() (30-11-2017)
+
+* Fix bug: if queue thread-count set greater than 1 than execution pool starts only one thread for queue processing
+
 ### [3.0.0]() (27-09-2017)
 
 * QueueLocation replaced with QueueId wherever possible in order to identify particular queue.
