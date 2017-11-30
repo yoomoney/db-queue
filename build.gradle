@@ -21,13 +21,6 @@ buildscript {
     }
 }
 
-plugins {
-    id "net.ltgt.errorprone" version "0.0.11"
-    id 'net.researchgate.release' version '2.6.0'
-    id "com.jfrog.bintray" version "1.7.3"
-    id 'com.github.ben-manes.versions' version '0.15.0'
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 dependencies {
     def springVersion = '4.3.7.RELEASE'
     compile 'org.slf4j:slf4j-api:1.7.24',
