@@ -1,28 +1,33 @@
+apply from: 'http://jenkins-dev.yamoney.ru/build-scripts/backend-platform/build-common-without-plugins.gradle'
+apply plugin: 'yamoney-library-project-plugin'
+
+//noinspection GroovyUnusedAssignment
+groupIdSuffix = "common"
+//noinspection GroovyUnusedAssignment
+artifactID = "yamoney-db-queue"
+
 buildscript {
     repositories {
-        jcenter()
+        maven { url 'http://nexus.yamoney.ru/content/repositories/thirdparty/' }
+        maven { url 'http://nexus.yamoney.ru/content/repositories/central/' }
+        maven { url 'http://nexus.yamoney.ru/content/repositories/releases/' }
+        maven { url 'http://nexus.yamoney.ru/content/repositories/jcenter.bintray.com/' }
+
+        dependencies {
+            classpath 'net.researchgate:gradle-release:2.3.0'
+            classpath 'ru.yandex.money.gradle.plugins:yamoney-library-project-plugin:1.2.0'
+            classpath group: 'ru.yandex.money.platform', name: 'yamoney-libraries-dependencies', version: '2.+', ext: 'zip'
+        }
     }
 }
+
 plugins {
     id "net.ltgt.errorprone" version "0.0.11"
     id 'net.researchgate.release' version '2.6.0'
     id "com.jfrog.bintray" version "1.7.3"
     id 'com.github.ben-manes.versions' version '0.15.0'
 }
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.1'
-}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-apply plugin: 'java'
-compileJava.options.encoding = 'UTF-8'
-compileTestJava.options.encoding = 'UTF-8'
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-repositories {
-    mavenCentral()
-    jcenter()
-}
 dependencies {
     def springVersion = '4.3.7.RELEASE'
     compile 'org.slf4j:slf4j-api:1.7.24',
@@ -48,182 +53,9 @@ dependencies {
             'com.google.code.findbugs:annotations:3.0.1'
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-jar {
-    manifest {
-        attributes(
-                'Implementation-Version': "$project.version",
-                'Implementation-Title': "$project.name",
-                'Built-By': java.lang.System.getProperty('user.name'),
-                'Built-Date': new Date().format('yyyy-MM-dd'),
-                'Copyright': '2017 NBCO Yandex.Money LLC',
-                'License': 'MIT'
-        )
-    }
-
-    from(projectDir.absolutePath) {
-        include "CHANGELOG.md", "README.md"
-        into "META-INF"
-    }
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-release {
-    git {
-        requireBranch = 'master'
-    }
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-apply plugin: 'findbugs'
-dependencies {
-    findbugsPlugins 'com.mebigfatguy.fb-contrib:fb-contrib:7.0.3',
-            'com.h3xstream.findsecbugs:findsecbugs-plugin:1.7.1'
-}
-findbugs {
-    toolVersion = "3.0.1"
-    sourceSets = [sourceSets.main]
-    effort = "max"
-    reportLevel = "medium"
-    ignoreFailures = false
-}
-tasks.withType(FindBugs) {
-    reports {
-        html.enabled = true
-        xml.enabled = false
-    }
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-apply plugin: 'checkstyle'
-checkstyle {
-    toolVersion = "8.1"
-    sourceSets = [sourceSets.main]
-    ignoreFailures = false
-    configFile = file("checkstyle.xml")
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-apply plugin: 'idea'
-idea {
-    project {
-        jdkName = '1.8'
-        languageLevel = '1.8'
-        vcs = 'Git'
-    }
-    module {
-        downloadJavadoc = true
-        downloadSources = true
-    }
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 apply plugin: 'jdepend'
 
 jdepend {
     ignoreFailures = false
     sourceSets = [sourceSets.main]
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-test {
-    systemProperty "file.encoding", "UTF-8"
-    testLogging {
-        events "skipped", "failed"
-        exceptionFormat "full"
-        showExceptions true
-        showCauses true
-        showStackTraces true
-    }
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-apply plugin: "jacoco"
-jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            limit {
-                counter = 'INSTRUCTION'
-                minimum = 0.90
-            }
-            limit {
-                counter = 'BRANCH'
-                minimum = 0.80
-            }
-            limit {
-                counter = 'CLASS'
-                minimum = 0.99
-            }
-        }
-    }
-}
-jacocoTestReport {
-    reports {
-        html.enabled = true
-        xml.enabled = true
-    }
-}
-check.dependsOn jacocoTestCoverageVerification
-check.dependsOn jacocoTestReport
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-apply plugin: 'maven'
-apply plugin: 'maven-publish'
-javadoc {
-    exclude "**/internal/**"
-    options {
-        docEncoding = 'UTF-8'
-        charSet = 'UTF-8'
-        encoding = 'UTF-8'
-        failOnError = true
-    }
-}
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourcesJar, javadocJar
-}
-
-publishing {
-    publications {
-        MyPublication(MavenPublication) {
-            from components.java
-            groupId 'ru.yandex.money.common'
-            artifactId 'db-queue'
-            version project.version
-            artifact sourcesJar
-            artifact javadocJar
-        }
-    }
-}
-
-bintrayUpload.onlyIf { !project.version.endsWith("-SNAPSHOT") }
-
-bintray {
-    user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
-    key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
-    publications = ['MyPublication']
-
-    dryRun = false
-    publish = true
-    pkg {
-        name = 'db-queue'
-        repo = 'maven'
-        userOrg = 'yandex-money'
-        desc = ' Worker-queue implementation on top of Java and database'
-        websiteUrl = 'https://github.com/yandex-money/db-queue'
-        issueTrackerUrl = 'https://github.com/yandex-money/db-queue/issues'
-        vcsUrl = 'https://github.com/yandex-money/db-queue.git'
-        licenses = ['MIT']
-        labels = ['postgresql', 'queue', 'java', 'database']
-        publicDownloadNumbers = true
-        githubRepo = 'yandex-money/db-queue'
-        githubReleaseNotesFile = 'README.md'
-        version {
-            name = project.version
-            released = new Date()
-            vcsTag = project.version
-        }
-    }
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
