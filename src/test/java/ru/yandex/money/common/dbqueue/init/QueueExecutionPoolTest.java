@@ -169,11 +169,12 @@ public class QueueExecutionPoolTest {
 
         QueueRegistry queueRegistry = mock(QueueRegistry.class);
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
+        int targetThreadCount = 3;
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(
                 location1,
                 QueueSettings.builder()
                         .withNoTaskTimeout(Duration.ZERO)
-                        .withThreadCount(3)
+                        .withThreadCount(targetThreadCount)
                         .withBetweenTaskTimeout(Duration.ZERO).build()));
         QueueShardRouter shardRouter = mock(QueueShardRouter.class);
         when(shardRouter.getShardsId()).thenReturn(new ArrayList() {{
@@ -211,7 +212,7 @@ public class QueueExecutionPoolTest {
                 (threadCount, factory) -> {
                     new ArrayBlockingQueue<>(threadCount);
                     assertThat(factory, sameInstance(threadFactory));
-                    assertThat(threadCount, equalTo(3));
+                    assertThat(threadCount, equalTo(targetThreadCount));
                     return queueThreadExecutor;
                 },
                 listener -> {
@@ -228,9 +229,9 @@ public class QueueExecutionPoolTest {
         queueExecutionPool.init();
         queueExecutionPool.start();
 
-        verify(queueThreadExecutor, times(2)).execute(any());
-        verify(queueLoop, times(1)).start(shardId1, queueConsumer, queueRunner);
-        verify(queueLoop, times(1)).start(shardId2, queueConsumer, queueRunner);
+        verify(queueThreadExecutor, times(2 * targetThreadCount)).execute(any());
+        verify(queueLoop, times(targetThreadCount)).start(shardId1, queueConsumer, queueRunner);
+        verify(queueLoop, times(targetThreadCount)).start(shardId2, queueConsumer, queueRunner);
 
         queueExecutionPool.shutdown();
 

@@ -168,8 +168,11 @@ public class QueueExecutionPool {
                 poolInstance.queueShardThreadPool = shardThreadPool;
                 QueueLoop queueLoop = queueLoopFactory.apply(poolInstance.threadListener);
                 QueueRunner queueRunner = queueRunnerFactory.apply(poolInstance);
-                shardThreadPool.execute(() -> queueLoop.start(poolInstance.queueDao.getShardId(),
-                        poolInstance.queueConsumer, queueRunner));
+
+                for (int i = 0; i < threadCount; i++) {
+                    shardThreadPool.execute(() -> queueLoop.start(poolInstance.queueDao.getShardId(),
+                            poolInstance.queueConsumer, queueRunner));
+                }
             }
         });
     }
