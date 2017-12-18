@@ -17,6 +17,7 @@ buildscript {
             classpath 'net.researchgate:gradle-release:2.3.0'
             classpath 'ru.yandex.money.gradle.plugins:yamoney-library-project-plugin:1.2.0'
             classpath group: 'ru.yandex.money.platform', name: 'yamoney-libraries-dependencies', version: '2.+', ext: 'zip'
+            classpath 'org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.+'
         }
     }
 }
@@ -52,3 +53,15 @@ jdepend {
     ignoreFailures = false
     sourceSets = [sourceSets.main]
 }
+
+
+apply plugin: "org.sonarqube"
+
+sonarqube {
+    properties {
+        property "sonar.host.url", "https://sonar-test.cloud.yamoney.ru"
+        property "sonar.projectKey", artifactID
+        property "sonar.projectName", artifactID.replaceAll("yamoney-", "")
+    }
+}
+
