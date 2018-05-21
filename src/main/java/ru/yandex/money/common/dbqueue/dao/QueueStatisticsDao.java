@@ -119,6 +119,15 @@ public class QueueStatisticsDao {
     }
 
     /**
+     * Получить jdbc template
+     *
+     * @return spring jdbc template
+     */
+    public NamedParameterJdbcTemplate getJdbcTemplate() {
+        return jdbcTemplate;
+    }
+
+    /**
      * Получить transaction template
      *
      * @return spring transaction template
