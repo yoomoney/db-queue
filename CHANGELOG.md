@@ -8,7 +8,11 @@ Given version x.y.z
 
 * x - Major version. Backward compatibility is broken. Refactoring or big features.
 * y - Minor version. Backward compatibile with previous version. New features.
-* z - Patch version. Backward compatibile with previous version. Bug fix or small features. 
+* z - Patch version. Backward compatibile with previous version. Bug fix or small features.
+
+## [3.0.3]() (19-06-2018)
+
+* Поддержка обновления контекста
 
 ## [3.0.2]() (21-05-2018)
 

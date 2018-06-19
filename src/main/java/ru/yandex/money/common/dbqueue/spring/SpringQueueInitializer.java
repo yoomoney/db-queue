@@ -1,5 +1,7 @@
 package ru.yandex.money.common.dbqueue.spring;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -33,6 +35,9 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SpringQueueInitializer implements
         ApplicationListener<ContextRefreshedEvent>, DisposableBean {
+
+    private static final Logger log = LoggerFactory.getLogger(SpringQueueInitializer.class);
+
     @Nonnull
     private final QueueRegistry queueRegistry;
     @Nonnull
@@ -200,6 +205,10 @@ public class SpringQueueInitializer implements
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
+        if (executionPool.isInitialized()) {
+            log.info("Queue initialization skipped");
+            return;
+        }
         init();
         executionPool.init();
         executionPool.start();
