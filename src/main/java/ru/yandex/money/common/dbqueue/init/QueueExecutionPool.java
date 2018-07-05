@@ -229,6 +229,13 @@ public class QueueExecutionPool {
     }
 
     /**
+     * Инициализированны ли очереди
+     */
+    public boolean isInitialized() {
+        return initialized;
+    }
+
+    /**
      * Данные запускаемого обработчика очереди
      */
     static class ShardPoolInstance {
