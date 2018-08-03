@@ -224,6 +224,7 @@ public class QueueExecutionPoolTest {
                     assertThat(poolInstance.externalExecutor, sameInstance(externalExecutor));
                     assertThat(poolInstance.taskListener, sameInstance(taskListener));
                     assertThat(poolInstance.threadListener, sameInstance(threadListener));
+                    assertThat(poolInstance.queueLoop, sameInstance(queueLoop));
                     return queueRunner;
                 });
         queueExecutionPool.init();
@@ -232,6 +233,9 @@ public class QueueExecutionPoolTest {
         verify(queueThreadExecutor, times(2 * targetThreadCount)).execute(any());
         verify(queueLoop, times(targetThreadCount)).start(shardId1, queueConsumer, queueRunner);
         verify(queueLoop, times(targetThreadCount)).start(shardId2, queueConsumer, queueRunner);
+
+        queueExecutionPool.wakeup(queueId1, shardId1);
+        verify(queueLoop).wakeup();
 
         queueExecutionPool.shutdown();
 

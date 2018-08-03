@@ -42,6 +42,13 @@ public class QueueLoop {
     }
 
     /**
+     * Возобновить цикл обработки задач
+     */
+    public void wakeup() {
+        loopPolicy.doContinue();
+    }
+
+    /**
      * Запустить цикл обработки задач в очерди
      *
      * @param shardId       идентификатор шарда, на котором происходит обработка

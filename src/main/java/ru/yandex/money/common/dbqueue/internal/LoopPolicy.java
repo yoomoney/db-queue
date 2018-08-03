@@ -23,6 +23,11 @@ public interface LoopPolicy {
     void doRun(Runnable runnable);
 
     /**
+     * Продолжить исполнение кода
+     */
+    void doContinue();
+
+    /**
      * Приостановить исполнение кода
      *
      * @param timeout промежуток на который следует приостановить работу
@@ -33,26 +38,51 @@ public interface LoopPolicy {
      * Cтратегия выполнения задачи в потоке
      */
     @SuppressFBWarnings("LO_SUSPECT_LOG_CLASS")
-    class ThreadLoopPolicy implements LoopPolicy {
-
+    class WakeupLoopPolicy implements LoopPolicy {
         private static final Logger log = LoggerFactory.getLogger(LoopPolicy.class);
+
+        private final Object monitor = new Object();
+        private volatile boolean isWakedUp = false;
 
         @Override
         public void doRun(Runnable runnable) {
             while (!Thread.currentThread().isInterrupted()) {
                 runnable.run();
             }
+
+        }
+
+        @Override
+        public void doContinue() {
+            synchronized (monitor) {
+                isWakedUp = true;
+                monitor.notify();
+            }
         }
 
         @Override
         public void doWait(Duration timeout) {
             try {
-                Thread.sleep(timeout.toMillis());
+                synchronized (monitor) {
+                    long plannedWakeupTime = System.currentTimeMillis() + timeout.toMillis();
+                    long timeToSleep = plannedWakeupTime - System.currentTimeMillis();
+                    while (timeToSleep > 1L) {
+                        if (!isWakedUp) {
+                            monitor.wait(timeToSleep);
+                        }
+                        if (isWakedUp) {
+                            break;
+                        }
+                        timeToSleep = plannedWakeupTime - System.currentTimeMillis();
+                    }
+                    isWakedUp = false;
+                }
             } catch (InterruptedException ignored) {
                 log.info("sleep interrupted: threadName={}", Thread.currentThread().getName());
                 Thread.currentThread().interrupt();
             }
-        }
 
+        }
     }
+
 }
