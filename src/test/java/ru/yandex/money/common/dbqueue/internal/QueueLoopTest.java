@@ -14,6 +14,8 @@ import ru.yandex.money.common.dbqueue.stub.FakeMillisTimeProvider;
 import java.time.Duration;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -50,7 +52,37 @@ public class QueueLoopTest {
         verify(listener).started(shardId, location);
         verify(queueRunner).runQueue(queueConsumer);
         verify(listener).executed(shardId, location, false, 4);
-        verify(loopPolicy).doWait(waitDuration);
+        verify(loopPolicy).doWait(waitDuration, LoopPolicy.WaitInterrupt.ALLOW);
+        verify(listener).finished(shardId, location);
+    }
+
+    @Test
+    public void should_wakeup() {
+        LoopPolicy loopPolicy = spy(new DelegatedSingleLoopExecution(new LoopPolicy.WakeupLoopPolicy()));
+        ThreadLifecycleListener listener = mock(ThreadLifecycleListener.class);
+        QueueShardId shardId = new QueueShardId("s1");
+        QueueConsumer queueConsumer = mock(QueueConsumer.class);
+        QueueLocation location = QueueLocation.builder().withTableName("table")
+                .withQueueId(new QueueId("queue")).build();
+        Duration waitDuration = Duration.ofDays(1);
+        when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
+                QueueSettings.builder()
+                        .withBetweenTaskTimeout(Duration.ZERO)
+                        .withNoTaskTimeout(waitDuration)
+                        .build()));
+        QueueRunner queueRunner = mock(QueueRunner.class);
+        when(queueRunner.runQueue(queueConsumer)).thenReturn(QueueProcessingStatus.SKIPPED);
+
+
+        QueueLoop queueLoop = new QueueLoop(loopPolicy, listener, new MillisTimeProvider.SystemMillisTimeProvider());
+        queueLoop.wakeup();
+        queueLoop.start(shardId, queueConsumer, queueRunner);
+
+        verify(loopPolicy).doRun(any());
+        verify(listener).started(shardId, location);
+        verify(queueRunner).runQueue(queueConsumer);
+        verify(listener).executed(eq(shardId), eq(location), eq(false), anyLong());
+        verify(loopPolicy).doWait(waitDuration, LoopPolicy.WaitInterrupt.ALLOW);
         verify(listener).finished(shardId, location);
     }
 
@@ -78,9 +110,41 @@ public class QueueLoopTest {
         verify(loopPolicy).doRun(any());
         verify(listener).started(shardId, location);
         verify(queueRunner).runQueue(queueConsumer);
-        verify(loopPolicy).doWait(fatalCrashTimeout);
+        verify(loopPolicy).doWait(fatalCrashTimeout, LoopPolicy.WaitInterrupt.DENY);
         verify(listener).crashed(shardId, location, exception);
         verify(listener).finished(shardId, location);
+    }
+
+    private static class DelegatedSingleLoopExecution implements LoopPolicy {
+
+        private final LoopPolicy delegate;
+        private int attemptCount = 0;
+
+        private DelegatedSingleLoopExecution(LoopPolicy delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void doRun(Runnable runnable) {
+            delegate.doRun(() -> {
+                if (attemptCount > 0) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                attemptCount++;
+                runnable.run();
+            });
+        }
+
+        @Override
+        public void doContinue() {
+            delegate.doContinue();
+        }
+
+        @Override
+        public void doWait(Duration timeout, WaitInterrupt waitInterrupt) {
+            delegate.doWait(timeout, waitInterrupt);
+        }
     }
 
     private static class SyncLoopPolicy implements LoopPolicy {
@@ -90,7 +154,12 @@ public class QueueLoopTest {
         }
 
         @Override
-        public void doWait(Duration timeout) {
+        public void doContinue() {
+
+        }
+
+        @Override
+        public void doWait(Duration timeout, WaitInterrupt waitInterrupt) {
 
         }
     }

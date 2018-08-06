@@ -57,14 +57,87 @@ public class SpringQueueCollectorTest {
     @Test
     public void should_collect_all_bean_definitions() throws Exception {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ValidContext.class);
-        SpringQueueCollector collector = context.getBean(SpringQueueCollector.class);
-        assertThat(collector.getProducers().size(), equalTo(2));
-        assertThat(collector.getConsumers().size(), equalTo(2));
-        assertThat(collector.getTransformers().size(), equalTo(2));
-        assertThat(collector.getShardRouters().size(), equalTo(2));
-        assertThat(collector.getTaskListeners().size(), equalTo(2));
-        assertThat(collector.getThreadListeners().size(), equalTo(2));
-        assertThat(collector.getExecutors().size(), equalTo(2));
+        SpringQueueCollector springCollector2 = context.getBean(SpringQueueCollector.class);
+
+        AnnotationConfigApplicationContext childContext = new AnnotationConfigApplicationContext();
+        childContext.setParent(context);
+        childContext.register(ChildContext.class);
+        childContext.refresh();
+
+        SpringQueueCollector springCollector1 = childContext.getBean("springQueueCollector1", SpringQueueCollector.class);
+        System.out.println(springCollector1);
+    }
+
+    @Configuration
+    private static class ChildContext {
+        private static final QueueId queueId1 = new QueueId("test_queue1");
+        private static final QueueLocation testLocation1 =
+                QueueLocation.builder().withTableName("queue_test")
+                        .withQueueId(queueId1).build();
+
+        private static final QueueId queueId2 = new QueueId("test_queue2");
+        private static final QueueLocation testLocation2 =
+                QueueLocation.builder().withTableName("queue_test")
+                        .withQueueId(queueId2).build();
+
+        public ChildContext() {
+        }
+
+        @Bean
+        QueueProducer<String> testProducer1() {
+            return new SpringTransactionalProducer<>(queueId1, String.class);
+        }
+
+        @Bean
+        QueueConsumer<String> testConsumer1() {
+            return new SpringQueueConsumer<String>(queueId1, String.class) {
+                @Nonnull
+                @Override
+                public TaskExecutionResult execute(@Nonnull Task<String> task) {
+                    return TaskExecutionResult.finish();
+                }
+            };
+        }
+
+        @Bean
+        TaskPayloadTransformer<String> testTransformer1() {
+            return new SpringNoopPayloadTransformer(queueId1);
+        }
+
+        @Bean
+        QueueShardRouter<String> testShardRouter1() {
+            return new SpringSingleShardRouter<>(queueId1,
+                    String.class, mock(QueueDao.class));
+        }
+
+        @Bean
+        QueueDao queueDao1() {
+            return new QueueDao(new QueueShardId("1"), mock(JdbcOperations.class),
+                    mock(TransactionOperations.class));
+        }
+
+        @Bean
+        SpringTaskLifecycleListener springTaskLifecycleListener1() {
+            return new NoopSpringTaskLifecycleListener(queueId1);
+        }
+
+        @Bean
+        SpringThreadLifecycleListener springThreadLifecycleListener1() {
+            return new NoopSpringThreadLifecycleListener(queueId1);
+        }
+
+
+        @Bean
+        SpringQueueExternalExecutor springQueueExternalExecutor1() {
+            SpringQueueExternalExecutor mock = mock(SpringQueueExternalExecutor.class);
+            doReturn(queueId1).when(mock).getQueueId();
+            return mock;
+        }
+
+        @Bean
+        SpringQueueCollector springQueueCollector1() {
+            return new SpringQueueCollector();
+        }
     }
 
     @Configuration
@@ -84,29 +157,11 @@ public class SpringQueueCollectorTest {
         }
 
         @Bean
-        QueueProducer<String> testProducer1() {
-            return new SpringTransactionalProducer<>(queueId1, String.class);
-        }
-
-        @DependsOn("testProducer1")
-        @Bean
         QueueProducer<String> testProducer2() {
             return new SpringTransactionalProducer<>(queueId2, String.class);
         }
 
-        @DependsOn("testProducer2")
-        @Bean
-        QueueConsumer<String> testConsumer1() {
-            return new SpringQueueConsumer<String>(queueId1, String.class) {
-                @Nonnull
-                @Override
-                public TaskExecutionResult execute(@Nonnull Task<String> task) {
-                    return TaskExecutionResult.finish();
-                }
-            };
-        }
 
-        @DependsOn("testConsumer1")
         @Bean
         QueueConsumer<String> testConsumer2() {
             return new SpringQueueConsumer<String>(queueId2, String.class) {
@@ -118,79 +173,35 @@ public class SpringQueueCollectorTest {
             };
         }
 
-        @DependsOn("testConsumer2")
-        @Bean
-        TaskPayloadTransformer<String> testTransformer1() {
-            return new SpringNoopPayloadTransformer(queueId1);
-        }
-
-        @DependsOn("testTransformer1")
         @Bean
         TaskPayloadTransformer<String> testTransformer2() {
             return new SpringNoopPayloadTransformer(queueId2);
         }
 
-        @DependsOn("testTransformer2")
-        @Bean
-        QueueShardRouter<String> testShardRouter1() {
-            return new SpringSingleShardRouter<>(queueId1,
-                    String.class, mock(QueueDao.class));
-        }
 
-        @DependsOn("testShardRouter1")
         @Bean
         QueueShardRouter<String> testShardRouter2() {
             return new SpringSingleShardRouter<>(queueId2,
                     String.class, mock(QueueDao.class));
         }
 
-        @DependsOn("testShardRouter2")
-        @Bean
-        QueueDao queueDao1() {
-            return new QueueDao(new QueueShardId("1"), mock(JdbcOperations.class),
-                    mock(TransactionOperations.class));
-        }
-
-        @DependsOn("queueDao1")
         @Bean
         QueueDao queueDao2() {
             return new QueueDao(new QueueShardId("2"), mock(JdbcOperations.class),
                     mock(TransactionOperations.class));
         }
 
-        @DependsOn("queueDao2")
-        @Bean
-        SpringTaskLifecycleListener springTaskLifecycleListener1() {
-            return new NoopSpringTaskLifecycleListener(queueId1);
-        }
-
-        @DependsOn("springTaskLifecycleListener1")
         @Bean
         SpringTaskLifecycleListener springTaskLifecycleListener2() {
             return new NoopSpringTaskLifecycleListener(queueId2);
         }
 
-        @DependsOn("springTaskLifecycleListener2")
-        @Bean
-        SpringThreadLifecycleListener springThreadLifecycleListener1() {
-            return new NoopSpringThreadLifecycleListener(queueId1);
-        }
-
-        @DependsOn("springThreadLifecycleListener1")
         @Bean
         SpringThreadLifecycleListener springThreadLifecycleListener2() {
             return new NoopSpringThreadLifecycleListener(queueId2);
         }
 
-        @DependsOn("springThreadLifecycleListener2")
-        @Bean
-        SpringQueueExternalExecutor springQueueExternalExecutor1() {
-            SpringQueueExternalExecutor mock = mock(SpringQueueExternalExecutor.class);
-            doReturn(queueId1).when(mock).getQueueId();
-            return mock;
-        }
 
-        @DependsOn("springQueueExternalExecutor1")
         @Bean
         SpringQueueExternalExecutor springQueueExternalExecutor2() {
             SpringQueueExternalExecutor mock = mock(SpringQueueExternalExecutor.class);
@@ -199,7 +210,7 @@ public class SpringQueueCollectorTest {
         }
 
         @Bean
-        SpringQueueCollector springQueueCollector() {
+        SpringQueueCollector springQueueCollector2() {
             return new SpringQueueCollector();
         }
     }

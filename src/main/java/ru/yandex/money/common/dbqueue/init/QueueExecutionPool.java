@@ -19,8 +19,9 @@ import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executor;
@@ -44,7 +45,7 @@ public class QueueExecutionPool {
     private static final Logger log = LoggerFactory.getLogger(QueueExecutionPool.class);
 
     @Nonnull
-    private final Collection<ShardPoolInstance> poolInstances = new ArrayList<>();
+    private final Map<QueueId, Map<QueueShardId, ShardPoolInstance>> poolInstances = new HashMap<>();
     @Nonnull
     private final QueueRegistry queueRegistry;
     @Nonnull
@@ -78,7 +79,7 @@ public class QueueExecutionPool {
                 QueueThreadFactory::new,
                 (threadCount, factory) -> new ThreadPoolExecutor(threadCount, threadCount,
                         0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(threadCount), factory),
-                listener -> new QueueLoop(new LoopPolicy.ThreadLoopPolicy(), listener,
+                listener -> new QueueLoop(new LoopPolicy.WakeupLoopPolicy(), listener,
                         new MillisTimeProvider.SystemMillisTimeProvider()),
                 poolInstance -> QueueRunner.Factory.createQueueRunner(poolInstance.queueConsumer,
                         poolInstance.queueDao, poolInstance.taskListener, poolInstance.externalExecutor));
@@ -135,10 +136,12 @@ public class QueueExecutionPool {
                 .getOrDefault(queueId, defaultThreadLifecycleListener);
         Executor externalExecutor = queueRegistry.getExternalExecutors().get(queueId);
         Collection<QueueShardId> shards = queueConsumer.getShardRouter().getShardsId();
+        poolInstances.computeIfAbsent(queueId, ignored -> new HashMap<>());
+        Map<QueueShardId, ShardPoolInstance> queueInstancePool = poolInstances.get(queueId);
         for (QueueShardId shardId : shards) {
             QueueDao queueDao = queueRegistry.getShards().get(shardId);
-            poolInstances.add(new ShardPoolInstance(queueConsumer, queueDao, taskListener, threadListener,
-                    externalExecutor));
+            queueInstancePool.put(shardId, new ShardPoolInstance(queueConsumer, queueDao, taskListener, threadListener,
+                    externalExecutor, queueLoopFactory.apply(threadListener)));
         }
     }
 
@@ -154,26 +157,26 @@ public class QueueExecutionPool {
         }
         started = true;
         log.info("starting queues");
-        poolInstances.forEach(poolInstance -> {
-            QueueConfig queueConfig = poolInstance.queueConsumer.getQueueConfig();
-
-            ThreadFactory threadFactory = threadFactoryProvider.apply(queueConfig.getLocation(),
-                    poolInstance.queueDao.getShardId());
-            int threadCount = queueConfig.getSettings().getThreadCount();
-            if (threadCount <= 0) {
-                log.info("queue is turned off: queueId={}",
-                        queueConfig.getLocation().getQueueId());
-            } else {
+        poolInstances.forEach((queueId, queuePoolInstance) -> {
+            queuePoolInstance.forEach((queueShardId, shardPoolInstance) -> {
+                QueueConfig queueConfig = shardPoolInstance.queueConsumer.getQueueConfig();
+                log.info("running queue: queueId={}, shardId={}", queueId, queueShardId);
+                ThreadFactory threadFactory = threadFactoryProvider.apply(queueConfig.getLocation(),
+                        shardPoolInstance.queueDao.getShardId());
+                int threadCount = queueConfig.getSettings().getThreadCount();
+                if (threadCount <= 0) {
+                    log.info("queue is turned off: queueId={}", queueConfig.getLocation().getQueueId());
+                    return;
+                }
                 ExecutorService shardThreadPool = queueThreadPoolFactory.apply(threadCount, threadFactory);
-                poolInstance.queueShardThreadPool = shardThreadPool;
-                QueueLoop queueLoop = queueLoopFactory.apply(poolInstance.threadListener);
-                QueueRunner queueRunner = queueRunnerFactory.apply(poolInstance);
+                shardPoolInstance.queueShardThreadPool = shardThreadPool;
+                QueueRunner queueRunner = queueRunnerFactory.apply(shardPoolInstance);
 
                 for (int i = 0; i < threadCount; i++) {
-                    shardThreadPool.execute(() -> queueLoop.start(poolInstance.queueDao.getShardId(),
-                            poolInstance.queueConsumer, queueRunner));
+                    shardThreadPool.execute(() -> shardPoolInstance.queueLoop.start(shardPoolInstance.queueDao.getShardId(),
+                            shardPoolInstance.queueConsumer, queueRunner));
                 }
-            }
+            });
         });
     }
 
@@ -193,13 +196,14 @@ public class QueueExecutionPool {
         // Необходимо сначала остановить очереди выборки задач
         // В противном случае будут поступать задачи в executor,
         // который не сможет их принять.
-        poolInstances.parallelStream().forEach(poolInstance -> {
-            if (poolInstance.queueShardThreadPool != null) {
-                log.info("shutting down queue: queueId={}, shardId={}",
-                        poolInstance.queueConsumer.getQueueConfig().getLocation(),
-                        poolInstance.queueDao.getShardId());
-                shutdownThreadPool(poolInstance);
-            }
+        poolInstances.entrySet().parallelStream().forEach((queueIdMapEntry) -> {
+            queueIdMapEntry.getValue().entrySet().parallelStream().forEach((queueShardIdMapEntry) -> {
+                if (queueShardIdMapEntry.getValue().queueShardThreadPool != null) {
+                    log.info("shutting down queue: queueId={}, shardId={}",
+                            queueIdMapEntry.getKey(), queueShardIdMapEntry.getKey());
+                    shutdownThreadPool(queueShardIdMapEntry.getValue());
+                }
+            });
         });
         queueRegistry.getExternalExecutors().entrySet().parallelStream().forEach(entry -> {
             log.info("shutting down external executor: queueId={}", entry.getKey().asString());
@@ -236,6 +240,22 @@ public class QueueExecutionPool {
     }
 
     /**
+     * Принудительно продолжить обработку задач в очереди.
+     * <p>
+     * Может быть полезно для очередей, которые относятся к взаимодействию с пользователем, поскольку пользователю почти
+     * всегда требуется быстрый отклик на свои действия.
+     * Используется после постановки задачи на выполнение, поэтому следует делать только после завершения транзакции
+     * по вставке задачи. Также возможно применение в тестах для их ускорения.
+     *
+     * @param queueId      идентификатор очереди
+     * @param queueShardId идентфикатор шарда
+     */
+    public void wakeup(QueueId queueId, QueueShardId queueShardId) {
+        ShardPoolInstance shardPoolInstance = poolInstances.get(queueId).get(queueShardId);
+        shardPoolInstance.queueLoop.wakeup();
+    }
+
+    /**
      * Данные запускаемого обработчика очереди
      */
     static class ShardPoolInstance {
@@ -259,16 +279,22 @@ public class QueueExecutionPool {
          * Внешний исполнитель
          */
         final Executor externalExecutor;
+
+        /**
+         * Стратегия ожидания задач в пуле
+         */
+        final QueueLoop queueLoop;
         @Nullable
         private ExecutorService queueShardThreadPool;
 
         private ShardPoolInstance(QueueConsumer queueConsumer, QueueDao queueDao, TaskLifecycleListener taskListener,
-                                  ThreadLifecycleListener threadListener, Executor externalExecutor) {
+                                  ThreadLifecycleListener threadListener, Executor externalExecutor, QueueLoop queueLoop) {
             this.queueConsumer = queueConsumer;
             this.queueDao = queueDao;
             this.taskListener = taskListener;
             this.threadListener = threadListener;
             this.externalExecutor = externalExecutor;
+            this.queueLoop = queueLoop;
         }
     }
 

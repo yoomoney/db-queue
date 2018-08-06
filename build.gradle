@@ -1,3 +1,5 @@
+ext.skipCheckMutation = true
+
 apply from: 'http://jenkins-dev.yamoney.ru/build-scripts/backend-platform/build-common-without-plugins.gradle'
 apply plugin: 'yamoney-library-project-plugin'
 
@@ -52,16 +54,5 @@ apply plugin: 'jdepend'
 jdepend {
     ignoreFailures = false
     sourceSets = [sourceSets.main]
-}
-
-
-apply plugin: "org.sonarqube"
-
-sonarqube {
-    properties {
-        property "sonar.host.url", "https://sonar-test.cloud.yamoney.ru"
-        property "sonar.projectKey", artifactID
-        property "sonar.projectName", artifactID.replaceAll("yamoney-", "")
-    }
 }
 
