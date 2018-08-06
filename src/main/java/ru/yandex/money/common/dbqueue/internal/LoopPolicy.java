@@ -31,8 +31,9 @@ public interface LoopPolicy {
      * Приостановить исполнение кода
      *
      * @param timeout промежуток на который следует приостановить работу
+     * @param waitInterrupt признак, что разрешено прервать ожидание и продолжить работу
      */
-    void doWait(Duration timeout);
+    void doWait(Duration timeout, WaitInterrupt waitInterrupt);
 
     /**
      * Cтратегия выполнения задачи в потоке
@@ -61,7 +62,7 @@ public interface LoopPolicy {
         }
 
         @Override
-        public void doWait(Duration timeout) {
+        public void doWait(Duration timeout, WaitInterrupt waitInterrupt) {
             try {
                 synchronized (monitor) {
                     long plannedWakeupTime = System.currentTimeMillis() + timeout.toMillis();
@@ -70,8 +71,11 @@ public interface LoopPolicy {
                         if (!isWakedUp) {
                             monitor.wait(timeToSleep);
                         }
-                        if (isWakedUp) {
+                        if (isWakedUp && waitInterrupt == WaitInterrupt.ALLOW) {
                             break;
+                        }
+                        if (isWakedUp && waitInterrupt == WaitInterrupt.DENY) {
+                            isWakedUp = false;
                         }
                         timeToSleep = plannedWakeupTime - System.currentTimeMillis();
                     }
@@ -83,6 +87,20 @@ public interface LoopPolicy {
             }
 
         }
+    }
+
+    /**
+     * Признак прерывания ожидания
+     */
+    enum WaitInterrupt {
+        /**
+         * Прерывание разрешено
+         */
+        ALLOW,
+        /**
+         * Прерывание запрещено
+         */
+        DENY
     }
 
 }

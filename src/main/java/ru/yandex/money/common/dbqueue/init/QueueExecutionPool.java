@@ -137,9 +137,9 @@ public class QueueExecutionPool {
         Executor externalExecutor = queueRegistry.getExternalExecutors().get(queueId);
         Collection<QueueShardId> shards = queueConsumer.getShardRouter().getShardsId();
         poolInstances.computeIfAbsent(queueId, ignored -> new HashMap<>());
+        Map<QueueShardId, ShardPoolInstance> queueInstancePool = poolInstances.get(queueId);
         for (QueueShardId shardId : shards) {
             QueueDao queueDao = queueRegistry.getShards().get(shardId);
-            Map<QueueShardId, ShardPoolInstance> queueInstancePool = poolInstances.get(queueId);
             queueInstancePool.put(shardId, new ShardPoolInstance(queueConsumer, queueDao, taskListener, threadListener,
                     externalExecutor, queueLoopFactory.apply(threadListener)));
         }
@@ -165,17 +165,16 @@ public class QueueExecutionPool {
                         shardPoolInstance.queueDao.getShardId());
                 int threadCount = queueConfig.getSettings().getThreadCount();
                 if (threadCount <= 0) {
-                    log.info("queue is turned off: queueId={}",
-                            queueConfig.getLocation().getQueueId());
-                } else {
-                    ExecutorService shardThreadPool = queueThreadPoolFactory.apply(threadCount, threadFactory);
-                    shardPoolInstance.queueShardThreadPool = shardThreadPool;
-                    QueueRunner queueRunner = queueRunnerFactory.apply(shardPoolInstance);
+                    log.info("queue is turned off: queueId={}", queueConfig.getLocation().getQueueId());
+                    return;
+                }
+                ExecutorService shardThreadPool = queueThreadPoolFactory.apply(threadCount, threadFactory);
+                shardPoolInstance.queueShardThreadPool = shardThreadPool;
+                QueueRunner queueRunner = queueRunnerFactory.apply(shardPoolInstance);
 
-                    for (int i = 0; i < threadCount; i++) {
-                        shardThreadPool.execute(() -> shardPoolInstance.queueLoop.start(shardPoolInstance.queueDao.getShardId(),
-                                shardPoolInstance.queueConsumer, queueRunner));
-                    }
+                for (int i = 0; i < threadCount; i++) {
+                    shardThreadPool.execute(() -> shardPoolInstance.queueLoop.start(shardPoolInstance.queueDao.getShardId(),
+                            shardPoolInstance.queueConsumer, queueRunner));
                 }
             });
         });

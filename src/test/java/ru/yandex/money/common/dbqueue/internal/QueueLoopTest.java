@@ -52,7 +52,7 @@ public class QueueLoopTest {
         verify(listener).started(shardId, location);
         verify(queueRunner).runQueue(queueConsumer);
         verify(listener).executed(shardId, location, false, 4);
-        verify(loopPolicy).doWait(waitDuration);
+        verify(loopPolicy).doWait(waitDuration, LoopPolicy.WaitInterrupt.ALLOW);
         verify(listener).finished(shardId, location);
     }
 
@@ -82,7 +82,7 @@ public class QueueLoopTest {
         verify(listener).started(shardId, location);
         verify(queueRunner).runQueue(queueConsumer);
         verify(listener).executed(eq(shardId), eq(location), eq(false), anyLong());
-        verify(loopPolicy).doWait(waitDuration);
+        verify(loopPolicy).doWait(waitDuration, LoopPolicy.WaitInterrupt.ALLOW);
         verify(listener).finished(shardId, location);
     }
 
@@ -110,7 +110,7 @@ public class QueueLoopTest {
         verify(loopPolicy).doRun(any());
         verify(listener).started(shardId, location);
         verify(queueRunner).runQueue(queueConsumer);
-        verify(loopPolicy).doWait(fatalCrashTimeout);
+        verify(loopPolicy).doWait(fatalCrashTimeout, LoopPolicy.WaitInterrupt.DENY);
         verify(listener).crashed(shardId, location, exception);
         verify(listener).finished(shardId, location);
     }
@@ -142,8 +142,8 @@ public class QueueLoopTest {
         }
 
         @Override
-        public void doWait(Duration timeout) {
-            delegate.doWait(timeout);
+        public void doWait(Duration timeout, WaitInterrupt waitInterrupt) {
+            delegate.doWait(timeout, waitInterrupt);
         }
     }
 
@@ -159,7 +159,7 @@ public class QueueLoopTest {
         }
 
         @Override
-        public void doWait(Duration timeout) {
+        public void doWait(Duration timeout, WaitInterrupt waitInterrupt) {
 
         }
     }

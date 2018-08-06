@@ -4,10 +4,8 @@ import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
 import ru.yandex.money.common.dbqueue.internal.runner.QueueRunner;
-import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 
 import javax.annotation.Nonnull;
-import java.time.Duration;
 import java.util.Objects;
 
 /**
@@ -65,25 +63,27 @@ public class QueueLoop {
                 threadLifecycleListener.executed(shardId, queueConsumer.getQueueConfig().getLocation(),
                         queueProcessingStatus != QueueProcessingStatus.SKIPPED,
                         millisTimeProvider.getMillis() - startTime);
-                loopPolicy.doWait(getWaitTime(queueProcessingStatus, queueConsumer.getQueueConfig().getSettings()));
+
+                switch (queueProcessingStatus) {
+                    case SKIPPED:
+                        loopPolicy.doWait(queueConsumer.getQueueConfig().getSettings().getNoTaskTimeout(),
+                                LoopPolicy.WaitInterrupt.ALLOW);
+                        return;
+                    case PROCESSED:
+                        loopPolicy.doWait(queueConsumer.getQueueConfig().getSettings().getBetweenTaskTimeout(),
+                                LoopPolicy.WaitInterrupt.DENY);
+                        return;
+                    default:
+                        throw new IllegalStateException("unknown task loop result" + queueProcessingStatus);
+                }
             } catch (Throwable e) {
                 threadLifecycleListener.crashed(shardId, queueConsumer.getQueueConfig().getLocation(), e);
-                loopPolicy.doWait(queueConsumer.getQueueConfig().getSettings().getFatalCrashTimeout());
+                loopPolicy.doWait(queueConsumer.getQueueConfig().getSettings().getFatalCrashTimeout(),
+                        LoopPolicy.WaitInterrupt.DENY);
             } finally {
                 threadLifecycleListener.finished(shardId, queueConsumer.getQueueConfig().getLocation());
             }
         });
-    }
-
-    private Duration getWaitTime(QueueProcessingStatus status, QueueSettings settings) {
-        switch (status) {
-            case SKIPPED:
-                return settings.getNoTaskTimeout();
-            case PROCESSED:
-                return settings.getBetweenTaskTimeout();
-            default:
-                throw new IllegalStateException("unknown task loop result" + status);
-        }
     }
 
 }
