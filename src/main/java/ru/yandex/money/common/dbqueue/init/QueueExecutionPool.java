@@ -4,10 +4,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
+import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.internal.LoopPolicy;
 import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
 import ru.yandex.money.common.dbqueue.internal.QueueLoop;
@@ -82,7 +82,7 @@ public class QueueExecutionPool {
                 listener -> new QueueLoop(new LoopPolicy.WakeupLoopPolicy(), listener,
                         new MillisTimeProvider.SystemMillisTimeProvider()),
                 poolInstance -> QueueRunner.Factory.createQueueRunner(poolInstance.queueConsumer,
-                        poolInstance.queueDao, poolInstance.taskListener, poolInstance.externalExecutor));
+                        poolInstance.queueShard, poolInstance.taskListener, poolInstance.externalExecutor));
     }
 
     /**
@@ -135,12 +135,11 @@ public class QueueExecutionPool {
         ThreadLifecycleListener threadListener = queueRegistry.getThreadListeners()
                 .getOrDefault(queueId, defaultThreadLifecycleListener);
         Executor externalExecutor = queueRegistry.getExternalExecutors().get(queueId);
-        Collection<QueueShardId> shards = queueConsumer.getShardRouter().getShardsId();
+        Collection<QueueShard> shards = queueConsumer.getConsumerShardsProvider().getProcessingShards();
         poolInstances.computeIfAbsent(queueId, ignored -> new HashMap<>());
         Map<QueueShardId, ShardPoolInstance> queueInstancePool = poolInstances.get(queueId);
-        for (QueueShardId shardId : shards) {
-            QueueDao queueDao = queueRegistry.getShards().get(shardId);
-            queueInstancePool.put(shardId, new ShardPoolInstance(queueConsumer, queueDao, taskListener, threadListener,
+        for (QueueShard shard : shards) {
+            queueInstancePool.put(shard.getShardId(), new ShardPoolInstance(queueConsumer, shard, taskListener, threadListener,
                     externalExecutor, queueLoopFactory.apply(threadListener)));
         }
     }
@@ -162,7 +161,7 @@ public class QueueExecutionPool {
                 QueueConfig queueConfig = shardPoolInstance.queueConsumer.getQueueConfig();
                 log.info("running queue: queueId={}, shardId={}", queueId, queueShardId);
                 ThreadFactory threadFactory = threadFactoryProvider.apply(queueConfig.getLocation(),
-                        shardPoolInstance.queueDao.getShardId());
+                        shardPoolInstance.queueShard.getShardId());
                 int threadCount = queueConfig.getSettings().getThreadCount();
                 if (threadCount <= 0) {
                     log.info("queue is turned off: queueId={}", queueConfig.getLocation().getQueueId());
@@ -173,7 +172,7 @@ public class QueueExecutionPool {
                 QueueRunner queueRunner = queueRunnerFactory.apply(shardPoolInstance);
 
                 for (int i = 0; i < threadCount; i++) {
-                    shardThreadPool.execute(() -> shardPoolInstance.queueLoop.start(shardPoolInstance.queueDao.getShardId(),
+                    shardThreadPool.execute(() -> shardPoolInstance.queueLoop.start(shardPoolInstance.queueShard.getShardId(),
                             shardPoolInstance.queueConsumer, queueRunner));
                 }
             });
@@ -217,14 +216,14 @@ public class QueueExecutionPool {
         Objects.requireNonNull(poolInstance.queueShardThreadPool);
         log.info("waiting queue threads to respond to interrupt request: queueId={}, shardId={}, timeout={}",
                 poolInstance.queueConsumer.getQueueConfig().getLocation().getQueueId(),
-                poolInstance.queueDao.getShardId(), TERMINATION_TIMEOUT);
+                poolInstance.queueShard.getShardId(), TERMINATION_TIMEOUT);
         try {
             poolInstance.queueShardThreadPool.shutdownNow();
             if (!poolInstance.queueShardThreadPool.awaitTermination(
                     TERMINATION_TIMEOUT.getSeconds(), TimeUnit.SECONDS)) {
                 log.error("several queue threads are still not terminated: queueId={}, shardId={}",
                         poolInstance.queueConsumer.getQueueConfig().getLocation().getQueueId(),
-                        poolInstance.queueDao.getShardId());
+                        poolInstance.queueShard.getShardId());
             }
         } catch (InterruptedException ignored) {
             log.error("queue shutdown is unexpectedly terminated");
@@ -241,6 +240,9 @@ public class QueueExecutionPool {
 
     /**
      * Принудительно продолжить обработку задач в очереди.
+     * <p>
+     * Продолжение обработки происходит только если очередь была приостановлена на
+     * {@link ru.yandex.money.common.dbqueue.settings.QueueConfigsReader#SETTING_NO_TASK_TIMEOUT}
      * <p>
      * Может быть полезно для очередей, которые относятся к взаимодействию с пользователем, поскольку пользователю почти
      * всегда требуется быстрый отклик на свои действия.
@@ -266,7 +268,7 @@ public class QueueExecutionPool {
         /**
          * Шард
          */
-        final QueueDao queueDao;
+        final QueueShard queueShard;
         /**
          * Слушатель задач
          */
@@ -287,10 +289,10 @@ public class QueueExecutionPool {
         @Nullable
         private ExecutorService queueShardThreadPool;
 
-        private ShardPoolInstance(QueueConsumer queueConsumer, QueueDao queueDao, TaskLifecycleListener taskListener,
+        private ShardPoolInstance(QueueConsumer queueConsumer, QueueShard queueShard, TaskLifecycleListener taskListener,
                                   ThreadLifecycleListener threadListener, Executor externalExecutor, QueueLoop queueLoop) {
             this.queueConsumer = queueConsumer;
-            this.queueDao = queueDao;
+            this.queueShard = queueShard;
             this.taskListener = taskListener;
             this.threadListener = threadListener;
             this.externalExecutor = externalExecutor;

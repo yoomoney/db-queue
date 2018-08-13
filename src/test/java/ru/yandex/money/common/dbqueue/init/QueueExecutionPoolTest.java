@@ -3,13 +3,15 @@ package ru.yandex.money.common.dbqueue.init;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Assert;
 import org.junit.Test;
+import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.transaction.support.TransactionOperations;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueExternalExecutor;
+import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.internal.QueueLoop;
 import ru.yandex.money.common.dbqueue.internal.runner.QueueRunner;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
@@ -89,8 +91,6 @@ public class QueueExecutionPoolTest {
         QueueLocation location1 = QueueLocation.builder().withTableName("testTable")
                 .withQueueId(queueId1).build();
         QueueShardId shardId1 = new QueueShardId("s1");
-        QueueDao queueDao1 = mock(QueueDao.class);
-        when(queueDao1.getShardId()).thenReturn(shardId1);
 
         QueueRegistry queueRegistry = mock(QueueRegistry.class);
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
@@ -101,21 +101,18 @@ public class QueueExecutionPoolTest {
                         .withThreadCount(0)
                         .withBetweenTaskTimeout(Duration.ZERO).build()));
         QueueShardRouter shardRouter = mock(QueueShardRouter.class);
-        when(shardRouter.getShardsId()).thenReturn(new ArrayList() {{
-            add(shardId1);
+        when(shardRouter.getProcessingShards()).thenReturn(new ArrayList() {{
+            add(new QueueShard(shardId1, mock(JdbcOperations.class), mock(TransactionOperations.class)));
         }});
         TaskLifecycleListener queueShardListener = mock(TaskLifecycleListener.class);
         QueueExternalExecutor externalExecutor = mock(QueueExternalExecutor.class);
 
-        when(queueConsumer.getShardRouter()).thenReturn(shardRouter);
+        when(queueConsumer.getConsumerShardsProvider()).thenReturn(shardRouter);
         when(queueRegistry.getConsumers()).thenReturn(Collections.singletonList(queueConsumer));
         when(queueRegistry.getTaskListeners()).thenReturn(
                 Collections.singletonMap(queueId1, queueShardListener));
         when(queueRegistry.getExternalExecutors()).thenReturn(
                 Collections.singletonMap(queueId1, externalExecutor));
-        when(queueRegistry.getShards()).thenReturn(new HashMap<QueueShardId, QueueDao>() {{
-            put(shardId1, queueDao1);
-        }});
 
         ThreadFactory threadFactory = mock(ThreadFactory.class);
         TaskLifecycleListener defaultTaskListener = mock(TaskLifecycleListener.class);
@@ -162,10 +159,6 @@ public class QueueExecutionPoolTest {
                 .withQueueId(queueId1).build();
         QueueShardId shardId1 = new QueueShardId("s1");
         QueueShardId shardId2 = new QueueShardId("s2");
-        QueueDao queueDao1 = mock(QueueDao.class);
-        when(queueDao1.getShardId()).thenReturn(shardId1);
-        QueueDao queueDao2 = mock(QueueDao.class);
-        when(queueDao2.getShardId()).thenReturn(shardId2);
 
         QueueRegistry queueRegistry = mock(QueueRegistry.class);
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
@@ -177,15 +170,15 @@ public class QueueExecutionPoolTest {
                         .withThreadCount(targetThreadCount)
                         .withBetweenTaskTimeout(Duration.ZERO).build()));
         QueueShardRouter shardRouter = mock(QueueShardRouter.class);
-        when(shardRouter.getShardsId()).thenReturn(new ArrayList() {{
-            add(shardId1);
-            add(shardId2);
+        when(shardRouter.getProcessingShards()).thenReturn(new ArrayList() {{
+            add(new QueueShard(shardId1, mock(JdbcOperations.class), mock(TransactionOperations.class)));
+            add(new QueueShard(shardId2, mock(JdbcOperations.class), mock(TransactionOperations.class)));
         }});
         TaskLifecycleListener taskListener = mock(TaskLifecycleListener.class);
         ThreadLifecycleListener threadListener = mock(ThreadLifecycleListener.class);
         QueueExternalExecutor externalExecutor = mock(QueueExternalExecutor.class);
 
-        when(queueConsumer.getShardRouter()).thenReturn(shardRouter);
+        when(queueConsumer.getConsumerShardsProvider()).thenReturn(shardRouter);
         when(queueRegistry.getConsumers()).thenReturn(Collections.singletonList(queueConsumer));
         when(queueRegistry.getTaskListeners()).thenReturn(
                 Collections.singletonMap(queueId1, taskListener));
@@ -193,10 +186,6 @@ public class QueueExecutionPoolTest {
                 Collections.singletonMap(queueId1, threadListener));
         when(queueRegistry.getExternalExecutors()).thenReturn(
                 Collections.singletonMap(queueId1, externalExecutor));
-        when(queueRegistry.getShards()).thenReturn(new HashMap<QueueShardId, QueueDao>() {{
-            put(shardId1, queueDao1);
-            put(shardId2, queueDao2);
-        }});
 
         ThreadFactory threadFactory = mock(ThreadFactory.class);
         TaskLifecycleListener defaultTaskListener = mock(TaskLifecycleListener.class);

@@ -1,8 +1,8 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
+import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
@@ -19,17 +19,17 @@ class TaskResultHandler {
     @Nonnull
     private final QueueLocation location;
     @Nonnull
-    private final QueueDao queueDao;
+    private final QueueShard queueShard;
 
     /**
      * Конструктор
      *
      * @param location местоположение очереди
-     * @param queueDao шард на котором происходит обработка задачи
+     * @param queueShard шард на котором происходит обработка задачи
      */
-    TaskResultHandler(@Nonnull QueueLocation location, @Nonnull QueueDao queueDao) {
+    TaskResultHandler(@Nonnull QueueLocation location, @Nonnull QueueShard queueShard) {
         this.location = Objects.requireNonNull(location);
-        this.queueDao = Objects.requireNonNull(queueDao);
+        this.queueShard = Objects.requireNonNull(queueShard);
     }
 
     /**
@@ -43,13 +43,13 @@ class TaskResultHandler {
         Objects.requireNonNull(executionResult);
         switch (executionResult.getActionType()) {
             case FINISH:
-                queueDao.getTransactionTemplate().execute(status ->
-                        queueDao.deleteTask(location, taskRecord.getId()));
+                queueShard.getTransactionTemplate().execute(status ->
+                        queueShard.getQueueDao().deleteTask(location, taskRecord.getId()));
                 return;
 
             case REENQUEUE:
-                queueDao.getTransactionTemplate().execute(
-                        status -> queueDao.reenqueue(location, taskRecord.getId(),
+                queueShard.getTransactionTemplate().execute(
+                        status -> queueShard.getQueueDao().reenqueue(location, taskRecord.getId(),
                                 executionResult.getExecutionDelayOrThrow()));
                 return;
             case FAIL:

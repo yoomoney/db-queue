@@ -2,8 +2,8 @@ package ru.yandex.money.common.dbqueue.internal.runner;
 
 import org.junit.Test;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
+import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.internal.QueueProcessingStatus;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueId;
@@ -40,16 +40,16 @@ public class QueueRunnerInTransactionTest {
         TaskPicker taskPicker = mock(TaskPicker.class);
         when(taskPicker.pickTask(queueConsumer)).thenReturn(null);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);
-        QueueDao queueDao = mock(QueueDao.class);
-        when(queueDao.getTransactionTemplate()).thenReturn(new FakeTransactionTemplate());
+        QueueShard queueShard = mock(QueueShard.class);
+        when(queueShard.getTransactionTemplate()).thenReturn(new FakeTransactionTemplate());
 
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
-        QueueProcessingStatus status = new QueueRunnerInTransaction(taskPicker, taskProcessor, queueDao).runQueue(queueConsumer);
+        QueueProcessingStatus status = new QueueRunnerInTransaction(taskPicker, taskProcessor, queueShard).runQueue(queueConsumer);
 
         assertThat(status, equalTo(QueueProcessingStatus.SKIPPED));
 
-        verify(queueDao).getTransactionTemplate();
+        verify(queueShard).getTransactionTemplate();
         verify(taskPicker).pickTask(queueConsumer);
         verifyZeroInteractions(taskProcessor);
     }
@@ -65,17 +65,17 @@ public class QueueRunnerInTransactionTest {
                 ZonedDateTime.now(), null, null);
         when(taskPicker.pickTask(queueConsumer)).thenReturn(taskRecord);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);
-        QueueDao queueDao = mock(QueueDao.class);
-        when(queueDao.getTransactionTemplate()).thenReturn(new FakeTransactionTemplate());
+        QueueShard queueShard = mock(QueueShard.class);
+        when(queueShard.getTransactionTemplate()).thenReturn(new FakeTransactionTemplate());
 
 
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
                 QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
-        QueueProcessingStatus queueProcessingStatus = new QueueRunnerInTransaction(taskPicker, taskProcessor, queueDao).runQueue(queueConsumer);
+        QueueProcessingStatus queueProcessingStatus = new QueueRunnerInTransaction(taskPicker, taskProcessor, queueShard).runQueue(queueConsumer);
 
         assertThat(queueProcessingStatus, equalTo(QueueProcessingStatus.PROCESSED));
 
-        verify(queueDao).getTransactionTemplate();
+        verify(queueShard).getTransactionTemplate();
         verify(taskPicker).pickTask(queueConsumer);
         verify(taskProcessor).processTask(queueConsumer, taskRecord);
     }

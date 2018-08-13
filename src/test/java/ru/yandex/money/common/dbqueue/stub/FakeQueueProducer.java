@@ -47,7 +47,7 @@ public class FakeQueueProducer implements QueueProducer<String> {
 
     @Nonnull
     @Override
-    public QueueShardRouter<String> getShardRouter() {
+    public QueueShardRouter<String> getProducerShardRouter() {
         return shardRouter;
     }
 }

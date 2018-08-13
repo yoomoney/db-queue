@@ -6,10 +6,8 @@ import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueExternalExecutor;
 import ru.yandex.money.common.dbqueue.api.QueueProducer;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.settings.QueueId;
 
@@ -17,8 +15,8 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -41,7 +39,6 @@ public class QueueRegistry {
     private final Map<QueueId, TaskLifecycleListener> taskListeners = new LinkedHashMap<>();
     private final Map<QueueId, ThreadLifecycleListener> threadListeners = new LinkedHashMap<>();
     private final Map<QueueId, QueueExternalExecutor> externalExecutors = new LinkedHashMap<>();
-    private final Map<QueueShardId, QueueDao> shards = new LinkedHashMap<>();
     private final Collection<String> errorMessages = new ArrayList<>();
 
     private volatile boolean isRegistrationFinished;
@@ -69,26 +66,16 @@ public class QueueRegistry {
             errorMessages.add(String.format("payload transformers must be the same: queueId=%s", queueId));
         }
 
-        if (!Objects.equals(queueProducer.getShardRouter(), queueConsumer.getShardRouter())) {
-            errorMessages.add(String.format("shard routers must be the same: queueId=%s", queueId));
-        }
+        HashSet<QueueShardId> uniqueShards = new HashSet<>();
+        queueConsumer.getConsumerShardsProvider().getProcessingShards().stream().forEach(shard -> {
+            if (uniqueShards.contains(shard.getShardId())) {
+                errorMessages.add(String.format("duplicate shard: queueId=%s, shardId=%s", queueId, shard.getShardId()));
+            }
+            uniqueShards.add(shard.getShardId());
+        });
 
         if (consumers.putIfAbsent(queueId, queueConsumer) != null) {
             errorMessages.add("duplicate queue: queueId=" + queueId);
-        }
-    }
-
-    /**
-     * Зарегистрировать шард БД
-     *
-     * @param queueDao dao для работы с шардом
-     */
-    public synchronized void registerShard(@Nonnull QueueDao queueDao) {
-        Objects.requireNonNull(queueDao);
-        ensureConstructionInProgress();
-        QueueShardId shardId = queueDao.getShardId();
-        if (shards.putIfAbsent(shardId, queueDao) != null) {
-            errorMessages.add("duplicate shard: shardId=" + shardId);
         }
     }
 
@@ -145,7 +132,6 @@ public class QueueRegistry {
      */
     public synchronized void finishRegistration() {
         isRegistrationFinished = true;
-        validateShards();
         validateTaskListeners();
         validateThreadListeners();
         validateExternalExecutors();
@@ -154,35 +140,12 @@ public class QueueRegistry {
                     errorMessages.stream().collect(Collectors.joining(System.lineSeparator())));
         }
         consumers.values().forEach(consumer -> log.info("registered consumer: config={}", consumer.getQueueConfig()));
-        shards.values().forEach(shard -> log.info("registered shard: shardId={}", shard.getShardId()));
         externalExecutors.keySet().forEach(queueId -> log.info("registered external executor: queueId={}", queueId));
         taskListeners.keySet().forEach(queueId ->
                 log.info("registered task lifecycle listener: queueId={}", queueId));
         threadListeners.keySet().forEach(queueId ->
                 log.info("registered thread lifecycle listener: queueId={}", queueId));
 
-    }
-
-    private void validateShards() {
-        Map<QueueShardId, Boolean> shardsInUse = shards.keySet().stream()
-                .collect(Collectors.toMap(id -> id, id -> Boolean.FALSE));
-        for (QueueShardRouter shardRouter : consumers.values().stream()
-                .map(QueueConsumer::getShardRouter).collect(Collectors.toList())) {
-            Collection<QueueShardId> routerShards = shardRouter.getShardsId();
-            for (QueueShardId shardId : routerShards) {
-                if (shards.containsKey(shardId)) {
-                    shardsInUse.put(shardId, Boolean.TRUE);
-                } else {
-                    errorMessages.add("shard not found: shardId=" + shardId);
-                }
-            }
-        }
-        List<QueueShardId> unusedShards = shardsInUse.entrySet().stream()
-                .filter(inUse -> !inUse.getValue()).map(Map.Entry::getKey).collect(Collectors.toList());
-        if (!unusedShards.isEmpty()) {
-            errorMessages.add("shards is not used: shardIds=" +
-                    unusedShards.stream().map(QueueShardId::asString).collect(Collectors.joining(",")));
-        }
     }
 
     private void validateTaskListeners() {
@@ -265,17 +228,6 @@ public class QueueRegistry {
     Map<QueueId, QueueExternalExecutor> getExternalExecutors() {
         ensureConstructionFinished();
         return Collections.unmodifiableMap(externalExecutors);
-    }
-
-    /**
-     * Получить зарегестрированные шарды
-     *
-     * @return Map: key - идентификатор шарда, value - dao для работы с данным шардом
-     */
-    @Nonnull
-    Map<QueueShardId, QueueDao> getShards() {
-        ensureConstructionFinished();
-        return Collections.unmodifiableMap(shards);
     }
 
     private void ensureConstructionFinished() {

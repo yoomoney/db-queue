@@ -70,7 +70,7 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 <dependency>
   <groupId>ru.yandex.money.common</groupId>
   <artifactId>db-queue</artifactId>
-  <version>3.0.0</version>
+  <version>4.0.0</version>
 </dependency>
 ```
 
@@ -87,7 +87,7 @@ CREATE TABLE queue_tasks (
   attempt       INTEGER                  DEFAULT 0,
   actor         VARCHAR(128),
   log_timestamp VARCHAR(128)
-);
+) WITH (fillfactor = 80);
 CREATE INDEX queue_tasks_name_time_desc_idx
   ON queue_tasks (queue_name, process_time, id DESC);
 ```
@@ -104,8 +104,7 @@ Example - [example.ManualConfiguration](https://github.com/yandex-money/db-queue
 
 Main steps to create manual configuration:
 
-* Create [QueueDao](https://yandex-money.github.io/db-queue/ru/yandex/money/common/dbqueue/dao/QueueDao.html) instance for each shard.
-* Implement [QueueShardRouter](https://yandex-money.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueShardRouter.html) interface or use [SingleShardRouter](https://yandex-money.github.io/db-queue/ru/yandex/money/common/dbqueue/api/impl/SingleShardRouter.html).
+* Implement [QueueShardRouter](https://yandex-money.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueShardRouter.html) interface
 * Implement [TaskPayloadTransformer](https://yandex-money.github.io/db-queue/ru/yandex/money/common/dbqueue/api/TaskPayloadTransformer.html) interface or use [NoopPayloadTransformer](https://yandex-money.github.io/db-queue/ru/yandex/money/common/dbqueue/api/impl/NoopPayloadTransformer.html).
 * Implement [QueueProducer](https://yandex-money.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueProducer.html) interface or use [TransactionalProducer](https://yandex-money.github.io/db-queue/ru/yandex/money/common/dbqueue/api/impl/TransactionalProducer.html).
 * Implement [QueueConsumer](https://yandex-money.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueConsumer.html) interface.
@@ -197,10 +196,9 @@ for example, you can set
 
 * Retry strategies cannot be defined by a user
 
-In some cases a client may want to use different retry strategies. 
+In some cases a you may want to use different retry strategies. 
 For example, do first retry almost immediately and then use standard behaviour.
-This strategy can be useful to deal with temporary glitches in network or database.
-There is hard to predict what client needs so it is desirable feature.
+Library does not support this type of customization.
 
 * Uneven load balancing
 
@@ -217,13 +215,13 @@ There is no support for blue-green deployment because a task is not bound to a h
 
 * No support for failover.
 
-[QueueProducer](https://yandex-money.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueProducer.html) can fail on task scheduling. We can detect that fail is caused by database 
+[QueueProducer](https://yandex-money.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueProducer.html) can fail on task scheduling. You can manually detect that fail is caused by database 
 and try insert task on next shard.
 
 * Hard to write tests.
 
 Task processing is asynchronous. Therefore, it is hard to write tests because you always must think about that fact
-and write code according to it. We can implement some kind of a synchronous mode for tests. 
+and write code according to it. To ease development of tests you can use `wakeup` method of [QueueExecutionPool](https://yandex-money.github.io/db-queue/ru/yandex/money/common/dbqueue/init/QueueExecutionPool.html)
  
 
 

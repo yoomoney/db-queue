@@ -6,6 +6,7 @@ import ru.yandex.money.common.dbqueue.api.EnqueueParams;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueExternalExecutor;
 import ru.yandex.money.common.dbqueue.api.QueueProducer;
+import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.Task;
@@ -14,7 +15,6 @@ import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.api.ThreadLifecycleListener;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
@@ -27,9 +27,9 @@ import ru.yandex.money.common.dbqueue.spring.SpringQueueConfigContainer;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueConsumer;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueExternalExecutor;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueInitializer;
+import ru.yandex.money.common.dbqueue.spring.SpringSingleShardRouter;
 import ru.yandex.money.common.dbqueue.spring.SpringTaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringNoopPayloadTransformer;
-import ru.yandex.money.common.dbqueue.spring.impl.SpringSingleShardRouter;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalProducer;
 import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
@@ -82,7 +82,7 @@ public class SpringLifecycleConfiguration {
     @Bean
     SpringQueueInitializer springQueueInitializer() {
         return new SpringQueueInitializer(springQueueConfigContainer(), springQueueCollector(),
-                queueExecutionPool(), Collections.singletonList(queueDao()));
+                queueExecutionPool());
     }
 
     @Bean
@@ -91,8 +91,8 @@ public class SpringLifecycleConfiguration {
     }
 
     @Bean
-    QueueDao queueDao() {
-        return new QueueDao(new QueueShardId("shard1"), QueueDatabaseInitializer.getJdbcTemplate(),
+    QueueShard queueShard() {
+        return new QueueShard(new QueueShardId("shard1"), QueueDatabaseInitializer.getJdbcTemplate(),
                 QueueDatabaseInitializer.getTransactionTemplate());
     }
 
@@ -135,13 +135,13 @@ public class SpringLifecycleConfiguration {
     }
 
     @Bean
-    QueueShardRouter<String> exampleShardRouter(QueueDao queueDao) {
-        return new SpringSingleShardRouter<String>(TEST_QUEUE_ID, String.class, queueDao) {
+    QueueShardRouter<String> exampleShardRouter(QueueShard queueShard) {
+        return new SpringSingleShardRouter<String>(TEST_QUEUE_ID, String.class, queueShard) {
+            @Nonnull
             @Override
-            public QueueShardId resolveShardId(EnqueueParams<String> enqueueParams) {
-                QueueShardId queueShardId = super.resolveShardId(enqueueParams);
-                EVENTS.add("resolved shard: " + queueShardId.toString());
-                return queueShardId;
+            public QueueShard resolveEnqueuingShard(@Nonnull EnqueueParams<String> enqueueParams) {
+                EVENTS.add("resolved shard: " + queueShard.getShardId().asString());
+                return queueShard;
             }
         };
     }

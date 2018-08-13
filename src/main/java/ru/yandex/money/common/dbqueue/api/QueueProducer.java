@@ -45,11 +45,29 @@ public interface QueueProducer<T> {
     QueueConfig getQueueConfig();
 
     /**
-     * Получить правила шардирования задач, обрабатываемых очередью
+     * Получить правила шардирования для вставки задачи
      *
      * @return правила шардирования
      */
     @Nonnull
-    QueueShardRouter<T> getShardRouter();
+    ProducerShardRouter<T> getProducerShardRouter();
 
+    /**
+     * Правила размещения задачи на шарде БД
+     *
+     * @param <T> тип данных задачи
+     * @author Oleg Kandaurov
+     * @since 13.08.2018
+     */
+    interface ProducerShardRouter<T> {
+
+        /**
+         * Получить шард, на котором должна быть размещена задача
+         *
+         * @param enqueueParams данные постновки задачи в очередь
+         * @return идентификатор шарда
+         */
+        @Nonnull
+        QueueShard resolveEnqueuingShard(@Nonnull EnqueueParams<T> enqueueParams);
+    }
 }

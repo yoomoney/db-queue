@@ -2,6 +2,7 @@ package ru.yandex.money.common.dbqueue.internal.runner;
 
 import org.junit.Test;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
+import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.Task;
@@ -9,7 +10,6 @@ import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueId;
@@ -47,8 +47,8 @@ public class TaskProcessorTest {
         TaskExecutionResult queueResult = TaskExecutionResult.finish();
 
 
-        QueueDao queueDao = mock(QueueDao.class);
-        when(queueDao.getShardId()).thenReturn(shardId);
+        QueueShard queueShard = mock(QueueShard.class);
+        when(queueShard.getShardId()).thenReturn(shardId);
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
         MillisTimeProvider millisTimeProvider = spy(new FakeMillisTimeProvider(3L, 5L));
         TaskResultHandler resultHandler = mock(TaskResultHandler.class);
@@ -59,7 +59,7 @@ public class TaskProcessorTest {
                 transformer, mock(QueueShardRouter.class), r -> queueResult));
 
 
-        new TaskProcessor(queueDao, listener, millisTimeProvider, resultHandler).processTask(queueConsumer, taskRecord);
+        new TaskProcessor(queueShard, listener, millisTimeProvider, resultHandler).processTask(queueConsumer, taskRecord);
 
         verify(listener).started(shardId, location, taskRecord);
         verify(millisTimeProvider, times(2)).getMillis();
@@ -82,8 +82,8 @@ public class TaskProcessorTest {
         RuntimeException queueException = new RuntimeException("fail");
 
 
-        QueueDao queueDao = mock(QueueDao.class);
-        when(queueDao.getShardId()).thenReturn(shardId);
+        QueueShard queueShard = mock(QueueShard.class);
+        when(queueShard.getShardId()).thenReturn(shardId);
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
         MillisTimeProvider millisTimeProvider = mock(MillisTimeProvider.class);
         TaskResultHandler resultHandler = mock(TaskResultHandler.class);
@@ -96,7 +96,7 @@ public class TaskProcessorTest {
         }));
 
 
-        new TaskProcessor(queueDao, listener, millisTimeProvider, resultHandler).processTask(queueConsumer, taskRecord);
+        new TaskProcessor(queueShard, listener, millisTimeProvider, resultHandler).processTask(queueConsumer, taskRecord);
 
         verify(listener).started(shardId, location, taskRecord);
         verify(queueConsumer).execute(any());
@@ -116,8 +116,8 @@ public class TaskProcessorTest {
         TaskExecutionResult queueResult = TaskExecutionResult.finish();
 
 
-        QueueDao queueDao = mock(QueueDao.class);
-        when(queueDao.getShardId()).thenReturn(shardId);
+        QueueShard queueShard = mock(QueueShard.class);
+        when(queueShard.getShardId()).thenReturn(shardId);
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
         MillisTimeProvider millisTimeProvider = mock(MillisTimeProvider.class);
         TaskResultHandler resultHandler = mock(TaskResultHandler.class);
@@ -129,7 +129,7 @@ public class TaskProcessorTest {
                 transformer, mock(QueueShardRouter.class), r -> queueResult));
 
 
-        new TaskProcessor(queueDao, listener, millisTimeProvider, resultHandler).processTask(queueConsumer, taskRecord);
+        new TaskProcessor(queueShard, listener, millisTimeProvider, resultHandler).processTask(queueConsumer, taskRecord);
 
         verify(listener).started(shardId, location, taskRecord);
         verify(queueConsumer).execute(any());

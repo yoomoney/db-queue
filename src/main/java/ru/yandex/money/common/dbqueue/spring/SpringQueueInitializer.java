@@ -5,8 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
-import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
@@ -14,9 +12,7 @@ import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -41,8 +37,6 @@ public class SpringQueueInitializer implements
     @Nonnull
     private final QueueRegistry queueRegistry;
     @Nonnull
-    private final Collection<QueueDao> queueShards;
-    @Nonnull
     private final QueueExecutionPool executionPool;
     @Nonnull
     private final SpringQueueConfigContainer configContainer;
@@ -57,17 +51,14 @@ public class SpringQueueInitializer implements
      * @param configContainer настройки очередей
      * @param queueCollector  поставщик бинов, связанных с очередями
      * @param executionPool   менеджер запуска очередей
-     * @param queueShards     шарды на которых запускаются очереди
      */
     public SpringQueueInitializer(@Nonnull SpringQueueConfigContainer configContainer,
                                   @Nonnull SpringQueueCollector queueCollector,
-                                  @Nonnull QueueExecutionPool executionPool,
-                                  @Nonnull Collection<QueueDao> queueShards) {
+                                  @Nonnull QueueExecutionPool executionPool) {
         this.configContainer = requireNonNull(configContainer);
         this.queueCollector = requireNonNull(queueCollector);
         this.executionPool = requireNonNull(executionPool);
         this.queueRegistry = requireNonNull(executionPool.getQueueRegistry());
-        this.queueShards = requireNonNull(queueShards);
     }
 
     private void init() {
@@ -78,7 +69,6 @@ public class SpringQueueInitializer implements
         throwIfHasErrors();
         wireQueueConfig();
 
-        queueShards.forEach(queueRegistry::registerShard);
         queueCollector.getTaskListeners().forEach(queueRegistry::registerTaskLifecycleListener);
         queueCollector.getThreadListeners().forEach(queueRegistry::registerThreadLifecycleListener);
         queueCollector.getExecutors().forEach(queueRegistry::registerExternalExecutor);
@@ -95,8 +85,6 @@ public class SpringQueueInitializer implements
     }
 
     private void wireQueueConfig() {
-        Map<QueueShardId, QueueDao> allShards = queueShards.stream().collect(Collectors.toMap(
-                QueueDao::getShardId, Function.identity()));
         queueCollector.getConsumers().forEach((queueId, consumer) -> {
             QueueConfig queueConfig = requireNonNull(configContainer.getQueueConfig(queueId).orElse(null));
             SpringTaskPayloadTransformer payloadTransformer = requireNonNull(
@@ -105,18 +93,12 @@ public class SpringQueueInitializer implements
 
             consumer.setPayloadTransformer(payloadTransformer);
             consumer.setQueueConfig(queueConfig);
-            consumer.setShardRouter(shardRouter);
+            consumer.setConsumerShardsProvider(shardRouter);
 
-            Collection<QueueShardId> routerShards = shardRouter.getShardsId();
-            Map<QueueShardId, QueueDao> queueShards = routerShards.stream()
-                    .filter(allShards::containsKey)
-                    .map(allShards::get)
-                    .collect(Collectors.toMap(QueueDao::getShardId, Function.identity()));
             SpringQueueProducer producer = requireNonNull(queueCollector.getProducers().get(queueId));
             producer.setPayloadTransformer(payloadTransformer);
-            producer.setShardRouter(shardRouter);
+            producer.setProducerShardRouter(shardRouter);
             producer.setQueueConfig(queueConfig);
-            producer.setShards(queueShards);
             queueRegistry.registerQueue(consumer, producer);
         });
     }

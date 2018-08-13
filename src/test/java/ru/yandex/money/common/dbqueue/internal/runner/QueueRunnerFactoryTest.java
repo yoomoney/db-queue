@@ -5,9 +5,9 @@ import org.junit.Test;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.transaction.support.TransactionOperations;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
+import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueId;
@@ -37,7 +37,7 @@ public class QueueRunnerFactoryTest {
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
 
         QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queueConsumer,
-                new QueueDao(new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
+                new QueueShard(new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
                 mock(TaskLifecycleListener.class),
                 mock(Executor.class));
 
@@ -55,7 +55,7 @@ public class QueueRunnerFactoryTest {
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
 
         QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queueConsumer,
-                new QueueDao(new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
+                new QueueShard(new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
                 mock(TaskLifecycleListener.class),
                 null);
 
@@ -72,7 +72,7 @@ public class QueueRunnerFactoryTest {
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
 
         QueueRunner queueRunner = QueueRunner.Factory.createQueueRunner(queueConsumer,
-                new QueueDao(new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
+                new QueueShard(new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
                 mock(TaskLifecycleListener.class),
                 null);
 

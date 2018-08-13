@@ -2,17 +2,11 @@ package ru.yandex.money.common.dbqueue.spring;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import ru.yandex.money.common.dbqueue.api.QueueProducer;
-import ru.yandex.money.common.dbqueue.api.QueueShardId;
-import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueId;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -34,8 +28,7 @@ public abstract class SpringQueueProducer<T> implements QueueProducer<T>, Spring
     private final Class<T> payloadClass;
     private QueueConfig queueConfig;
     private TaskPayloadTransformer<T> payloadTransformer;
-    private Map<QueueShardId, QueueDao> shards;
-    private QueueShardRouter<T> shardRouter;
+    private ProducerShardRouter<T> shardRouter;
 
     /**
      * Конструктор постановщика задач
@@ -72,7 +65,7 @@ public abstract class SpringQueueProducer<T> implements QueueProducer<T>, Spring
 
     @Nonnull
     @Override
-    public QueueShardRouter<T> getShardRouter() {
+    public ProducerShardRouter<T> getProducerShardRouter() {
         return shardRouter;
     }
 
@@ -101,31 +94,12 @@ public abstract class SpringQueueProducer<T> implements QueueProducer<T>, Spring
     }
 
     /**
-     * Установить список шардов, которые могут быть использованы при роутинге задачи на шард
+     * Установить роутер для диспатчинга задач на шарды
      *
-     * @param shards Map: key - идентификатор шарда, value - dao для работы с шардом
+     * @param producerShardRouter роутер
      */
-    public void setShards(@Nonnull Map<QueueShardId, QueueDao> shards) {
-        this.shards = Objects.requireNonNull(shards);
-    }
-
-    /**
-     * Получить список шардов участвующих роутинге задач
-     *
-     * @return список шардов
-     */
-    @Nonnull
-    public Collection<QueueDao> getShards() {
-        return Collections.unmodifiableCollection(shards.values());
-    }
-
-    /**
-     * Установить роутер для диспатчинг задач на шарды
-     *
-     * @param shardRouter роутер
-     */
-    public void setShardRouter(@Nonnull QueueShardRouter<T> shardRouter) {
-        this.shardRouter = Objects.requireNonNull(shardRouter);
+    public void setProducerShardRouter(@Nonnull ProducerShardRouter<T> producerShardRouter) {
+        this.shardRouter = Objects.requireNonNull(producerShardRouter);
     }
 
     /**

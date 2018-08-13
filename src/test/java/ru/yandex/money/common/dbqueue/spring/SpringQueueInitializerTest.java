@@ -3,11 +3,12 @@ package ru.yandex.money.common.dbqueue.spring;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import ru.yandex.money.common.dbqueue.api.EnqueueParams;
+import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.transaction.support.TransactionOperations;
+import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.Task;
 import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
@@ -15,21 +16,16 @@ import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringNoopPayloadTransformer;
-import ru.yandex.money.common.dbqueue.spring.impl.SpringSingleShardRouter;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalProducer;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -55,7 +51,7 @@ public class SpringQueueInitializerTest {
         when(executionPool.getQueueRegistry()).thenReturn(new QueueRegistry());
         SpringQueueInitializer initializer = new SpringQueueInitializer(
                 new SpringQueueConfigContainer(Collections.emptyList()),
-                mock(SpringQueueCollector.class), executionPool, Collections.emptyList());
+                mock(SpringQueueCollector.class), executionPool);
         initializer.onApplicationEvent(null);
     }
 
@@ -65,7 +61,7 @@ public class SpringQueueInitializerTest {
         when(executionPool.getQueueRegistry()).thenReturn(new QueueRegistry());
         SpringQueueInitializer initializer = new SpringQueueInitializer(
                 new SpringQueueConfigContainer(Collections.emptyList()),
-                mock(SpringQueueCollector.class), executionPool, Collections.emptyList());
+                mock(SpringQueueCollector.class), executionPool);
         initializer.onApplicationEvent(null);
         verify(executionPool).init();
         verify(executionPool).start();
@@ -89,7 +85,7 @@ public class SpringQueueInitializerTest {
 
         SpringQueueInitializer initializer = new SpringQueueInitializer(
                 new SpringQueueConfigContainer(Collections.emptyList()),
-                queueCollector, executionPool, Collections.emptyList());
+                queueCollector, executionPool);
         initializer.onApplicationEvent(null);
     }
 
@@ -109,7 +105,7 @@ public class SpringQueueInitializerTest {
         when(queueCollector.getProducers()).thenReturn(singletonMap(queueId1,
                 new SpringTransactionalProducer<>(queueId1, Long.class)));
         when(queueCollector.getShardRouters()).thenReturn(singletonMap(queueId1,
-                new SpringSingleShardRouter<>(queueId1, BigDecimal.class, mock(QueueDao.class))));
+                new SpringSingleShardRouter<>(queueId1, BigDecimal.class, mock(QueueShard.class))));
         when(queueCollector.getTransformers()).thenReturn(singletonMap(queueId1,
                 new SpringNoopPayloadTransformer(queueId1)));
 
@@ -117,7 +113,7 @@ public class SpringQueueInitializerTest {
                 new SpringQueueConfigContainer(Collections.singletonList(new QueueConfig(testLocation1,
                         QueueSettings.builder().withNoTaskTimeout(Duration.ofMillis(1L))
                                 .withBetweenTaskTimeout(Duration.ofMillis(1L)).build()))),
-                queueCollector, executionPool, Collections.emptyList());
+                queueCollector, executionPool);
         initializer.onApplicationEvent(null);
     }
 
@@ -136,7 +132,7 @@ public class SpringQueueInitializerTest {
         when(queueCollector.getProducers()).thenReturn(singletonMap(queueId1,
                 new SpringTransactionalProducer<>(queueId1, String.class)));
         when(queueCollector.getShardRouters()).thenReturn(singletonMap(queueId1,
-                new SpringSingleShardRouter<>(queueId1, String.class, mock(QueueDao.class))));
+                new SpringSingleShardRouter<>(queueId1, String.class, mock(QueueShard.class))));
         when(queueCollector.getTransformers()).thenReturn(singletonMap(queueId1,
                 new SpringNoopPayloadTransformer(queueId1)));
 
@@ -144,7 +140,7 @@ public class SpringQueueInitializerTest {
                 new SpringQueueConfigContainer(Collections.singletonList(new QueueConfig(testLocation1,
                         QueueSettings.builder().withNoTaskTimeout(Duration.ofMillis(1L))
                                 .withBetweenTaskTimeout(Duration.ofMillis(1L)).build()))),
-                queueCollector, executionPool, Collections.emptyList());
+                queueCollector, executionPool);
         initializer.onApplicationEvent(null);
     }
 
@@ -157,27 +153,10 @@ public class SpringQueueInitializerTest {
                 QueueSettings.builder().withNoTaskTimeout(Duration.ofMillis(1L))
                         .withBetweenTaskTimeout(Duration.ofMillis(1L)).build());
 
-        QueueDao queueDao = mock(QueueDao.class);
-        QueueShardId shardId = new QueueShardId("1");
-        when(queueDao.getShardId()).thenReturn(shardId);
-
-        QueueDao unusedQueueDao = mock(QueueDao.class);
-        QueueShardId unusedShardId = new QueueShardId("unused");
-        when(unusedQueueDao.getShardId()).thenReturn(unusedShardId);
-
         SimpleQueueConsumer<String> consumer = spy(new SimpleQueueConsumer<>(String.class));
         SpringQueueProducer<String> producer = spy(new SpringTransactionalProducer<>(queueId1, String.class));
-        SpringQueueShardRouter<String> shardRouter = new SpringQueueShardRouter<String>(queueId1, String.class) {
-            @Override
-            public Collection<QueueShardId> getShardsId() {
-                return Collections.singletonList(shardId);
-            }
-
-            @Override
-            public QueueShardId resolveShardId(EnqueueParams enqueueParams) {
-                return shardId;
-            }
-        };
+        SpringQueueShardRouter<String> shardRouter = new SpringSingleShardRouter<>(queueId1, String.class,
+                new QueueShard(new QueueShardId("1"), mock(JdbcOperations.class), mock(TransactionOperations.class)));
         SpringNoopPayloadTransformer payloadTransformer = new SpringNoopPayloadTransformer(queueId1);
         SpringQueueExternalExecutor externalExecutor = new SimpleExternalExecutor(queueId1);
         SpringTaskLifecycleListener taskLifecycleListener = mock(SpringTaskLifecycleListener.class);
@@ -199,10 +178,9 @@ public class SpringQueueInitializerTest {
         when(executionPool.getQueueRegistry()).thenReturn(queueRegistry);
         SpringQueueInitializer initializer = new SpringQueueInitializer(
                 new SpringQueueConfigContainer(Collections.singletonList(queueConfig)),
-                queueCollector, executionPool, Arrays.asList(queueDao, unusedQueueDao));
+                queueCollector, executionPool);
         initializer.onApplicationEvent(null);
 
-        verify(queueRegistry).registerShard(queueDao);
         verify(queueRegistry).registerQueue(consumer, producer);
         verify(queueRegistry).registerTaskLifecycleListener(queueId1, taskLifecycleListener);
         verify(queueRegistry).registerThreadLifecycleListener(queueId1, threadLifecycleListener);
@@ -211,17 +189,13 @@ public class SpringQueueInitializerTest {
         verify(consumer).onInitialized();
         verify(producer).onInitialized();
 
-        assertThat(consumer.getShardRouter(), equalTo(shardRouter));
+        assertThat(consumer.getConsumerShardsProvider(), equalTo(shardRouter));
         assertThat(consumer.getPayloadTransformer(), equalTo(payloadTransformer));
         assertThat(consumer.getQueueConfig(), equalTo(queueConfig));
 
-        assertThat(producer.getShardRouter(), equalTo(shardRouter));
+        assertThat(producer.getProducerShardRouter(), equalTo(shardRouter));
         assertThat(producer.getPayloadTransformer(), equalTo(payloadTransformer));
         assertThat(producer.getQueueConfig(), equalTo(queueConfig));
-        HashMap<QueueShardId, QueueDao> expectedShards = new HashMap<QueueShardId, QueueDao>() {{
-            put(shardId, queueDao);
-        }};
-        verify(producer).setShards(eq(expectedShards));
         assertThat(producer.getQueueConfig(), equalTo(queueConfig));
 
     }
