@@ -3,7 +3,6 @@ package ru.yandex.money.common.dbqueue.dao;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.transaction.support.TransactionOperations;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
@@ -27,17 +26,14 @@ import static java.util.Objects.requireNonNull;
 public class QueueActorDao {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
-    private final TransactionOperations transactionTemplate;
 
     /**
      * Конструктор
      *
      * @param jdbcTemplate        spring jdbc template
-     * @param transactionTemplate spring transaction template
      */
-    public QueueActorDao(JdbcOperations jdbcTemplate, TransactionOperations transactionTemplate) {
+    public QueueActorDao(JdbcOperations jdbcTemplate) {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
-        this.transactionTemplate = transactionTemplate;
     }
 
     /**
@@ -110,12 +106,4 @@ public class QueueActorDao {
         return updatedRows != 0;
     }
 
-    /**
-     * Получить transaction template
-     *
-     * @return spring transaction template
-     */
-    public TransactionOperations getTransactionTemplate() {
-        return transactionTemplate;
-    }
 }

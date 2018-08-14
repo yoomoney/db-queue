@@ -10,6 +10,17 @@ Given version x.y.z
 * y - Minor version. Backward compatibile with previous version. New features.
 * z - Patch version. Backward compatibile with previous version. Bug fix or small features.
 
+## [4.0.0]() (13-08-2018)
+
+Изменён способ конфигурирования шардов БД. 
+
+В предыдущей версии шарды были общими для всех очередей 
+и идентичными между Producer и Consumer в пределах одной очереди.
+Теперь используемые шарды задаются в каждом из QueueShardRouter 
+и могут быть различными для Producer и Consumer.
+
+Примеры новой конфигурации в тестах: example.ManualConfiguration и example.SpringAutoConfiguration
+
 ## [3.1.0]() (03-08-2018)
 
 * Добавлена возможность будить поток разбора задача посредством QueueExecutionPool#wakeup

@@ -49,7 +49,7 @@ public class FakeQueueConsumer implements QueueConsumer<String> {
 
     @Nonnull
     @Override
-    public QueueShardRouter<String> getShardRouter() {
+    public QueueShardRouter<String> getConsumerShardsProvider() {
         return shardRouter;
     }
 }

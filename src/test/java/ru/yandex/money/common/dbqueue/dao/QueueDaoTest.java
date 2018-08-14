@@ -3,7 +3,6 @@ package ru.yandex.money.common.dbqueue.dao;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
-import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
@@ -20,7 +19,7 @@ import static org.hamcrest.CoreMatchers.not;
  */
 public class QueueDaoTest extends BaseDaoTest {
 
-    private final QueueDao queueDao = new QueueDao(new QueueShardId("s1"), jdbcTemplate, transactionTemplate);
+    private final QueueDao queueDao = new QueueDao(jdbcTemplate);
 
     @Test
     public void enqueue_should_accept_null_values() throws Exception {

@@ -1,8 +1,10 @@
 package ru.yandex.money.common.dbqueue.spring;
 
 import org.junit.Test;
+import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.transaction.support.TransactionOperations;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
+import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
@@ -13,13 +15,13 @@ import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalProducer;
 import ru.yandex.money.common.dbqueue.stub.FakeTransactionTemplate;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -44,34 +46,33 @@ public class SpringTransactionalProducerTest {
         QueueShardId firstShardId = new QueueShardId("s1");
         QueueShardId secondShardId = new QueueShardId("s2");
 
-        QueueDao firstQueueDao = mock(QueueDao.class);
-        when(firstQueueDao.getShardId()).thenReturn(firstShardId);
-        when(firstQueueDao.getTransactionTemplate()).thenReturn(transactionTemplate);
-        QueueDao secondQueueDao = mock(QueueDao.class);
-        when(secondQueueDao.getShardId()).thenReturn(secondShardId);
-        when(secondQueueDao.getTransactionTemplate()).thenReturn(transactionTemplate);
-        when(secondQueueDao.enqueue(any(), any())).thenReturn(99L);
+        QueueShard firstShard = new QueueShard(firstShardId, mock(JdbcOperations.class), transactionTemplate);
+        QueueShard secondShard = spy(new QueueShard(secondShardId, mock(JdbcOperations.class), transactionTemplate));
+        when(secondShard.getShardId()).thenReturn(secondShardId);
+        when(secondShard.getTransactionTemplate()).thenReturn(transactionTemplate);
+        QueueDao queueDao = mock(QueueDao.class);
+        when(secondShard.getQueueDao()).thenReturn(queueDao);
+        when(queueDao.enqueue(any(), any())).thenReturn(99L);
 
         SpringQueueProducer<String> producer = new SpringTransactionalProducer<>(queueId1, String.class);
-        producer.setShards(new HashMap<QueueShardId, QueueDao>() {{
-            put(firstShardId, firstQueueDao);
-            put(secondShardId, secondQueueDao);
-        }});
         TaskPayloadTransformer<String> payloadTransformer = mock(TaskPayloadTransformer.class);
         when(payloadTransformer.fromObject("testPayload")).thenReturn("transformedPayload");
         producer.setPayloadTransformer(payloadTransformer);
         SpringQueueShardRouter<String> shardRouter = spy(new SpringQueueShardRouter<String>(queueId1, String.class) {
+            @Nonnull
             @Override
-            public QueueShardId resolveShardId(EnqueueParams<String> enqueueParams) {
-                return enqueueParams.getExecutionDelay().isZero() ? secondShardId : firstShardId;
+            public QueueShard resolveEnqueuingShard(@Nonnull EnqueueParams<String> enqueueParams) {
+                return enqueueParams.getExecutionDelay().isZero() ? secondShard : firstShard;
             }
 
+            @Nonnull
             @Override
-            public Collection<QueueShardId> getShardsId() {
-                return Arrays.asList(firstShardId, secondShardId);
+            public Collection<QueueShard> getProcessingShards() {
+                return Arrays.asList(firstShard, secondShard);
             }
+
         });
-        producer.setShardRouter(shardRouter);
+        producer.setProducerShardRouter(shardRouter);
 
         QueueConfig queueConfig = new QueueConfig(testLocation1, QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
                 .withNoTaskTimeout(Duration.ZERO).build());
@@ -83,11 +84,11 @@ public class SpringTransactionalProducerTest {
 
         assertThat(taskId, equalTo(99L));
 
-        verify(shardRouter).resolveShardId(enqueueParams);
+        verify(shardRouter).resolveEnqueuingShard(enqueueParams);
         verify(payloadTransformer).fromObject(eq("testPayload"));
-        verify(secondQueueDao).getTransactionTemplate();
+        verify(secondShard).getTransactionTemplate();
         verify(transactionTemplate).execute(any());
-        verify(secondQueueDao).enqueue(eq(testLocation1), eq(enqueueParams.withPayload("transformedPayload")));
+        verify(queueDao).enqueue(eq(testLocation1), eq(enqueueParams.withPayload("transformedPayload")));
 
     }
 

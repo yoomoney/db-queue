@@ -4,7 +4,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
-import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.dao.QueueActorDao;
 import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
@@ -23,10 +22,8 @@ public class SpringLifecycleTest {
     @Test
     public void should_do_actions_in_particular_order() throws Exception {
         QueueDatabaseInitializer.createTable("lifecycle_table");
-        QueueDao queueDao = new QueueDao(new QueueShardId("shard1"), QueueDatabaseInitializer.getJdbcTemplate(),
-                QueueDatabaseInitializer.getTransactionTemplate());
-        QueueActorDao actorDao = new QueueActorDao(QueueDatabaseInitializer.getJdbcTemplate(),
-                QueueDatabaseInitializer.getTransactionTemplate());
+        QueueDao queueDao = new QueueDao(QueueDatabaseInitializer.getJdbcTemplate());
+        QueueActorDao actorDao = new QueueActorDao(QueueDatabaseInitializer.getJdbcTemplate());
         queueDao.enqueue(SpringLifecycleConfiguration.TEST_QUEUE_LOCATION,
                 EnqueueParams.create("first").withActor("1"));
 

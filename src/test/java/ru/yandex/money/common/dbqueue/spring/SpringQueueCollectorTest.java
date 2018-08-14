@@ -10,17 +10,16 @@ import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.transaction.support.TransactionOperations;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueProducer;
+import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.Task;
 import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringNoopPayloadTransformer;
-import ru.yandex.money.common.dbqueue.spring.impl.SpringSingleShardRouter;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalProducer;
 
 import javax.annotation.Nonnull;
@@ -105,14 +104,13 @@ public class SpringQueueCollectorTest {
         }
 
         @Bean
-        QueueShardRouter<String> testShardRouter1() {
-            return new SpringSingleShardRouter<>(queueId1,
-                    String.class, mock(QueueDao.class));
+        QueueShardRouter<String> testShardRouter1(QueueShard queueShard1) {
+            return new SpringSingleShardRouter<>(queueId1, String.class, queueShard1);
         }
 
         @Bean
-        QueueDao queueDao1() {
-            return new QueueDao(new QueueShardId("1"), mock(JdbcOperations.class),
+        QueueShard queueShard1() {
+            return new QueueShard(new QueueShardId("1"), mock(JdbcOperations.class),
                     mock(TransactionOperations.class));
         }
 
@@ -180,14 +178,13 @@ public class SpringQueueCollectorTest {
 
 
         @Bean
-        QueueShardRouter<String> testShardRouter2() {
-            return new SpringSingleShardRouter<>(queueId2,
-                    String.class, mock(QueueDao.class));
+        QueueShardRouter<String> testShardRouter2(QueueShard queueShard2) {
+            return new SpringSingleShardRouter<>(queueId2, String.class, queueShard2);
         }
 
         @Bean
-        QueueDao queueDao2() {
-            return new QueueDao(new QueueShardId("2"), mock(JdbcOperations.class),
+        QueueShard queueShard2() {
+            return new QueueShard(new QueueShardId("2"), mock(JdbcOperations.class),
                     mock(TransactionOperations.class));
         }
 
@@ -276,31 +273,31 @@ public class SpringQueueCollectorTest {
         @Bean
         QueueShardRouter<String> testShardRouter1() {
             return new SpringSingleShardRouter<>(queueId,
-                    String.class, mock(QueueDao.class));
+                    String.class, mock(QueueShard.class));
         }
 
         @DependsOn("testShardRouter1")
         @Bean
         QueueShardRouter<String> testShardRouter2() {
             return new SpringSingleShardRouter<>(queueId,
-                    String.class, mock(QueueDao.class));
+                    String.class, mock(QueueShard.class));
         }
 
         @DependsOn("testShardRouter2")
         @Bean
-        QueueDao queueDao1() {
-            return new QueueDao(new QueueShardId("1"), mock(JdbcOperations.class),
+        QueueShard queueShard1() {
+            return new QueueShard(new QueueShardId("1"), mock(JdbcOperations.class),
                     mock(TransactionOperations.class));
         }
 
-        @DependsOn("queueDao1")
+        @DependsOn("queueShard1")
         @Bean
-        QueueDao queueDao2() {
-            return new QueueDao(new QueueShardId("1"), mock(JdbcOperations.class),
+        QueueShard queueShard2() {
+            return new QueueShard(new QueueShardId("1"), mock(JdbcOperations.class),
                     mock(TransactionOperations.class));
         }
 
-        @DependsOn("queueDao2")
+        @DependsOn("queueShard2")
         @Bean
         SpringTaskLifecycleListener springTaskLifecycleListener1() {
             return new NoopSpringTaskLifecycleListener(queueId);

@@ -2,7 +2,6 @@ package ru.yandex.money.common.dbqueue.spring;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
-import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueId;
@@ -29,7 +28,7 @@ public abstract class SpringQueueConsumer<T> implements QueueConsumer<T>, Spring
     private final Class<T> payloadClass;
     private TaskPayloadTransformer<T> payloadTransformer;
     private QueueConfig queueConfig;
-    private QueueShardRouter<T> shardRouter;
+    private ConsumerShardsProvider shardRouter;
 
     /**
      * Конструктор очереди
@@ -60,12 +59,6 @@ public abstract class SpringQueueConsumer<T> implements QueueConsumer<T>, Spring
         return payloadTransformer;
     }
 
-    @Nonnull
-    @Override
-    public QueueShardRouter<T> getShardRouter() {
-        return shardRouter;
-    }
-
     /**
      * Получить класс данных задачи в очереди
      *
@@ -79,10 +72,16 @@ public abstract class SpringQueueConsumer<T> implements QueueConsumer<T>, Spring
     /**
      * Установить роутер для диспатчинг задач на шарды
      *
-     * @param shardRouter роутер
+     * @param consumerShardsProvider хранитель шардов БД
      */
-    void setShardRouter(@Nonnull QueueShardRouter<T> shardRouter) {
-        this.shardRouter = Objects.requireNonNull(shardRouter);
+    void setConsumerShardsProvider(@Nonnull ConsumerShardsProvider consumerShardsProvider) {
+        this.shardRouter = Objects.requireNonNull(consumerShardsProvider);
+    }
+
+    @Nonnull
+    @Override
+    public ConsumerShardsProvider getConsumerShardsProvider() {
+        return shardRouter;
     }
 
     /**

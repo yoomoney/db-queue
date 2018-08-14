@@ -6,14 +6,15 @@ import org.junit.runner.RunWith;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import ru.yandex.money.common.dbqueue.api.EnqueueParams;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.QueueProducer;
+import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.Task;
 import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
@@ -24,13 +25,14 @@ import ru.yandex.money.common.dbqueue.spring.SpringQueueCollector;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueConfigContainer;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueConsumer;
 import ru.yandex.money.common.dbqueue.spring.SpringQueueInitializer;
+import ru.yandex.money.common.dbqueue.spring.SpringQueueShardRouter;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringNoopPayloadTransformer;
-import ru.yandex.money.common.dbqueue.spring.impl.SpringSingleShardRouter;
 import ru.yandex.money.common.dbqueue.spring.impl.SpringTransactionalProducer;
 import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Collections;
 
 /**
@@ -67,8 +69,25 @@ public class SpringAutoConfiguration {
         }
 
         @Bean
-        QueueShardRouter<String> exampleShardRouter(QueueDao queueDao) {
-            return new SpringSingleShardRouter<>(EXAMPLE_QUEUE, String.class, queueDao);
+        QueueShardRouter<String> exampleShardRouter() {
+            return new SpringQueueShardRouter<String>(EXAMPLE_QUEUE, String.class) {
+
+                private final QueueShard singleShard = new QueueShard(new QueueShardId("master"),
+                        QueueDatabaseInitializer.getJdbcTemplate(),
+                        QueueDatabaseInitializer.getTransactionTemplate());
+
+                @Nonnull
+                @Override
+                public Collection<QueueShard> getProcessingShards() {
+                    return Collections.singletonList(singleShard);
+                }
+
+                @Nonnull
+                @Override
+                public QueueShard resolveEnqueuingShard(@Nonnull EnqueueParams<String> enqueueParams) {
+                    return singleShard;
+                }
+            };
         }
 
         @Bean
@@ -92,24 +111,15 @@ public class SpringAutoConfiguration {
         }
 
         @Bean
-        QueueDao queueDao() {
-            QueueDatabaseInitializer.createTable("example_spring_table");
-            return new QueueDao(new QueueShardId("master"), QueueDatabaseInitializer.getJdbcTemplate(),
-                    QueueDatabaseInitializer.getTransactionTemplate());
-        }
-
-        @Bean
         SpringQueueCollector springQueueCollector() {
             return new SpringQueueCollector();
         }
 
         @Bean
         SpringQueueInitializer springQueueInitializer(SpringQueueConfigContainer springQueueConfigContainer,
-                                                      SpringQueueCollector springQueueCollector,
-                                                      QueueDao queueDao) {
+                                                      SpringQueueCollector springQueueCollector) {
             return new SpringQueueInitializer(springQueueConfigContainer, springQueueCollector,
-                    new QueueExecutionPool(new QueueRegistry(), new EmptyTaskListener(),
-                            new EmptyListener()), Collections.singletonList(queueDao));
+                    new QueueExecutionPool(new QueueRegistry(), new EmptyTaskListener(), new EmptyListener()));
         }
     }
 

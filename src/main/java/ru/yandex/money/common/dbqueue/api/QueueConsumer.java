@@ -3,6 +3,7 @@ package ru.yandex.money.common.dbqueue.api;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 
 /**
  * Обработчик задач в очереди.
@@ -39,10 +40,27 @@ public interface QueueConsumer<T> {
     TaskPayloadTransformer<T> getPayloadTransformer();
 
     /**
-     * Получить правила шардирования задач, обрабатываемых очередью
+     * Получить инстанс класс, представляющий шарды для обработки задачи
      *
-     * @return правила шардирования
+     * @return шарды БД
      */
     @Nonnull
-    QueueShardRouter<T> getShardRouter();
+    ConsumerShardsProvider getConsumerShardsProvider();
+
+    /**
+     * Предоставление шардов БД для обработки задачи
+     *
+     * @author Oleg Kandaurov
+     * @since 13.08.2018
+     */
+    interface ConsumerShardsProvider {
+
+        /**
+         * Получить список всех шардов, на которых обрабатывается задача.
+         *
+         * @return идентификаторы шардов
+         */
+        @Nonnull
+        Collection<QueueShard> getProcessingShards();
+    }
 }

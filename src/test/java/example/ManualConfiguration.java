@@ -1,16 +1,16 @@
 package example;
 
 import org.junit.Test;
+import ru.yandex.money.common.dbqueue.api.EnqueueParams;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
+import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.Task;
 import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import ru.yandex.money.common.dbqueue.api.impl.NoopPayloadTransformer;
-import ru.yandex.money.common.dbqueue.api.impl.SingleShardRouter;
 import ru.yandex.money.common.dbqueue.api.impl.TransactionalProducer;
-import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.init.QueueExecutionPool;
 import ru.yandex.money.common.dbqueue.init.QueueRegistry;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
@@ -21,6 +21,7 @@ import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Collections;
 
 /**
@@ -30,9 +31,9 @@ import java.util.Collections;
 public class ManualConfiguration {
 
     @Test
-    public void manual_config() throws Exception {
+    public void manual_config() {
         QueueDatabaseInitializer.createTable("example_manual_table");
-        QueueDao queueDao = new QueueDao(new QueueShardId("master"), QueueDatabaseInitializer.getJdbcTemplate(),
+        QueueShard queueShard = new QueueShard(new QueueShardId("master"), QueueDatabaseInitializer.getJdbcTemplate(),
                 QueueDatabaseInitializer.getTransactionTemplate());
         QueueConfig config = new QueueConfig(QueueLocation.builder().withTableName("example_manual_table")
                 .withQueueId(new QueueId("example_queue")).build(),
@@ -41,13 +42,24 @@ public class ManualConfiguration {
                         .withNoTaskTimeout(Duration.ofSeconds(1))
                         .build());
 
-        SingleShardRouter<String> shardRouter = new SingleShardRouter<>(queueDao);
+        QueueShardRouter<String> shardRouter = new QueueShardRouter<String>() {
+            @Nonnull
+            @Override
+            public QueueShard resolveEnqueuingShard(@Nonnull EnqueueParams<String> enqueueParams) {
+                return queueShard;
+            }
+
+            @Nonnull
+            @Override
+            public Collection<QueueShard> getProcessingShards() {
+                return Collections.singletonList(queueShard);
+            }
+        };
         TransactionalProducer<String> producer = new TransactionalProducer<>(config,
-                NoopPayloadTransformer.getInstance(), Collections.singletonList(queueDao), shardRouter);
+                NoopPayloadTransformer.getInstance(), shardRouter);
         ExampleQueueConsumer consumer = new ExampleQueueConsumer(config, NoopPayloadTransformer.getInstance(), shardRouter);
 
         QueueRegistry queueRegistry = new QueueRegistry();
-        queueRegistry.registerShard(queueDao);
         queueRegistry.registerQueue(consumer, producer);
         queueRegistry.finishRegistration();
 
@@ -63,13 +75,13 @@ public class ManualConfiguration {
 
         private final QueueConfig queueConfig;
         private final TaskPayloadTransformer<String> payloadTransformer;
-        private final QueueShardRouter<String> shardRouter;
+        private final QueueConsumer.ConsumerShardsProvider consumerShardsProvider;
 
         private ExampleQueueConsumer(QueueConfig queueConfig, TaskPayloadTransformer<String> payloadTransformer,
-                                     QueueShardRouter<String> shardRouter) {
+                                     QueueConsumer.ConsumerShardsProvider consumerShardsProvider) {
             this.queueConfig = queueConfig;
             this.payloadTransformer = payloadTransformer;
-            this.shardRouter = shardRouter;
+            this.consumerShardsProvider = consumerShardsProvider;
         }
 
 
@@ -93,8 +105,8 @@ public class ManualConfiguration {
 
         @Nonnull
         @Override
-        public QueueShardRouter<String> getShardRouter() {
-            return shardRouter;
+        public ConsumerShardsProvider getConsumerShardsProvider() {
+            return consumerShardsProvider;
         }
     }
 

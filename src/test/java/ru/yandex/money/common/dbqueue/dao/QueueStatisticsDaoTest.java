@@ -24,7 +24,7 @@ import static org.junit.Assert.assertThat;
  */
 public class QueueStatisticsDaoTest extends BaseDaoTest {
 
-    private final QueueStatisticsDao queueStatisticsDao = new QueueStatisticsDao(jdbcTemplate, transactionTemplate);
+    private final QueueStatisticsDao queueStatisticsDao = new QueueStatisticsDao(jdbcTemplate);
 
 
     @Test
