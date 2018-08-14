@@ -17,7 +17,7 @@ public class QueueShard {
     private final QueueShardId shardId;
     private final JdbcOperations jdbcTemplate;
     private final TransactionOperations transactionTemplate;
-    private QueueDao queueDao;
+    private final QueueDao queueDao;
 
     /**
      * Конструктор
@@ -32,6 +32,7 @@ public class QueueShard {
         this.shardId = shardId;
         this.jdbcTemplate = jdbcTemplate;
         this.transactionTemplate = transactionTemplate;
+        this.queueDao = new QueueDao(jdbcTemplate);
     }
 
     /**
@@ -67,9 +68,6 @@ public class QueueShard {
      * @return класс для работы с очередью
      */
     public QueueDao getQueueDao() {
-        if (queueDao == null) {
-            queueDao = new QueueDao(shardId, jdbcTemplate, transactionTemplate);
-        }
         return queueDao;
     }
 }

@@ -3,9 +3,7 @@ package ru.yandex.money.common.dbqueue.dao;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.transaction.support.TransactionOperations;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
-import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
@@ -16,30 +14,22 @@ import static java.util.Objects.requireNonNull;
 /**
  * Управление задачами в очереди.
  * <p>
- * Каждый экземпляр данного класса привязан к физическому шарду БД.
+ * Каждый экземпляр данного класса привязан к шарду БД.
  *
  * @author Oleg Kandaurov
  * @since 09.07.2017
  */
 public class QueueDao {
 
-    private final QueueShardId shardId;
     private final NamedParameterJdbcTemplate jdbcTemplate;
-    private final TransactionOperations transactionTemplate;
 
     /**
      * Конструктор.
      * <p>
-     * Клиентский код обязан обеспечить уникальную привязку пары (jdbcTemplate, transactionTemplate) к shardId
-     *
-     * @param shardId             идентификатор шарда
      * @param jdbcTemplate        spring jdbc template
-     * @param transactionTemplate spring transaction template
      */
-    public QueueDao(QueueShardId shardId, JdbcOperations jdbcTemplate, TransactionOperations transactionTemplate) {
-        this.shardId = shardId;
+    public QueueDao(JdbcOperations jdbcTemplate) {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
-        this.transactionTemplate = transactionTemplate;
     }
 
     /**
@@ -104,30 +94,5 @@ public class QueueDao {
         return updatedRows != 0;
     }
 
-    /**
-     * Получить transaction template данного шарда
-     *
-     * @return transaction template данного шарда
-     */
-    public TransactionOperations getTransactionTemplate() {
-        return transactionTemplate;
-    }
 
-    /**
-     * Получить jdbc template данного шарда
-     *
-     * @return jdbc template данного шарда
-     */
-    public JdbcOperations getJdbcTemplate() {
-        return jdbcTemplate.getJdbcOperations();
-    }
-
-    /**
-     * Получить идентификатор данного шарда
-     *
-     * @return идентификатор шарда
-     */
-    public QueueShardId getShardId() {
-        return shardId;
-    }
 }

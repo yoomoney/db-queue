@@ -3,7 +3,6 @@ package ru.yandex.money.common.dbqueue.dao;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
-import ru.yandex.money.common.dbqueue.api.QueueShardId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
@@ -21,24 +20,24 @@ import static org.junit.Assert.assertThat;
  */
 public class QueueActorDaoTest extends BaseDaoTest {
 
-    private final QueueActorDao queueActorDao = new QueueActorDao(jdbcTemplate, transactionTemplate);
-    private final QueueDao queueDao = new QueueDao(new QueueShardId("s1"), jdbcTemplate, transactionTemplate);
+    private final QueueActorDao queueActorDao = new QueueActorDao(jdbcTemplate);
+    private final QueueDao queueDao = new QueueDao(jdbcTemplate);
 
     @Test
     public void should_delete_tasks_by_actor() throws Exception {
         QueueLocation location = generateUniqueLocation();
         String actor = "123";
 
-        queueDao.getTransactionTemplate().execute(s ->
+        transactionTemplate.execute(s ->
                 queueDao.enqueue(location, new EnqueueParams<String>().withActor(actor)));
         assertThat(queueActorDao.isTasksExist(location, actor), is(true));
 
-        Boolean isDeleted = queueActorDao.getTransactionTemplate().execute(s ->
+        Boolean isDeleted = transactionTemplate.execute(s ->
                 queueActorDao.deleteTasksByActor(location, actor));
         assertThat(isDeleted, is(true));
         assertThat(queueActorDao.isTasksExist(location, actor), is(false));
 
-        Boolean isDeletedTwice = queueActorDao.getTransactionTemplate().execute(s ->
+        Boolean isDeletedTwice = transactionTemplate.execute(s ->
                 queueActorDao.deleteTasksByActor(location, actor));
         assertThat(isDeletedTwice, is(false));
 

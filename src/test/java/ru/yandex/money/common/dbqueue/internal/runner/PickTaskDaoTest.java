@@ -29,7 +29,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
  */
 public class PickTaskDaoTest extends BaseDaoTest {
 
-    private final QueueDao queueDao = new QueueDao(new QueueShardId("s1"), jdbcTemplate, transactionTemplate);
+    private final QueueDao queueDao = new QueueDao(jdbcTemplate);
     private final PickTaskDao pickTaskDao = new PickTaskDao(new QueueShardId("s1"), jdbcTemplate, transactionTemplate);
 
     /**

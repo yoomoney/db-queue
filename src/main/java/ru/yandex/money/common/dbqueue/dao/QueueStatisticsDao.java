@@ -2,7 +2,6 @@ package ru.yandex.money.common.dbqueue.dao;
 
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.transaction.support.TransactionOperations;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 
 import java.time.ZoneId;
@@ -24,17 +23,14 @@ import java.util.Map;
 public class QueueStatisticsDao {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
-    private final TransactionOperations transactionTemplate;
 
     /**
      * Конструктор
      *
      * @param jdbcTemplate        spring jdbc template
-     * @param transactionTemplate spring transaction template
      */
-    public QueueStatisticsDao(JdbcOperations jdbcTemplate, TransactionOperations transactionTemplate) {
+    public QueueStatisticsDao(JdbcOperations jdbcTemplate) {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
-        this.transactionTemplate = transactionTemplate;
     }
 
     /**
@@ -118,21 +114,4 @@ public class QueueStatisticsDao {
                 Collections.emptyMap());
     }
 
-    /**
-     * Получить jdbc template
-     *
-     * @return spring jdbc template
-     */
-    public NamedParameterJdbcTemplate getJdbcTemplate() {
-        return jdbcTemplate;
-    }
-
-    /**
-     * Получить transaction template
-     *
-     * @return spring transaction template
-     */
-    public TransactionOperations getTransactionTemplate() {
-        return transactionTemplate;
-    }
 }
