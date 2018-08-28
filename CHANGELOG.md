@@ -10,6 +10,10 @@ Given version x.y.z
 * y - Minor version. Backward compatibile with previous version. New features.
 * z - Patch version. Backward compatibile with previous version. Bug fix or small features.
 
+## [5.0.0]() (28-08-2018)
+
+correlationId переименован в traceInfo
+
 ## [4.0.0]() (13-08-2018)
 
 Изменён способ конфигурирования шардов БД. 

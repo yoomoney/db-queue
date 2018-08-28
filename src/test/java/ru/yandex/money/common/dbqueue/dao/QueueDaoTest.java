@@ -32,17 +32,17 @@ public class QueueDaoTest extends BaseDaoTest {
     public void enqueue_should_save_all_values() throws Exception {
         QueueLocation location = generateUniqueLocation();
         String payload = "{}";
-        String correlationId = "#11";
+        String traceInfo = "#11";
         String actor = "id-123";
         Duration executionDelay = Duration.ofHours(1L);
         ZonedDateTime beforeExecution = ZonedDateTime.now();
         long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, EnqueueParams.create(payload)
-                .withExecutionDelay(executionDelay).withCorrelationId(correlationId).withActor(actor)));
+                .withExecutionDelay(executionDelay).withTraceInfo(traceInfo).withActor(actor)));
         jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
             ZonedDateTime afterExecution = ZonedDateTime.now();
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getString("task"), equalTo(payload));
-            Assert.assertThat(rs.getString("log_timestamp"), equalTo(correlationId));
+            Assert.assertThat(rs.getString("log_timestamp"), equalTo(traceInfo));
             Assert.assertThat(rs.getString("actor"), equalTo(actor));
             ZonedDateTime processTime = ZonedDateTime.ofInstant(rs.getTimestamp("process_time").toInstant(),
                     ZoneId.systemDefault());

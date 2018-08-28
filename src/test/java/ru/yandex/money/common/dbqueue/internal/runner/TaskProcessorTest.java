@@ -65,7 +65,7 @@ public class TaskProcessorTest {
         verify(millisTimeProvider, times(2)).getMillis();
         verify(queueConsumer).execute(new Task<>(shardId, transformedPayload,
                 taskRecord.getAttemptsCount(), taskRecord.getCreateDate(),
-                taskRecord.getCorrelationId(), taskRecord.getActor()));
+                taskRecord.getTraceInfo(), taskRecord.getActor()));
         verify(listener).executed(shardId, location, taskRecord, queueResult, 2);
         verify(resultHandler).handleResult(taskRecord, queueResult);
         verify(listener).finished(shardId, location, taskRecord);

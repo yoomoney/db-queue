@@ -44,7 +44,7 @@ public class TransactionalProducer<T> implements QueueProducer<T> {
         QueueShard queueShard = shardRouter.resolveEnqueuingShard(enqueueParams);
         EnqueueParams<String> rawEnqueueParams = new EnqueueParams<String>()
                 .withPayload(payloadTransformer.fromObject(enqueueParams.getPayload()))
-                .withCorrelationId(enqueueParams.getCorrelationId())
+                .withTraceInfo(enqueueParams.getTraceInfo())
                 .withExecutionDelay(enqueueParams.getExecutionDelay())
                 .withActor(enqueueParams.getActor());
         return queueShard.getTransactionTemplate().execute(status ->

@@ -77,14 +77,14 @@ public class QueueStatisticsDaoTest extends BaseDaoTest {
                                         "%s(queue_name, task, process_time, create_time, log_timestamp, actor, attempt) " +
                                         "VALUES " +
                                         "(:queueName, :task, :processTime, :createTime, " +
-                                        ":correlationId, :actor, :attempt)",
+                                        ":traceInfo, :actor, :attempt)",
                                 table),
                         new MapSqlParameterSource()
                                 .addValue("queueName", pendingQueueName)
                                 .addValue("task", "task" + i)
                                 .addValue("createTime", new Timestamp(100000000 * i))
                                 .addValue("processTime", new Timestamp(1000000000 * i))
-                                .addValue("correlationId", "correlationId" + i)
+                                .addValue("traceInfo", "traceInfo" + i)
                                 .addValue("actor", "actor" + i)
                                 .addValue("attempt", 2 + i));
             }
@@ -99,7 +99,7 @@ public class QueueStatisticsDaoTest extends BaseDaoTest {
                     id + 1, "task" + id, id + 2,
                     ZonedDateTime.ofInstant(new Timestamp(100000000 * id).toInstant(), ZoneId.systemDefault()),
                     ZonedDateTime.ofInstant(new Timestamp(1000000000 * id).toInstant(), ZoneId.systemDefault()),
-                    "correlationId" + id, "actor" + id
+                    "traceInfo" + id, "actor" + id
 
             ));
         }

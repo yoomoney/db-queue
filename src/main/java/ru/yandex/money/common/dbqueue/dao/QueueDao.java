@@ -45,13 +45,13 @@ public class QueueDao {
         return jdbcTemplate.queryForObject(String.format(
                 "INSERT INTO %s(queue_name, task, process_time, log_timestamp, actor) VALUES " +
                         "(:queueName, :task, now() + :executionDelay * INTERVAL '1 SECOND', " +
-                        ":correlationId, :actor) RETURNING id",
+                        ":traceInfo, :actor) RETURNING id",
                 location.getTableName()),
                 new MapSqlParameterSource()
                         .addValue("queueName", location.getQueueId().asString())
                         .addValue("task", enqueueParams.getPayload())
                         .addValue("executionDelay", enqueueParams.getExecutionDelay().getSeconds())
-                        .addValue("correlationId", enqueueParams.getCorrelationId())
+                        .addValue("traceInfo", enqueueParams.getTraceInfo())
                         .addValue("actor", enqueueParams.getActor()),
                 Long.class);
     }

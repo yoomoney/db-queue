@@ -20,7 +20,7 @@ public final class EnqueueParams<T> {
     @Nonnull
     private Duration executionDelay = Duration.ZERO;
     @Nullable
-    private String correlationId;
+    private String traceInfo;
     @Nullable
     private String actor;
 
@@ -61,15 +61,14 @@ public final class EnqueueParams<T> {
     }
 
     /**
-     * Технический идентификатор задачи в очереди.
-     * Может быть использован для связи вызывающего кода и обработчика очереди.
+     * Нетипизированные данные трассировки. К примеру информация в формате open tracing.
      *
-     * @param correlationId технический идентификатор
+     * @param traceInfo данные трассировки
      * @return параметры постановки задачи в очередь
      */
     @Nonnull
-    public EnqueueParams<T> withCorrelationId(@Nullable String correlationId) {
-        this.correlationId = correlationId;
+    public EnqueueParams<T> withTraceInfo(@Nullable String traceInfo) {
+        this.traceInfo = traceInfo;
         return this;
     }
 
@@ -110,13 +109,13 @@ public final class EnqueueParams<T> {
     }
 
     /**
-     * Получить технический идентификатор
+     * Получить данные трассировки
      *
-     * @return технический идентификатор
+     * @return данные трассировки
      */
     @Nullable
-    public String getCorrelationId() {
-        return correlationId;
+    public String getTraceInfo() {
+        return traceInfo;
     }
 
     /**
@@ -140,13 +139,13 @@ public final class EnqueueParams<T> {
         EnqueueParams<?> that = (EnqueueParams<?>) obj;
         return Objects.equals(payload, that.payload) &&
                 Objects.equals(executionDelay, that.executionDelay) &&
-                Objects.equals(correlationId, that.correlationId) &&
+                Objects.equals(traceInfo, that.traceInfo) &&
                 Objects.equals(actor, that.actor);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(payload, executionDelay, correlationId, actor);
+        return Objects.hash(payload, executionDelay, traceInfo, actor);
     }
 
     @Override
@@ -154,7 +153,6 @@ public final class EnqueueParams<T> {
         return '{' +
                 "executionDelay=" + executionDelay +
                 (payload != null ? ",payload=" + payload : "") +
-                (correlationId != null ? ", correlationId=" + correlationId : "") +
                 (actor != null ? ", actor=" + actor : "") +
                 '}';
     }
