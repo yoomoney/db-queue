@@ -23,7 +23,7 @@ public final class Task<T> {
     @Nonnull
     private final ZonedDateTime createDate;
     @Nullable
-    private final String correlationId;
+    private final String traceInfo;
     @Nullable
     private final String actor;
 
@@ -34,16 +34,16 @@ public final class Task<T> {
      * @param payload       данные задачи
      * @param attemptsCount количество попыток выполнения, включая текущую
      * @param createDate    дата помещения задачи в очередь
-     * @param correlationId технический идентификатор задачи в очереди
+     * @param traceInfo     данные трассировки задачи в очереди
      * @param actor         бизнесовый идентификатор задачи в очереди
      */
     public Task(@Nonnull QueueShardId shardId, @Nullable T payload, long attemptsCount,
-                @Nonnull ZonedDateTime createDate, @Nullable String correlationId, @Nullable String actor) {
+                @Nonnull ZonedDateTime createDate, @Nullable String traceInfo, @Nullable String actor) {
         this.shardId = Objects.requireNonNull(shardId);
         this.payload = payload;
         this.attemptsCount = attemptsCount;
         this.createDate = Objects.requireNonNull(createDate);
-        this.correlationId = correlationId;
+        this.traceInfo = traceInfo;
         this.actor = actor;
     }
 
@@ -91,27 +91,27 @@ public final class Task<T> {
     }
 
     /**
-     * Получить технический идентификатор задачи.
+     * Получить данные трассировки
      *
-     * @return технический идентификатор
-     * @throws IllegalArgumentException если идентификатор отсутствует
+     * @return данные трассировки
+     * @throws IllegalArgumentException если данные отсутствуют
      */
     @Nonnull
-    public String getCorrelationIdOrThrow() {
-        if (correlationId == null) {
-            throw new IllegalArgumentException("correlationId is absent");
+    public String getTraceInfoOrThrow() {
+        if (traceInfo == null) {
+            throw new IllegalArgumentException("traceInfo is absent");
         }
-        return correlationId;
+        return traceInfo;
     }
 
     /**
-     * Получить технический идентификатор задачи
+     * Получить данные трассировки
      *
-     * @return технический идентификатор
+     * @return данные трассировки
      */
     @Nonnull
-    public Optional<String> getCorrelationId() {
-        return Optional.ofNullable(correlationId);
+    public Optional<String> getTraceInfo() {
+        return Optional.ofNullable(traceInfo);
     }
 
     /**
@@ -161,13 +161,13 @@ public final class Task<T> {
                 Objects.equals(shardId, task.shardId) &&
                 Objects.equals(payload, task.payload) &&
                 Objects.equals(createDate, task.createDate) &&
-                Objects.equals(correlationId, task.correlationId) &&
+                Objects.equals(traceInfo, task.traceInfo) &&
                 Objects.equals(actor, task.actor);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(shardId, payload, attemptsCount, createDate, correlationId, actor);
+        return Objects.hash(shardId, payload, attemptsCount, createDate, traceInfo, actor);
     }
 
     @Override
@@ -177,7 +177,6 @@ public final class Task<T> {
                 ", attemptsCount=" + attemptsCount +
                 ", createDate=" + createDate +
                 ", payload=" + payload +
-                (correlationId != null ? ", correlationId=" + correlationId : "") +
                 (actor != null ? ", actor=" + actor : "") +
                 '}';
     }

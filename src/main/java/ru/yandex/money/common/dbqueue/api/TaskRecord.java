@@ -21,7 +21,7 @@ public final class TaskRecord {
     @Nonnull
     private final ZonedDateTime processTime;
     @Nullable
-    private final String correlationId;
+    private final String traceInfo;
     @Nullable
     private final String actor;
 
@@ -33,17 +33,17 @@ public final class TaskRecord {
      * @param attemptsCount количество попыток исполнения задачи
      * @param createDate    дата постановки задачи
      * @param processTime   время очередной обработки задачи
-     * @param correlationId технический идентификатор
+     * @param traceInfo     данные трассировки
      * @param actor         бизнесовый идентификатор
      */
     public TaskRecord(long id, @Nullable String payload, long attemptsCount, @Nonnull ZonedDateTime createDate,
-                      @Nonnull ZonedDateTime processTime, @Nullable String correlationId, @Nullable String actor) {
+                      @Nonnull ZonedDateTime processTime, @Nullable String traceInfo, @Nullable String actor) {
         this.id = id;
         this.payload = payload;
         this.attemptsCount = attemptsCount;
         this.createDate = createDate;
         this.processTime = processTime;
-        this.correlationId = correlationId;
+        this.traceInfo = traceInfo;
         this.actor = actor;
     }
 
@@ -86,13 +86,13 @@ public final class TaskRecord {
     }
 
     /**
-     * Получить технический идентификатор задачи
+     * Получить данные трассировки
      *
-     * @return технический идентификатор
+     * @return данные трассировки
      */
     @Nullable
-    public String getCorrelationId() {
-        return correlationId;
+    public String getTraceInfo() {
+        return traceInfo;
     }
 
     /**
@@ -129,13 +129,13 @@ public final class TaskRecord {
                 Objects.equals(payload, that.payload) &&
                 Objects.equals(createDate, that.createDate) &&
                 Objects.equals(processTime, that.processTime) &&
-                Objects.equals(correlationId, that.correlationId) &&
+                Objects.equals(traceInfo, that.traceInfo) &&
                 Objects.equals(actor, that.actor);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, payload, attemptsCount, createDate, processTime, correlationId, actor);
+        return Objects.hash(id, payload, attemptsCount, createDate, processTime, traceInfo, actor);
     }
 
     @Override
@@ -145,7 +145,6 @@ public final class TaskRecord {
                 ", attemptsCount=" + attemptsCount +
                 ", createDate=" + createDate +
                 ", processTime=" + processTime +
-                (correlationId != null ? ", correlationId=" + correlationId : "") +
                 (actor != null ? ", actor=" + actor : "") +
                 '}';
     }

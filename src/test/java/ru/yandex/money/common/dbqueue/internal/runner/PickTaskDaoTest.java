@@ -53,11 +53,11 @@ public class PickTaskDaoTest extends BaseDaoTest {
     public void pick_task_should_return_all_fields() throws Exception {
         QueueLocation location = generateUniqueLocation();
         String payload = "{}";
-        String correlationId = "#11";
+        String traceInfo = "#11";
         String actor = "id-123";
         ZonedDateTime beforeEnqueue = ZonedDateTime.now();
         long enqueueId = executeInTransaction(() -> queueDao.enqueue(location,
-                EnqueueParams.create(payload).withCorrelationId(correlationId).withActor(actor)));
+                EnqueueParams.create(payload).withTraceInfo(traceInfo).withActor(actor)));
 
         TaskRecord taskRecord = null;
         while (taskRecord == null) {
@@ -77,7 +77,7 @@ public class PickTaskDaoTest extends BaseDaoTest {
         Objects.requireNonNull(taskRecord);
         Assert.assertThat(taskRecord.getActor(), equalTo(actor));
         Assert.assertThat(taskRecord.getAttemptsCount(), equalTo(1L));
-        Assert.assertThat(taskRecord.getCorrelationId(), equalTo(correlationId));
+        Assert.assertThat(taskRecord.getTraceInfo(), equalTo(traceInfo));
         Assert.assertThat(taskRecord.getId(), equalTo(enqueueId));
         Assert.assertThat(taskRecord.getPayload(), equalTo(payload));
         Assert.assertThat(taskRecord.getProcessTime(), is(not(nullValue())));
