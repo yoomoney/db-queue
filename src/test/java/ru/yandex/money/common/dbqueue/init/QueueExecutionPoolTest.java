@@ -1,6 +1,5 @@
 package ru.yandex.money.common.dbqueue.init;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -23,6 +22,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -117,7 +118,7 @@ public class QueueExecutionPoolTest {
         ThreadFactory threadFactory = mock(ThreadFactory.class);
         TaskLifecycleListener defaultTaskListener = mock(TaskLifecycleListener.class);
         ThreadLifecycleListener threadListener = mock(ThreadLifecycleListener.class);
-        ExecutorService queueThreadExecutor = spy(MoreExecutors.newDirectExecutorService());
+        ExecutorService queueThreadExecutor = mock(ExecutorService.class);
 
         QueueLoop queueLoop = mock(QueueLoop.class);
         QueueRunner queueRunner = mock(QueueRunner.class);
@@ -190,7 +191,7 @@ public class QueueExecutionPoolTest {
         ThreadFactory threadFactory = mock(ThreadFactory.class);
         TaskLifecycleListener defaultTaskListener = mock(TaskLifecycleListener.class);
         ThreadLifecycleListener defaltThreadListener = mock(ThreadLifecycleListener.class);
-        ExecutorService queueThreadExecutor = spy(MoreExecutors.newDirectExecutorService());
+        ExecutorService queueThreadExecutor = spy(new DirectExecutor());
 
         QueueLoop queueLoop = mock(QueueLoop.class);
         QueueRunner queueRunner = mock(QueueRunner.class);
@@ -232,4 +233,38 @@ public class QueueExecutionPoolTest {
         verify(queueThreadExecutor, times(2)).shutdownNow();
         verify(queueThreadExecutor, times(2)).awaitTermination(30L, TimeUnit.SECONDS);
     }
+
+    private static class DirectExecutor extends AbstractExecutorService {
+
+        @Override
+        public void execute(Runnable command) {
+            command.run();
+        }
+
+        @Override
+        public void shutdown() {
+
+        }
+
+        @Override
+        public List<Runnable> shutdownNow() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public boolean isShutdown() {
+            return false;
+        }
+
+        @Override
+        public boolean isTerminated() {
+            return false;
+        }
+
+        @Override
+        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+            return false;
+        }
+    }
+
 }

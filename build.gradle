@@ -1,6 +1,4 @@
-ext.skipCheckMutation = true
-
-apply from: 'http://jenkins-dev.yamoney.ru/build-scripts/backend-platform/build-common-without-plugins.gradle'
+apply from: 'https://jenkins-dev.yamoney.ru/build-scripts/backend-platform/build-common-without-plugins.gradle'
 apply plugin: 'yamoney-library-project-plugin'
 
 //noinspection GroovyUnusedAssignment
@@ -10,23 +8,22 @@ artifactID = "yamoney-db-queue"
 
 buildscript {
     repositories {
-        maven { url 'http://nexus.yamoney.ru/content/repositories/thirdparty/' }
-        maven { url 'http://nexus.yamoney.ru/content/repositories/central/' }
-        maven { url 'http://nexus.yamoney.ru/content/repositories/releases/' }
-        maven { url 'http://nexus.yamoney.ru/content/repositories/jcenter.bintray.com/' }
+        maven { url 'https://nexus.yamoney.ru/content/repositories/thirdparty/' }
+        maven { url 'https://nexus.yamoney.ru/content/repositories/central/' }
+        maven { url 'https://nexus.yamoney.ru/content/repositories/releases/' }
+        maven { url 'https://nexus.yamoney.ru/content/repositories/jcenter.bintray.com/' }
 
         dependencies {
             classpath 'net.researchgate:gradle-release:2.3.0'
-            classpath 'ru.yandex.money.gradle.plugins:yamoney-library-project-plugin:1.2.0'
-            classpath group: 'ru.yandex.money.platform', name: 'yamoney-libraries-dependencies', version: '2.+', ext: 'zip'
-            classpath 'org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.+'
+            classpath 'ru.yandex.money.gradle.plugins:yamoney-library-project-plugin:1.+'
+            classpath group: 'ru.yandex.money.platform', name: 'yamoney-libraries-dependencies', version: '3.+', ext: 'zip'
         }
     }
 }
 
 dependencies {
-    def springVersion = '4.3.7.RELEASE'
-    compile 'org.slf4j:slf4j-api:1.7.24',
+    def springVersion = '5.0.9.RELEASE'
+    compile 'org.slf4j:slf4j-api:1.7.25',
             "org.springframework:spring-jdbc:${springVersion}",
             "org.springframework:spring-tx:${springVersion}",
             "org.springframework:spring-context:${springVersion}"
@@ -35,24 +32,29 @@ dependencies {
             'com.google.code.findbugs:annotations:3.0.1'
 
     testCompile "org.springframework:spring-test:${springVersion}",
-            'com.opentable.components:otj-pg-embedded:0.9.0',
-            'org.postgresql:postgresql:9.4.1208',
+            'com.opentable.components:otj-pg-embedded:0.12.1',
             'junit:junit:4.12',
-            'org.apache.logging.log4j:log4j-core:2.8.2',
-            'org.apache.logging.log4j:log4j-slf4j-impl:2.8.2',
-            'org.mockito:mockito-core:1.10.19',
-            'com.tngtech.archunit:archunit-junit:0.4.0',
-            'nl.jqno.equalsverifier:equalsverifier:2.3.2',
+            'org.apache.logging.log4j:log4j-core:2.10.0',
+            'org.apache.logging.log4j:log4j-slf4j-impl:2.10.0',
+            'org.mockito:mockito-core:2.15.0',
+            'com.tngtech.archunit:archunit:0.9.1',
+            'nl.jqno.equalsverifier:equalsverifier:2.5.2',
             'com.github.marschall:memoryfilesystem:1.0.0'
 
     testCompileOnly 'com.google.code.findbugs:jsr305:3.0.1',
             'com.google.code.findbugs:annotations:3.0.1'
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-apply plugin: 'jdepend'
 
-jdepend {
-    ignoreFailures = false
-    sourceSets = [sourceSets.main]
+dependencyManagement {
+    // Запрещаем переопределять версии библиотек в обычной секции Gradle dependencies
+    overriddenByDependencies = false
+
+    // Фиксируем версии библиотек
+    imports {
+        mavenBom 'ru.yandex.money.platform:yamoney-libraries-dependencies:3.+'
+    }
 }
 
+// Исключаем из проверки согласованности версий библиотек следующие конфигурации:
+checkDependencies.excludedConfigurations = ["checkstyle", "errorprone", "optional", "findbugs"]
+checkDependencies.exclusionsRulesSources = ['ru.yandex.money.platform:yamoney-libraries-dependencies']

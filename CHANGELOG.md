@@ -10,6 +10,10 @@ Given version x.y.z
 * y - Minor version. Backward compatibile with previous version. New features.
 * z - Patch version. Backward compatibile with previous version. Bug fix or small features.
 
+## [6.0.0]() (16-10-2018)
+
+Обновление до spring 5
+
 ## [5.0.0]() (28-08-2018)
 
 correlationId переименован в traceInfo
