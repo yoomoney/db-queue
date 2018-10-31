@@ -14,7 +14,7 @@ buildscript {
         maven { url 'https://nexus.yamoney.ru/content/repositories/jcenter.bintray.com/' }
 
         dependencies {
-            classpath 'net.researchgate:gradle-release:2.3.0'
+            classpath 'net.researchgate:gradle-release:2.4.0'
             classpath 'ru.yandex.money.gradle.plugins:yamoney-library-project-plugin:1.+'
             classpath group: 'ru.yandex.money.platform', name: 'yamoney-libraries-dependencies', version: '3.+', ext: 'zip'
         }
@@ -22,7 +22,7 @@ buildscript {
 }
 
 dependencies {
-    def springVersion = '5.0.9.RELEASE'
+    def springVersion = '5.1.2.RELEASE'
     compile 'org.slf4j:slf4j-api:1.7.25',
             "org.springframework:spring-jdbc:${springVersion}",
             "org.springframework:spring-tx:${springVersion}",
@@ -32,11 +32,11 @@ dependencies {
             'com.google.code.findbugs:annotations:3.0.1'
 
     testCompile "org.springframework:spring-test:${springVersion}",
-            'com.opentable.components:otj-pg-embedded:0.12.1',
+            'com.opentable.components:otj-pg-embedded:0.12.4',
             'junit:junit:4.12',
-            'org.apache.logging.log4j:log4j-core:2.10.0',
-            'org.apache.logging.log4j:log4j-slf4j-impl:2.10.0',
-            'org.mockito:mockito-core:2.15.0',
+            'org.apache.logging.log4j:log4j-core:2.11.1',
+            'org.apache.logging.log4j:log4j-slf4j-impl:2.11.1',
+            'org.mockito:mockito-core:2.23.0',
             'com.tngtech.archunit:archunit:0.9.1',
             'nl.jqno.equalsverifier:equalsverifier:2.5.2',
             'com.github.marschall:memoryfilesystem:1.0.0'
