@@ -20,7 +20,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  */
 public class ArchitectureTest {
 
-    private static final String BASE_PACKAGE = "ru.yandex.money.common.queue.postgres.";
+    private static final String BASE_PACKAGE = "ru.yandex.money.common.dbqueue";
 
     private JavaClasses classes;
 
@@ -28,7 +28,7 @@ public class ArchitectureTest {
     public void importClasses() {
         classes = new ClassFileImporter(new ImportOptions()
                 .with(new ImportOption.DontIncludeTests()))
-                .importPackages("ru.yandex.money.common.queue.postgres");
+                .importPackages(BASE_PACKAGE);
     }
 
     @Test
@@ -45,6 +45,7 @@ public class ArchitectureTest {
         ArchRule rule = classes().that().resideInAnyPackage(
                 fullNames("api"))
                 .should().accessClassesThat().resideInAnyPackage(fullNames("api", "settings"))
+                .orShould().accessClassesThat().resideInAnyPackage("java..")
                 .because("api must not depend on implementation details");
         rule.check(classes);
     }
@@ -54,6 +55,7 @@ public class ArchitectureTest {
         ArchRule rule = classes().that().resideInAnyPackage(
                 fullNames("settings"))
                 .should().accessClassesThat().resideInAnyPackage(fullNames("settings"))
+                .orShould().accessClassesThat().resideInAnyPackage("java..")
                 .because("settings must not depend on implementation details");
         rule.check(classes);
     }
@@ -88,7 +90,7 @@ public class ArchitectureTest {
 
 
     private static String[] fullNames(String... relativeName) {
-        return Arrays.stream(relativeName).map(name -> BASE_PACKAGE + name)
+        return Arrays.stream(relativeName).map(name -> BASE_PACKAGE + "." + name)
                 .collect(Collectors.toList()).toArray(new String[relativeName.length]);
     }
 

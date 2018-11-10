@@ -10,9 +10,10 @@ Given version x.y.z
 * y - Minor version. Backward compatibile with previous version. New features.
 * z - Patch version. Backward compatibile with previous version. Bug fix or small features.
 
-## [6.0.0]() (16-10-2018)
+## [6.0.0]() (11-11-2018)
 
 * Переход на spring boot 2.1
+* Публичный релиз библиотеки
 
 ## [5.0.0]() (28-08-2018)
 

@@ -16,7 +16,7 @@ before_script:
   - git config --global user.name "travis-ci"
 
 script:
-  - ./gradlew clean build bintrayUpload --info
+- ./gradlew-public -b build-public.gradle clean build bintrayUpload artifactoryPublish --info
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

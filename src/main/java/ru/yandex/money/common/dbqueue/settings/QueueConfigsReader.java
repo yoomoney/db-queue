@@ -3,7 +3,6 @@ package ru.yandex.money.common.dbqueue.settings;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -282,7 +281,7 @@ public class QueueConfigsReader {
     private Map<String, String> cleanupProperties(Map<String, String> rawProperties) {
         return rawProperties.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith(settingsPrefix))
-                .filter(entry -> StringUtils.hasText(entry.getValue()))
+                .filter(entry -> entry.getValue() != null && !entry.getValue().trim().isEmpty())
                 .collect(Collectors.toMap(entry -> entry.getKey().trim(), entry -> entry.getValue().trim()));
     }
 
