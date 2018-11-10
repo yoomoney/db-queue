@@ -1,0 +1,41 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+}
+plugins {
+    id "com.jfrog.bintray" version "1.7.3"
+    id 'com.github.ben-manes.versions' version '0.15.0'
+    id "com.jfrog.artifactory" version "4.7.5"
+}
+
+
+apply from: 'public-publish.gradle'
+apply from: 'dependencies.gradle'
+
+javadoc {
+    exclude "**/internal/**"
+}
+
+bintray {
+    pkg {
+        name = 'db-queue'
+        userOrg = 'yandex-money-tech'
+        desc = ' Worker-queue implementation on top of Java and database'
+        websiteUrl = 'https://github.com/yandex-money-tech/db-queue'
+        issueTrackerUrl = 'https://github.com/yandex-money-tech/db-queue/issues'
+        vcsUrl = 'https://github.com/yandex-money-tech/db-queue.git'
+        labels = ['postgresql', 'queue', 'java', 'database']
+        githubRepo = 'yandex-money-tech/db-queue'
+    }
+}
+
+publishing {
+    publications {
+        MyPublication(MavenPublication) {
+            artifactId 'db-queue'
+        }
+    }
+}
+
+

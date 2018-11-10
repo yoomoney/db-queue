@@ -1,0 +1,23 @@
+dependencies {
+    def springVersion = '5.1.2.RELEASE'
+    compile 'org.slf4j:slf4j-api:1.7.25',
+            "org.springframework:spring-jdbc:${springVersion}",
+            "org.springframework:spring-tx:${springVersion}",
+            "org.springframework:spring-context:${springVersion}"
+
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.1',
+            'com.google.code.findbugs:annotations:3.0.1'
+
+    testCompile "org.springframework:spring-test:${springVersion}",
+            'com.opentable.components:otj-pg-embedded:0.12.4',
+            'junit:junit:4.12',
+            'org.apache.logging.log4j:log4j-core:2.11.1',
+            'org.apache.logging.log4j:log4j-slf4j-impl:2.11.1',
+            'org.mockito:mockito-core:2.23.0',
+            'com.tngtech.archunit:archunit:0.9.1',
+            'nl.jqno.equalsverifier:equalsverifier:2.5.2',
+            'com.github.marschall:memoryfilesystem:1.0.0'
+
+    testCompileOnly 'com.google.code.findbugs:jsr305:3.0.1',
+            'com.google.code.findbugs:annotations:3.0.1'
+}
