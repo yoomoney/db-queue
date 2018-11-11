@@ -3,9 +3,9 @@ buildscript {
         jcenter()
     }
 }
+
 plugins {
-    id "com.jfrog.bintray" version "1.7.3"
-    id 'com.github.ben-manes.versions' version '0.15.0'
+    id "com.jfrog.bintray" version "1.8.4"
     id "com.jfrog.artifactory" version "4.7.5"
 }
 
@@ -13,8 +13,6 @@ repositories {
     mavenCentral()
     jcenter()
 }
-
-apply from: 'dependencies.gradle'
 
 task wrapper(type: Wrapper) {
     distributionType = Wrapper.DistributionType.ALL
@@ -26,6 +24,8 @@ task wrapper(type: Wrapper) {
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'java'
+apply from: 'dependencies.gradle'
+
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
 sourceCompatibility = '1.8'
@@ -166,6 +166,3 @@ artifactory {
 }
 
 artifactoryPublish.onlyIf { project.version.endsWith("-SNAPSHOT") }
-
-
-
