@@ -10,6 +10,10 @@ Given version x.y.z
 * y - Minor version. Backward compatibile with previous version. New features.
 * z - Patch version. Backward compatibile with previous version. Bug fix or small features.
 
+## [6.0.2]() (11-11-2018)
+
+* Починил публикацию на bintray
+
 ## [6.0.1]() (11-11-2018)
 
 * Исправил сборку на github

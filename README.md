@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/yandex-money-tech/db-queue.svg?branch=master)](https://travis-ci.org/yandex-money-tech/db-queue)
-[![Build status](https://ci.appveyor.com/api/projects/status/8078bof07yp16112?svg=true)](https://ci.appveyor.com/project/f0y/db-queue)
+[![Build status](https://ci.appveyor.com/api/projects/status/2ee4wumomugjnnl7?svg=true)](https://ci.appveyor.com/project/f0y/db-queue)
 [![codecov](https://codecov.io/gh/yandex-money-tech/db-queue/branch/master/graph/badge.svg)](https://codecov.io/gh/yandex-money-tech/db-queue)
 [![Codebeat](https://codebeat.co/badges/ff7a4c21-72fb-446c-b245-ba739240fe49)](https://codebeat.co/projects/github-com-yandex-money-db-queue-master)
 [![Codacy](https://api.codacy.com/project/badge/Grade/78c05240110c427f873895a5a3ee1eae)](https://www.codacy.com/project/f0y/db-queue/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=yandex-money-tech/db-queue&amp;utm_campaign=Badge_Grade_Dashboard)
@@ -67,9 +67,9 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 
 ```
 <dependency>
-  <groupId>ru.yandex.money.common</groupId>
+  <groupId>com.yandex.money.tech</groupId>
   <artifactId>db-queue</artifactId>
-  <version>4.0.0</version>
+  <version>6.0.2</version>
 </dependency>
 ```
 
@@ -113,7 +113,7 @@ Main steps to create manual configuration:
 ### Spring-Auto Configuration
 
 Spring configuration is more lightweight than manual configuration.
-Example - [example.SpringAutoConfiguration](https://github.com/yandex-money/db-queue/blob/master/src/test/java/example/SpringAutoConfiguration.java).
+Example - [example.SpringAutoConfiguration](https://github.com/yandex-money-tech/db-queue/blob/master/src/test/java/example/SpringAutoConfiguration.java).
 
 Spring configuration can be divided in two parts:
 
@@ -222,3 +222,15 @@ and try insert task on next shard.
 Task processing is asynchronous. Therefore, it is hard to write tests because you always must think about that fact
 and write code according to it. To ease development of tests you can use `wakeup` method of [QueueExecutionPool](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/init/QueueExecutionPool.html)
 
+# How To Build
+
+You can look at Travis (`.travis.yml`) or AppVeyor (`appveyor.yml`) configuration. 
+We have two gradle build files. There are `build.gradle`, `gradlew`, `gradle/wrapper` for Yandex.Money infrastructure and
+`build-public.gradle`, `gradlew-public`, `gradle-public/wrapper` for configuration outside of private network.
+
+In order to open project in IntelliJ IDEA you should import `build-public.gradle` 
+and select "Use gradle 'wrapper' task configuration". 
+
+Unfortunately, there is a bug in IntelliJ IDEA (https://github.com/f0y/idea-two-gradle-builds) so you have to copy 
+`gradle-public/wrapper/gradle-wrapper.properties` to `gradle/wrapper/gradle-wrapper.properties` and 
+`build-public.gradle` to `build.gradle` before importing.
