@@ -10,6 +10,10 @@ Given version x.y.z
 * y - Minor version. Backward compatibile with previous version. New features.
 * z - Patch version. Backward compatibile with previous version. Bug fix or small features.
 
+## [6.0.5]() (12-11-2018)
+
+* Синхронизация тегов
+
 ## [6.0.4]() (12-11-2018)
 
 * Проверка синхронизации
