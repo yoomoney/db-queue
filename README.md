@@ -228,9 +228,8 @@ You can look at Travis (`.travis.yml`) or AppVeyor (`appveyor.yml`) configuratio
 We have two gradle build files. There are `build.gradle`, `gradlew`, `gradle/wrapper` for Yandex.Money infrastructure and
 `build-public.gradle`, `gradlew-public`, `gradle-public/wrapper` for configuration outside of private network.
 
-In order to open project in IntelliJ IDEA you should import `build-public.gradle` 
-and select "Use gradle 'wrapper' task configuration". 
+# How To Import Project in IDE
 
-Unfortunately, there is a bug in IntelliJ IDEA (https://github.com/f0y/idea-two-gradle-builds) so you have to copy 
-`gradle-public/wrapper/gradle-wrapper.properties` to `gradle/wrapper/gradle-wrapper.properties` and 
-`build-public.gradle` to `build.gradle` before importing.
+Unfortunately, there is a bug in IntelliJ IDEA (https://github.com/f0y/idea-two-gradle-builds) so you have to replace 
+`gradle-public/wrapper/gradle-wrapper.properties` with `gradle/wrapper/gradle-wrapper.properties` and 
+`build-public.gradle` with `build.gradle` before importing. 

@@ -12,11 +12,11 @@ install:
  - true
 
 before_script:
-  - git config --global user.email "travis@travis-ci.org"
-  - git config --global user.name "travis-ci"
+- git config --global user.email "SvcReleaserBackend@yamoney.ru"
+- git config --global user.name "YamoneyRobot"
 
 script:
-- ./gradlew-public -b build-public.gradle clean build bintrayUpload artifactoryPublish --info
+- ./gradlew-public -b build-public.gradle clean build bintrayUpload --info
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
