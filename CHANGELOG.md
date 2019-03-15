@@ -1,5 +1,7 @@
-# Changelog
-
+### NEXT_VERSION_TYPE=MINOR
+### NEXT_VERSION_DESCRIPTION_BEGIN
+* Переход на platformLibraryProjectVersion 3 версии
+### NEXT_VERSION_DESCRIPTION_END
 ## Versioning Rules
 
 Project uses [Semantic Versioning](http://semver.org/).

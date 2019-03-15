@@ -1,4 +1,4 @@
-System.setProperty("platformLibraryProjectVersion", "2.+")
+System.setProperty("platformLibraryProjectVersion", "3.+")
 System.setProperty("platformDependenciesVersion", "3.+")
 
 repositories {
