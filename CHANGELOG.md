@@ -2,16 +2,6 @@
 ### NEXT_VERSION_DESCRIPTION_BEGIN
 * Переход на platformLibraryProjectVersion 3 версии
 ### NEXT_VERSION_DESCRIPTION_END
-## Versioning Rules
-
-Project uses [Semantic Versioning](http://semver.org/).
-
-Given version x.y.z
-
-* x - Major version. Backward compatibility is broken. Refactoring or big features.
-* y - Minor version. Backward compatibile with previous version. New features.
-* z - Patch version. Backward compatibile with previous version. Bug fix or small features.
-
 ## [6.0.5]() (12-11-2018)
 
 * Синхронизация тегов
