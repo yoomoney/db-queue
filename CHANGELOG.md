@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=MINOR
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [6.1.0]() (19-03-2019)
+
 * Переход на platformLibraryProjectVersion 3 версии
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [6.0.5]() (12-11-2018)
 
 * Синхронизация тегов
