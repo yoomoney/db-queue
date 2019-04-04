@@ -9,6 +9,8 @@ import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import javax.annotation.Nonnull;
 import java.util.Objects;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Реализация постановщика задач в очередь.
  * <p>
@@ -31,16 +33,17 @@ public class TransactionalProducer<T> implements QueueProducer<T> {
      * @param payloadTransformer преобразователь данных задачи
      * @param shardRouter        правила роутинга задачи на шарды
      */
-    public TransactionalProducer(QueueConfig queueConfig, TaskPayloadTransformer<T> payloadTransformer,
-                                 ProducerShardRouter<T> shardRouter) {
-        this.queueConfig = queueConfig;
-        this.payloadTransformer = payloadTransformer;
-        this.shardRouter = shardRouter;
+    public TransactionalProducer(@Nonnull QueueConfig queueConfig,
+                                 @Nonnull TaskPayloadTransformer<T> payloadTransformer,
+                                 @Nonnull ProducerShardRouter<T> shardRouter) {
+        this.queueConfig = requireNonNull(queueConfig, "queueConfig");
+        this.payloadTransformer = requireNonNull(payloadTransformer, "payloadTransformer");
+        this.shardRouter = requireNonNull(shardRouter, "shardRouter");
     }
 
     @Override
     public long enqueue(@Nonnull EnqueueParams<T> enqueueParams) {
-        Objects.requireNonNull(enqueueParams);
+        requireNonNull(enqueueParams);
         QueueShard queueShard = shardRouter.resolveEnqueuingShard(enqueueParams);
         EnqueueParams<String> rawEnqueueParams = new EnqueueParams<String>()
                 .withPayload(payloadTransformer.fromObject(enqueueParams.getPayload()))
