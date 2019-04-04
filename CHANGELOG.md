@@ -1,5 +1,12 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=PATCH
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+В случае, если задача ставится в очередь до того, как полностью поднялся spring-контекст очередей,
+внутри `SpringTransactionalProducer` лениво создавался `TransactionalProducer` со всеми полями `null`.
+Таким образом очередь работать не будет.
+
+Добавлен явный контроль полей `TransactionalProducer` на `requireNonNull`, чтобы вызывающий поток падал
+с исключением, а сам `producer` лениво не созадавался, пока контекст очередей не поднят. 
+Тогда при следущем вызове `enqueue` очередь заработает.  
 ### NEXT_VERSION_DESCRIPTION_END
 ## [6.1.0]() (19-03-2019)
 

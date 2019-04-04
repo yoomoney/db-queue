@@ -40,6 +40,7 @@ public class QueueShard {
      *
      * @return идентификатор шарда
      */
+    @Nonnull
     public QueueShardId getShardId() {
         return shardId;
     }
@@ -49,6 +50,7 @@ public class QueueShard {
      *
      * @return jdbc template данного шарда
      */
+    @Nonnull
     public JdbcOperations getJdbcTemplate() {
         return jdbcTemplate;
     }
@@ -58,6 +60,7 @@ public class QueueShard {
      *
      * @return transaction template данного шарда
      */
+    @Nonnull
     public TransactionOperations getTransactionTemplate() {
         return transactionTemplate;
     }
@@ -67,6 +70,7 @@ public class QueueShard {
      *
      * @return класс для работы с очередью
      */
+    @Nonnull
     public QueueDao getQueueDao() {
         return queueDao;
     }
