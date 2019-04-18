@@ -1,1 +1,1 @@
-jobFactory.libraryJobs()
+jobFactory.libraryJobs({successfulJ11BuildRequired enabled})
