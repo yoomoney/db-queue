@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=PATCH
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [6.1.2]() (24-04-2019)
+
 * Сборка проекта под Java 11
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [6.1.1]() (04-04-2019)
 
 В случае, если задача ставится в очередь до того, как полностью поднялся spring-контекст очередей,
