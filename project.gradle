@@ -2,10 +2,11 @@ System.setProperty("platformLibraryProjectVersion", "3.+")
 System.setProperty("platformDependenciesVersion", "3.+")
 
 repositories {
-    maven { url 'https://nexus.yamoney.ru/content/repositories/thirdparty/' }
-    maven { url 'https://nexus.yamoney.ru/content/repositories/central/' }
-    maven { url 'https://nexus.yamoney.ru/content/repositories/releases/' }
-    maven { url 'https://nexus.yamoney.ru/content/repositories/jcenter.bintray.com/' }
+    maven { url 'https://nexus.yamoney.ru/repository/gradle-plugins/' }
+    maven { url 'https://nexus.yamoney.ru/repository/thirdparty/' }
+    maven { url 'https://nexus.yamoney.ru/repository/central/' }
+    maven { url 'https://nexus.yamoney.ru/repository/releases/' }
+    maven { url 'https://nexus.yamoney.ru/repository/jcenter.bintray.com/' }
 
     dependencies {
         classpath 'ru.yandex.money.gradle.plugins:yamoney-library-project-plugin:' + 
