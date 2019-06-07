@@ -22,7 +22,7 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -37,10 +37,10 @@ import static org.mockito.Mockito.when;
 public class TaskProcessorTest {
 
     @Test
-    public void should_succesfully_process_task() throws Exception {
+    public void should_succesfully_process_task() {
         QueueLocation location = QueueLocation.builder().withTableName("testLocation")
                 .withQueueId(new QueueId("testQueue")).build();
-        TaskRecord taskRecord = new TaskRecord(1L, "testPayload", 3L,
+        TaskRecord taskRecord = new TaskRecord(1L, "testPayload", 3L, 1L, 4L,
                 ofSeconds(1), ofSeconds(5), "testcorid", "testactor");
         QueueShardId shardId = new QueueShardId("s1");
         String transformedPayload = "transformedPayload";
@@ -64,8 +64,8 @@ public class TaskProcessorTest {
         verify(listener).started(shardId, location, taskRecord);
         verify(millisTimeProvider, times(2)).getMillis();
         verify(queueConsumer).execute(new Task<>(shardId, transformedPayload,
-                taskRecord.getAttemptsCount(), taskRecord.getCreateDate(),
-                taskRecord.getTraceInfo(), taskRecord.getActor()));
+                taskRecord.getAttemptsCount(), taskRecord.getReenqueueAttemptsCount(), taskRecord.getTotalAttemptsCount(),
+                taskRecord.getCreateDate(), taskRecord.getTraceInfo(), taskRecord.getActor()));
         verify(listener).executed(shardId, location, taskRecord, queueResult, 2);
         verify(resultHandler).handleResult(taskRecord, queueResult);
         verify(listener).finished(shardId, location, taskRecord);
@@ -73,10 +73,10 @@ public class TaskProcessorTest {
     }
 
     @Test
-    public void should_handle_exception_when_queue_failed() throws Exception {
+    public void should_handle_exception_when_queue_failed() {
         QueueLocation location = QueueLocation.builder().withTableName("testLocation")
                 .withQueueId(new QueueId("testQueue")).build();
-        TaskRecord taskRecord = new TaskRecord(1L, "testPayload", 3L,
+        TaskRecord taskRecord = new TaskRecord(1L, "testPayload", 3L, 1L, 4L,
                 ofSeconds(1), ofSeconds(5), "testcorid", "testactor");
         QueueShardId shardId = new QueueShardId("s1");
         RuntimeException queueException = new RuntimeException("fail");
@@ -106,10 +106,10 @@ public class TaskProcessorTest {
     }
 
     @Test
-    public void should_handle_exception_when_result_handler_failed() throws Exception {
+    public void should_handle_exception_when_result_handler_failed() {
         QueueLocation location = QueueLocation.builder().withTableName("testLocation")
                 .withQueueId(new QueueId("testQueue")).build();
-        TaskRecord taskRecord = new TaskRecord(1L, "testPayload", 3L,
+        TaskRecord taskRecord = new TaskRecord(1L, "testPayload", 3L, 1L, 4L,
                 ofSeconds(1), ofSeconds(5), "testcorid", "testactor");
         QueueShardId shardId = new QueueShardId("s1");
         RuntimeException handlerException = new RuntimeException("fail");

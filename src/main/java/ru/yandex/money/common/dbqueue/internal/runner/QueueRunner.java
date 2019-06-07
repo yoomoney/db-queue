@@ -60,13 +60,16 @@ public interface QueueRunner {
             requireNonNull(queueShard);
             requireNonNull(taskLifecycleListener);
 
+            RetryTaskStrategy retryTaskStrategy = RetryTaskStrategy.Factory.create(queueConsumer.getQueueConfig().getSettings());
+            ReenqueueRetryStrategy reenqueueRetryStrategy = ReenqueueRetryStrategy
+                    .create(queueConsumer.getQueueConfig().getSettings().getReenqueueRetrySettings());
+
             PickTaskDao pickTaskDao = new PickTaskDao(queueShard.getShardId(),
                     queueShard.getJdbcTemplate(), queueShard.getTransactionTemplate());
             TaskPicker taskPicker = new TaskPicker(pickTaskDao, taskLifecycleListener,
-                    new MillisTimeProvider.SystemMillisTimeProvider(), RetryTaskStrategy.Factory.create(
-                    queueConsumer.getQueueConfig().getSettings()));
+                    new MillisTimeProvider.SystemMillisTimeProvider(), retryTaskStrategy);
             TaskResultHandler taskResultHandler = new TaskResultHandler(queueConsumer.getQueueConfig().getLocation(),
-                    queueShard);
+                    queueShard, reenqueueRetryStrategy);
             TaskProcessor taskProcessor = new TaskProcessor(queueShard, taskLifecycleListener,
                     new MillisTimeProvider.SystemMillisTimeProvider(), taskResultHandler);
             QueueSettings settings = queueConsumer.getQueueConfig().getSettings();

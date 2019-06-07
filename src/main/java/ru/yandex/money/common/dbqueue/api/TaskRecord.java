@@ -16,6 +16,8 @@ public final class TaskRecord {
     @Nullable
     private final String payload;
     private final long attemptsCount;
+    private final long reenqueueAttemptsCount;
+    private final long totalAttemptsCount;
     @Nonnull
     private final ZonedDateTime createDate;
     @Nonnull
@@ -28,19 +30,30 @@ public final class TaskRecord {
     /**
      * Конструктор
      *
-     * @param id            идентификатор (sequence id) задачи
-     * @param payload       сырые данные задачи
-     * @param attemptsCount количество попыток исполнения задачи
-     * @param createDate    дата постановки задачи
-     * @param processTime   время очередной обработки задачи
-     * @param traceInfo     данные трассировки
-     * @param actor         бизнесовый идентификатор
+     * @param id                     идентификатор (sequence id) задачи
+     * @param payload                сырые данные задачи
+     * @param attemptsCount          количество попыток исполнения задачи
+     * @param reenqueueAttemptsCount количество попыток переоткладывания задачи
+     * @param totalAttemptsCount     суммарное количество попыток выполнить задачу
+     * @param createDate             дата постановки задачи
+     * @param processTime            время очередной обработки задачи
+     * @param traceInfo              данные трассировки
+     * @param actor                  бизнесовый идентификатор
      */
-    public TaskRecord(long id, @Nullable String payload, long attemptsCount, @Nonnull ZonedDateTime createDate,
-                      @Nonnull ZonedDateTime processTime, @Nullable String traceInfo, @Nullable String actor) {
+    public TaskRecord(long id,
+                      @Nullable String payload,
+                      long attemptsCount,
+                      long reenqueueAttemptsCount,
+                      long totalAttemptsCount,
+                      @Nonnull ZonedDateTime createDate,
+                      @Nonnull ZonedDateTime processTime,
+                      @Nullable String traceInfo,
+                      @Nullable String actor) {
         this.id = id;
         this.payload = payload;
         this.attemptsCount = attemptsCount;
+        this.reenqueueAttemptsCount = reenqueueAttemptsCount;
+        this.totalAttemptsCount = totalAttemptsCount;
         this.createDate = createDate;
         this.processTime = processTime;
         this.traceInfo = traceInfo;
@@ -67,12 +80,32 @@ public final class TaskRecord {
     }
 
     /**
-     * Получить количество попыток исполнения задачи, включая текущую.
+     * Получить количество попыток исполнения задачи после последнего re-enqueue, включая текущую.
      *
      * @return количество попыток исполнения
      */
     public long getAttemptsCount() {
         return attemptsCount;
+    }
+
+    /**
+     * Получить количество попыток переоткладывания задачи.
+     *
+     * @return количество попыток переоткладывания
+     */
+    public long getReenqueueAttemptsCount() {
+        return reenqueueAttemptsCount;
+    }
+
+    /**
+     * Получить суммарное количество попыток выполнить задачу.
+     * Этот счетчик учитывает все попытки, включая неуспешные и с возвратом в очередь (re-enqueue),
+     * и никогда не сбрасывается.
+     *
+     * @return суммарное количество попыток выполнения
+     */
+    public long getTotalAttemptsCount() {
+        return totalAttemptsCount;
     }
 
     /**
@@ -126,6 +159,8 @@ public final class TaskRecord {
         TaskRecord that = (TaskRecord) obj;
         return id == that.id &&
                 attemptsCount == that.attemptsCount &&
+                reenqueueAttemptsCount == that.reenqueueAttemptsCount &&
+                totalAttemptsCount == that.totalAttemptsCount &&
                 Objects.equals(payload, that.payload) &&
                 Objects.equals(createDate, that.createDate) &&
                 Objects.equals(processTime, that.processTime) &&
@@ -135,7 +170,8 @@ public final class TaskRecord {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, payload, attemptsCount, createDate, processTime, traceInfo, actor);
+        return Objects.hash(id, payload, attemptsCount, reenqueueAttemptsCount, totalAttemptsCount, createDate, processTime,
+                traceInfo, actor);
     }
 
     @Override
@@ -143,6 +179,8 @@ public final class TaskRecord {
         return '{' +
                 "id=" + id +
                 ", attemptsCount=" + attemptsCount +
+                ", reenqueueAttemptsCount=" + reenqueueAttemptsCount +
+                ", totalAttemptsCount=" + totalAttemptsCount +
                 ", createDate=" + createDate +
                 ", processTime=" + processTime +
                 (actor != null ? ", actor=" + actor : "") +

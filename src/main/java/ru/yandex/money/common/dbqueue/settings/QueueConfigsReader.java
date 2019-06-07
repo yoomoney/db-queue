@@ -63,6 +63,37 @@ import java.util.stream.IntStream;
  * # see {@link QueueConfigsReader#SETTING_RETRY_INTERVAL}
  * queue-prefix.testQueue.retry-interval=PT30S
  *
+ * # see {@link QueueConfigsReader#SETTING_REENQUEUE_RETRY_TYPE}
+ * # values are:
+ * # {@link QueueConfigsReader#VALUE_REENQUEUE_RETRY_TYPE_MANUAL}
+ * # {@link QueueConfigsReader#VALUE_REENQUEUE_RETRY_TYPE_FIXED}
+ * # {@link QueueConfigsReader#VALUE_REENQUEUE_RETRY_TYPE_SEQUENTIAL}
+ * # {@link QueueConfigsReader#VALUE_REENQUEUE_RETRY_TYPE_ARITHMETIC}
+ * # {@link QueueConfigsReader#VALUE_REENQUEUE_RETRY_TYPE_GEOMETRIC}
+ * #
+ * # {@link QueueConfigsReader#VALUE_REENQUEUE_RETRY_TYPE_MANUAL} is used by default
+ * queue-prefix.testQueue.reenqueue-retry-type=fixed
+ *
+ * # see {@link QueueConfigsReader#SETTING_REENQUEUE_RETRY_DELAY}
+ * # Required when {@link QueueConfigsReader#SETTING_REENQUEUE_RETRY_TYPE} is set to 'fixed'
+ * queue-prefix.testQueue.reenqueue-retry-delay=PT10S
+ *
+ * # see {@link QueueConfigsReader#SETTING_REENQUEUE_RETRY_PLAN}
+ * # Required when {@link QueueConfigsReader#SETTING_REENQUEUE_RETRY_TYPE} is set to 'sequential'
+ * queue-prefix.testQueue.reenqueue-retry-plan=PT1S,PT2S,PT3S
+ *
+ * # see {@link QueueConfigsReader#SETTING_REENQUEUE_RETRY_INITIAL_DELAY}
+ * # PT1S is used by default.
+ * queue-prefix.testQueue.reenqueue-retry-initial-delay=PT10S
+ *
+ * # see {@link QueueConfigsReader#SETTING_REENQUEUE_RETRY_STEP}
+ * # PT2S is used by default.
+ * queue-prefix.testQueue.reenqueue-retry-step=PT2S
+ *
+ * # see {@link QueueConfigsReader#SETTING_REENQUEUE_RETRY_RATIO}
+ * # 2 is used by default.
+ * queue-prefix.testQueue.reenqueue-retry-ratio=3
+ *
  * # see {@link QueueConfigsReader#SETTING_PROCESSING_MODE}
  * # values are:
  * # {@link QueueConfigsReader#VALUE_PROCESSING_MODE_SEPARATE_TRANSACTIONS}
@@ -103,6 +134,26 @@ public class QueueConfigsReader {
      */
     public static final String VALUE_TASK_RETRY_TYPE_LINEAR = "linear";
     /**
+     * Representation of {@link ReenqueueRetryType#MANUAL}
+     */
+    public static final String VALUE_REENQUEUE_RETRY_TYPE_MANUAL = "manual";
+    /**
+     * Representation of {@link ReenqueueRetryType#FIXED}
+     */
+    public static final String VALUE_REENQUEUE_RETRY_TYPE_FIXED = "fixed";
+    /**
+     * Representation of {@link ReenqueueRetryType#SEQUENTIAL}
+     */
+    public static final String VALUE_REENQUEUE_RETRY_TYPE_SEQUENTIAL = "sequential";
+    /**
+     * Representation of {@link ReenqueueRetryType#ARITHMETIC}
+     */
+    public static final String VALUE_REENQUEUE_RETRY_TYPE_ARITHMETIC = "arithmetic";
+    /**
+     * Representation of {@link ReenqueueRetryType#GEOMETRIC}
+     */
+    public static final String VALUE_REENQUEUE_RETRY_TYPE_GEOMETRIC = "geometric";
+    /**
      * Representation of {@link ProcessingMode#USE_EXTERNAL_EXECUTOR}
      */
     public static final String VALUE_PROCESSING_MODE_USE_EXTERNAL_EXECUTOR = "use-external-executor";
@@ -126,6 +177,31 @@ public class QueueConfigsReader {
      * Representation of {@link QueueSettings#getRetryInterval()}
      */
     public static final String SETTING_RETRY_INTERVAL = "retry-interval";
+    private static final String REENQUEUE_RETRY_PREFIX = "reenqueue-retry";
+    /**
+     * Representation of {@link ReenqueueRetrySettings#getType()}
+     */
+    public static final String SETTING_REENQUEUE_RETRY_TYPE = REENQUEUE_RETRY_PREFIX + "-type";
+    /**
+     * Representation of {@link ReenqueueRetrySettings#getSequentialPlanOrThrow()}
+     */
+    public static final String SETTING_REENQUEUE_RETRY_PLAN = REENQUEUE_RETRY_PREFIX + "-plan";
+    /**
+     * Representation of {@link ReenqueueRetrySettings#getFixedDelayOrThrow()}
+     */
+    public static final String SETTING_REENQUEUE_RETRY_DELAY = REENQUEUE_RETRY_PREFIX + "-delay";
+    /**
+     * Representation of {@link ReenqueueRetrySettings#getInitialDelay()}
+     */
+    public static final String SETTING_REENQUEUE_RETRY_INITIAL_DELAY = REENQUEUE_RETRY_PREFIX + "-initial-delay";
+    /**
+     * Representation of {@link ReenqueueRetrySettings#getArithmeticStep()}
+     */
+    public static final String SETTING_REENQUEUE_RETRY_STEP = REENQUEUE_RETRY_PREFIX + "-step";
+    /**
+     * Representation of {@link ReenqueueRetrySettings#getGeometricRatio()}
+     */
+    public static final String SETTING_REENQUEUE_RETRY_RATIO = REENQUEUE_RETRY_PREFIX + "-ratio";
     /**
      * Representation of {@link QueueSettings#getThreadCount()}
      */
@@ -189,7 +265,8 @@ public class QueueConfigsReader {
         queues.forEach((queueId, settings) -> {
             queueLocations.add(buildQueueLocation(queueId, settings));
             queueSettings.add(buildQueueSettings(settings)
-                    .withAdditionalSettings(buildAdditionalSettings(settings)));
+                    .withAdditionalSettings(buildAdditionalSettings(settings))
+                    .withReenqueueRetrySettings(buildReenqueueRetrySettings(settings)));
         });
         checkErrors();
         return IntStream.range(0, Integer.max(queueLocations.size(), queueSettings.size()))
@@ -245,6 +322,7 @@ public class QueueConfigsReader {
         QueueSettings.Builder builder = QueueSettings.builder();
         settings.entrySet().stream()
                 .filter(property -> !property.getKey().startsWith(SETTING_ADDITIONAL + "."))
+                .filter(property -> !property.getKey().startsWith(REENQUEUE_RETRY_PREFIX))
                 .filter(property -> !SETTING_TABLE.equals(property.getKey()))
                 .forEach(property -> tryFillSetting(builder, property.getKey(), property.getValue()));
         return builder;
@@ -258,6 +336,51 @@ public class QueueConfigsReader {
                 .collect(Collectors.toMap(
                         entry -> entry.getKey().substring(additionalSettingsName.length(), entry.getKey().length()),
                         Map.Entry::getValue));
+    }
+
+    @Nonnull
+    private ReenqueueRetrySettings buildReenqueueRetrySettings(Map<String, String> settings) {
+        if (!settings.containsKey(SETTING_REENQUEUE_RETRY_TYPE)) {
+            return ReenqueueRetrySettings.createDefault();
+        }
+        Optional<ReenqueueRetryType> optionalRetryType = parseReenqueueRetryType(settings.get(SETTING_REENQUEUE_RETRY_TYPE));
+        if (!optionalRetryType.isPresent()) {
+            return ReenqueueRetrySettings.createDefault();
+        }
+        ReenqueueRetrySettings.Builder builder = ReenqueueRetrySettings.builder(optionalRetryType.get());
+        settings.entrySet().stream()
+                .filter(property -> property.getKey().startsWith(REENQUEUE_RETRY_PREFIX))
+                .filter(property -> !SETTING_REENQUEUE_RETRY_TYPE.equals(property.getKey()))
+                .forEach(property -> tryFillReenqueueSetting(builder, property.getKey(), property.getValue()));
+        return builder.build();
+    }
+
+    private void tryFillReenqueueSetting(ReenqueueRetrySettings.Builder builder, String name, String value) {
+        try {
+            switch (name) {
+                case SETTING_REENQUEUE_RETRY_PLAN:
+                    builder.withSequentialPlan(parseReenqueueRetryPlan(value));
+                    return;
+                case SETTING_REENQUEUE_RETRY_DELAY:
+                    builder.withFixedDelay(Duration.parse(value));
+                    return;
+                case SETTING_REENQUEUE_RETRY_INITIAL_DELAY:
+                    builder.withInitialDelay(Duration.parse(value));
+                    return;
+                case SETTING_REENQUEUE_RETRY_STEP:
+                    builder.withArithmeticStep(Duration.parse(value));
+                    return;
+                case SETTING_REENQUEUE_RETRY_RATIO:
+                    builder.withGeometricRatio(Long.valueOf(value));
+                    return;
+                default:
+                    errorMessages.add(String.format("unknown re-enqueue setting: name=%s, value=%s", name, value));
+                    return;
+            }
+        } catch (RuntimeException exc) {
+            log.warn("cannot parse setting", exc);
+            errorMessages.add(String.format("cannot parse re-enqueue setting: name=%s, value=%s", name, value));
+        }
     }
 
     private void checkErrors() {
@@ -355,6 +478,31 @@ public class QueueConfigsReader {
                 errorMessages.add(String.format("unknown retry type: name=%s", name));
                 return Optional.empty();
         }
+    }
+
+    private Optional<ReenqueueRetryType> parseReenqueueRetryType(String type) {
+        switch (type) {
+            case VALUE_REENQUEUE_RETRY_TYPE_MANUAL:
+                return Optional.of(ReenqueueRetryType.MANUAL);
+            case VALUE_REENQUEUE_RETRY_TYPE_FIXED:
+                return Optional.of(ReenqueueRetryType.FIXED);
+            case VALUE_REENQUEUE_RETRY_TYPE_SEQUENTIAL:
+                return Optional.of(ReenqueueRetryType.SEQUENTIAL);
+            case VALUE_REENQUEUE_RETRY_TYPE_ARITHMETIC:
+                return Optional.of(ReenqueueRetryType.ARITHMETIC);
+            case VALUE_REENQUEUE_RETRY_TYPE_GEOMETRIC:
+                return Optional.of(ReenqueueRetryType.GEOMETRIC);
+            default:
+                errorMessages.add(String.format("unknown re-enqueue retry type: type=%s", type));
+                return Optional.empty();
+        }
+    }
+
+    private List<Duration> parseReenqueueRetryPlan(String plan) {
+        String[] values = plan.split(",");
+        return Arrays.stream(values)
+                .map(Duration::parse)
+                .collect(Collectors.toList());
     }
 
 }

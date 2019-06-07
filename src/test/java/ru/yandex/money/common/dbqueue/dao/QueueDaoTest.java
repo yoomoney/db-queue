@@ -52,6 +52,11 @@ public class QueueDaoTest extends BaseDaoTest {
                     ZoneId.systemDefault());
             Assert.assertThat(createTime.isAfter(beforeExecution), equalTo(true));
             Assert.assertThat(createTime.isBefore(afterExecution), equalTo(true));
+
+            long reenqueueAttempt = rs.getLong("reenqueue_attempt");
+            Assert.assertFalse(rs.wasNull());
+            Assert.assertEquals(0L, reenqueueAttempt);
+
             return new Object();
         });
     }
@@ -120,6 +125,28 @@ public class QueueDaoTest extends BaseDaoTest {
         jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getLong("attempt"), equalTo(0L));
+            return new Object();
+        });
+    }
+
+    @Test
+    public void reenqueue_should_increment_reenqueue_attempts() {
+        QueueLocation location = generateUniqueLocation();
+
+        Long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, new EnqueueParams<>()));
+
+        jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
+            Assert.assertThat(rs.next(), equalTo(true));
+            Assert.assertThat(rs.getLong("reenqueue_attempt"), equalTo(0L));
+            return new Object();
+        });
+
+        Boolean reenqueueResult = executeInTransaction(() -> queueDao.reenqueue(location, enqueueId, Duration.ofHours(1L)));
+
+        Assert.assertThat(reenqueueResult, equalTo(true));
+        jdbcTemplate.query("select * from " + QueueDatabaseInitializer.DEFAULT_TABLE_NAME + " where id=" + enqueueId, rs -> {
+            Assert.assertThat(rs.next(), equalTo(true));
+            Assert.assertThat(rs.getLong("reenqueue_attempt"), equalTo(1L));
             return new Object();
         });
     }

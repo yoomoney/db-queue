@@ -69,7 +69,7 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 <dependency>
   <groupId>com.yandex.money.tech</groupId>
   <artifactId>db-queue</artifactId>
-  <version>6.0.2</version>
+  <version>7.0.0</version>
 </dependency>
 ```
 
@@ -78,14 +78,16 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 * Create table (with index) where tasks will be stored.
 ```sql
 CREATE TABLE queue_tasks (
-  id            BIGSERIAL PRIMARY KEY,
-  queue_name    VARCHAR(128) NOT NULL,
-  task          TEXT,
-  create_time   TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  process_time  TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  attempt       INTEGER                  DEFAULT 0,
-  actor         VARCHAR(128),
-  log_timestamp VARCHAR(128)
+  id                BIGSERIAL PRIMARY KEY,
+  queue_name        VARCHAR(128) NOT NULL,
+  task              TEXT,
+  create_time       TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  process_time      TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  attempt           INTEGER                  DEFAULT 0,
+  reenqueue_attempt INTEGER                  DEFAULT 0,
+  total_attempt     INTEGER                  DEFAULT 0,
+  actor             VARCHAR(128),
+  log_timestamp     TEXT
 ) WITH (fillfactor = 80);
 CREATE INDEX queue_tasks_name_time_desc_idx
   ON queue_tasks (queue_name, process_time, id DESC);

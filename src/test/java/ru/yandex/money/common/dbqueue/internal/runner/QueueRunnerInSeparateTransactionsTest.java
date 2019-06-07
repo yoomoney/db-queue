@@ -30,7 +30,7 @@ public class QueueRunnerInSeparateTransactionsTest {
                     .withQueueId(new QueueId("test_queue1")).build();
 
     @Test
-    public void should_wait_notasktimeout_when_no_task_found() throws Exception {
+    public void should_wait_notasktimeout_when_no_task_found() {
         Duration betweenTaskTimeout = Duration.ofHours(1L);
         Duration noTaskTimeout = Duration.ofMillis(5L);
 
@@ -50,13 +50,13 @@ public class QueueRunnerInSeparateTransactionsTest {
     }
 
     @Test
-    public void should_wait_betweentasktimeout_when_task_found() throws Exception {
+    public void should_wait_betweentasktimeout_when_task_found() {
         Duration betweenTaskTimeout = Duration.ofHours(1L);
         Duration noTaskTimeout = Duration.ofMillis(5L);
 
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
         TaskPicker taskPicker = mock(TaskPicker.class);
-        TaskRecord taskRecord = new TaskRecord(0, null, 0, ZonedDateTime.now(),
+        TaskRecord taskRecord = new TaskRecord(0, null, 0, 0, 0, ZonedDateTime.now(),
                 ZonedDateTime.now(), null, null);
         when(taskPicker.pickTask(queueConsumer)).thenReturn(taskRecord);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);

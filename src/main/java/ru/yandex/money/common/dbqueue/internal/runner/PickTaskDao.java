@@ -67,12 +67,13 @@ class PickTaskDao {
                         "FOR UPDATE SKIP LOCKED) " +
                         "UPDATE %s q " +
                         "SET " +
-                        "  process_time = %s, " +
-                        "  attempt      = attempt + 1 " +
+                        "  process_time  = %s, " +
+                        "  attempt       = attempt + 1, " +
+                        "  total_attempt = coalesce(total_attempt, 0) + 1" +
                         "FROM cte " +
                         "WHERE q.id = cte.id " +
-                        "RETURNING q.id, q.task, q.attempt, q.create_time, q.process_time, " +
-                        "q.log_timestamp, q.actor",
+                        "RETURNING q.id, q.task, q.attempt, q.reenqueue_attempt, q.total_attempt, q.create_time, " +
+                        "q.process_time, q.log_timestamp, q.actor",
                 location.getTableName(), location.getTableName(),
                 retryTaskStrategy.getNextProcessTimeSql()),
                 placeholders,
@@ -86,6 +87,8 @@ class PickTaskDao {
                                 rs.getLong("id"),
                                 rs.getString("task"),
                                 rs.getLong("attempt"),
+                                rs.getLong("reenqueue_attempt"),
+                                rs.getLong("total_attempt"),
                                 ZonedDateTime.ofInstant(rs.getTimestamp("create_time").toInstant(),
                                         ZoneId.systemDefault()),
                                 ZonedDateTime.ofInstant(rs.getTimestamp("process_time").toInstant(),

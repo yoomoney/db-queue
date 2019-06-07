@@ -20,6 +20,8 @@ public final class Task<T> {
     @Nullable
     private final T payload;
     private final long attemptsCount;
+    private final long reenqueueAttemptsCount;
+    private final long totalAttemptsCount;
     @Nonnull
     private final ZonedDateTime createDate;
     @Nullable
@@ -30,18 +32,23 @@ public final class Task<T> {
     /**
      * Конструктор типизированных параметров задачи
      *
-     * @param shardId       идентификатор шарда, с которого была взята задача
-     * @param payload       данные задачи
-     * @param attemptsCount количество попыток выполнения, включая текущую
-     * @param createDate    дата помещения задачи в очередь
-     * @param traceInfo     данные трассировки задачи в очереди
-     * @param actor         бизнесовый идентификатор задачи в очереди
+     * @param shardId                идентификатор шарда, с которого была взята задача
+     * @param payload                данные задачи
+     * @param attemptsCount          количество попыток выполнения, включая текущую
+     * @param reenqueueAttemptsCount количество попыток переоткладывания задачи
+     * @param totalAttemptsCount     суммарное количество попыток выполнить задачу, включая все попытки переоткладывания
+     *                               и все неудачные попытки
+     * @param createDate             дата помещения задачи в очередь
+     * @param traceInfo              данные трассировки задачи в очереди
+     * @param actor                  бизнесовый идентификатор задачи в очереди
      */
-    public Task(@Nonnull QueueShardId shardId, @Nullable T payload, long attemptsCount,
-                @Nonnull ZonedDateTime createDate, @Nullable String traceInfo, @Nullable String actor) {
+    public Task(@Nonnull QueueShardId shardId, @Nullable T payload, long attemptsCount, long reenqueueAttemptsCount,
+                long totalAttemptsCount, @Nonnull ZonedDateTime createDate, @Nullable String traceInfo, @Nullable String actor) {
         this.shardId = Objects.requireNonNull(shardId);
         this.payload = payload;
         this.attemptsCount = attemptsCount;
+        this.reenqueueAttemptsCount = reenqueueAttemptsCount;
+        this.totalAttemptsCount = totalAttemptsCount;
         this.createDate = Objects.requireNonNull(createDate);
         this.traceInfo = traceInfo;
         this.actor = actor;
@@ -72,12 +79,32 @@ public final class Task<T> {
     }
 
     /**
-     * Получить количество попыток исполнения задачи, включая текущую.
+     * Получить количество попыток исполнения задачи после последнего re-enqueue, включая текущую.
      *
      * @return количество попыток исполнения
      */
     public long getAttemptsCount() {
         return attemptsCount;
+    }
+
+    /**
+     * Получить количество попыток переоткладывания задачи.
+     *
+     * @return количество попыток переоткладывания
+     */
+    public long getReenqueueAttemptsCount() {
+        return reenqueueAttemptsCount;
+    }
+
+    /**
+     * Получить суммарное количество попыток выполнить задачу.
+     * Этот счетчик учитывает все попытки, включая неуспешные и с возвратом в очередь (re-enqueue),
+     * и никогда не сбрасывается.
+     *
+     * @return суммарное количество попыток выполнения
+     */
+    public long getTotalAttemptsCount() {
+        return totalAttemptsCount;
     }
 
     /**
@@ -158,6 +185,8 @@ public final class Task<T> {
         }
         Task<?> task = (Task<?>) obj;
         return attemptsCount == task.attemptsCount &&
+                reenqueueAttemptsCount == task.reenqueueAttemptsCount &&
+                totalAttemptsCount == task.totalAttemptsCount &&
                 Objects.equals(shardId, task.shardId) &&
                 Objects.equals(payload, task.payload) &&
                 Objects.equals(createDate, task.createDate) &&
@@ -167,7 +196,7 @@ public final class Task<T> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(shardId, payload, attemptsCount, createDate, traceInfo, actor);
+        return Objects.hash(shardId, payload, attemptsCount, reenqueueAttemptsCount, totalAttemptsCount, createDate, traceInfo, actor);
     }
 
     @Override
@@ -175,6 +204,8 @@ public final class Task<T> {
         return '{' +
                 "shardId=" + shardId +
                 ", attemptsCount=" + attemptsCount +
+                ", reenqueueAttemptsCount=" + reenqueueAttemptsCount +
+                ", totalAttemptsCount=" + totalAttemptsCount +
                 ", createDate=" + createDate +
                 ", payload=" + payload +
                 (actor != null ? ", actor=" + actor : "") +

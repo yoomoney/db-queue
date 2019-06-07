@@ -71,7 +71,15 @@ public class QueueRegistryTest {
     public void should_fail_when_producer_does_not_match_consumer() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Invalid queue configuration:" + System.lineSeparator() +
-                "queue config must be the same: queueId=test_queue1, producer={location={id=test_queue1,table=queue_test}, settings={threadCount=1, betweenTaskTimeout=PT0.1S, noTaskTimeout=PT0S, processingMode=SEPARATE_TRANSACTIONS, retryType=GEOMETRIC_BACKOFF, retryInterval=PT1M, fatalCrashTimeout=PT1S}}, consumer={location={id=test_queue1,table=queue_test}, settings={threadCount=1, betweenTaskTimeout=PT0S, noTaskTimeout=PT0S, processingMode=SEPARATE_TRANSACTIONS, retryType=GEOMETRIC_BACKOFF, retryInterval=PT1M, fatalCrashTimeout=PT1S}}" + System.lineSeparator() +
+                "queue config must be the same: queueId=test_queue1, producer={location={id=test_queue1,table=queue_test}, " +
+                "settings={threadCount=1, betweenTaskTimeout=PT0.1S, noTaskTimeout=PT0S, processingMode=SEPARATE_TRANSACTIONS, " +
+                "retryType=GEOMETRIC_BACKOFF, retryInterval=PT1M, " +
+                "reenqueueRetrySettings=ReenqueueRetrySettings{type=MANUAL, sequentialPlan=null, fixedDelay=null, initialDelay=PT1S, arithmeticStep=PT2S, geometricRatio=2}, " +
+                "fatalCrashTimeout=PT1S}}, consumer={location={id=test_queue1,table=queue_test}, " +
+                "settings={threadCount=1, betweenTaskTimeout=PT0S, noTaskTimeout=PT0S, processingMode=SEPARATE_TRANSACTIONS, " +
+                "retryType=GEOMETRIC_BACKOFF, retryInterval=PT1M, " +
+                "reenqueueRetrySettings=ReenqueueRetrySettings{type=MANUAL, sequentialPlan=null, fixedDelay=null, initialDelay=PT1S, arithmeticStep=PT2S, geometricRatio=2}, " +
+                "fatalCrashTimeout=PT1S}}" + System.lineSeparator() +
                 "payload transformers must be the same: queueId=test_queue1"));
         QueueRegistry queueRegistry = new QueueRegistry();
         queueRegistry.registerQueue(new FakeQueueConsumer(new QueueConfig(testLocation1,

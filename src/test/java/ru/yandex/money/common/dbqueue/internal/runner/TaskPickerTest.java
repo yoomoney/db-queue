@@ -44,7 +44,7 @@ public class TaskPickerTest {
                         .withNoTaskTimeout(Duration.ZERO).build()));
         PickTaskDao pickTaskDao = mock(PickTaskDao.class);
         when(pickTaskDao.getTransactionTemplate()).thenReturn(transactionTemplate);
-        TaskRecord taskRecord = new TaskRecord(0, null, 0, ZonedDateTime.now(),
+        TaskRecord taskRecord = new TaskRecord(0, null, 0, 0, 0, ZonedDateTime.now(),
                 ZonedDateTime.now(), null, null);
         when(pickTaskDao.pickTask(location, retryTaskStrategy)).thenReturn(taskRecord);
         when(pickTaskDao.getShardId()).thenReturn(shardId);

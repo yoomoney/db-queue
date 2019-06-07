@@ -202,6 +202,100 @@ public class QueueConfigsReaderTest {
     }
 
     @Test
+    public void should_parse_reenqueue_retry_types() throws Exception {
+        QueueConfigsReader queueConfigsReader = new QueueConfigsReader("q");
+        Collection<QueueConfig> configs = queueConfigsReader.parse(fileSystem.write(
+                // без явного указания reenqueue-retry-type
+                "q.testQueue0.table=foo",
+                "q.testQueue0.between-task-timeout=PT0S",
+                "q.testQueue0.no-task-timeout=PT0S",
+
+                // с manual стратегией
+                "q.testQueue1.table=foo",
+                "q.testQueue1.between-task-timeout=PT0S",
+                "q.testQueue1.no-task-timeout=PT0S",
+                "q.testQueue1.reenqueue-retry-type=manual",
+
+                // с фиксированной задержкой в 10 секунд
+                "q.testQueue2.table=foo",
+                "q.testQueue2.between-task-timeout=PT0S",
+                "q.testQueue2.no-task-timeout=PT0S",
+                "q.testQueue2.reenqueue-retry-type=fixed",
+                "q.testQueue2.reenqueue-retry-delay=PT10S",
+
+                // с планом для переоткладывания на 1с, 2с, 3с, 3с, 3с, ...
+                "q.testQueue3.table=foo",
+                "q.testQueue3.between-task-timeout=PT0S",
+                "q.testQueue3.no-task-timeout=PT0S",
+                "q.testQueue3.reenqueue-retry-type=sequential",
+                "q.testQueue3.reenqueue-retry-plan=PT1S,PT2S,PT3S",
+
+                // с арифметической прогрессией (по-умолчанию первый член = 1с, шаг = 2с)
+                "q.testQueue4.table=foo",
+                "q.testQueue4.between-task-timeout=PT0S",
+                "q.testQueue4.no-task-timeout=PT0S",
+                "q.testQueue4.reenqueue-retry-type=arithmetic",
+
+                // с арифметической прогрессией - первый член = 10с, шаг = 1с
+                "q.testQueue5.table=foo",
+                "q.testQueue5.between-task-timeout=PT0S",
+                "q.testQueue5.no-task-timeout=PT0S",
+                "q.testQueue5.reenqueue-retry-type=arithmetic",
+                "q.testQueue5.reenqueue-retry-initial-delay=PT10S",
+                "q.testQueue5.reenqueue-retry-step=PT1S",
+
+                // с геометрической прогрессией (по-умолчанию первый член = 1с, знаменатель = 2)
+                "q.testQueue6.table=foo",
+                "q.testQueue6.between-task-timeout=PT0S",
+                "q.testQueue6.no-task-timeout=PT0S",
+                "q.testQueue6.reenqueue-retry-type=geometric",
+
+                // с геометрической прогрессией - первый член = 10с, знаменатель = 3
+                "q.testQueue7.table=foo",
+                "q.testQueue7.between-task-timeout=PT0S",
+                "q.testQueue7.no-task-timeout=PT0S",
+                "q.testQueue7.reenqueue-retry-type=geometric",
+                "q.testQueue7.reenqueue-retry-initial-delay=PT10S",
+                "q.testQueue7.reenqueue-retry-ratio=3"
+        ));
+        assertThat(configs.stream().collect(Collectors.toMap(
+                config -> config.getLocation().getQueueId().asString(),
+                config -> config.getSettings().getReenqueueRetrySettings())),
+                equalTo(new LinkedHashMap<String, ReenqueueRetrySettings>() {{
+                    put("testQueue0", ReenqueueRetrySettings.builder(ReenqueueRetryType.MANUAL)
+                            .build());
+                    put("testQueue1", ReenqueueRetrySettings.builder(ReenqueueRetryType.MANUAL)
+                            .build());
+                    put("testQueue2", ReenqueueRetrySettings.builder(ReenqueueRetryType.FIXED)
+                            .withFixedDelay(Duration.ofSeconds(10L))
+                            .build());
+                    put("testQueue3", ReenqueueRetrySettings.builder(ReenqueueRetryType.SEQUENTIAL)
+                            .withSequentialPlan(Arrays.asList(
+                                    Duration.ofSeconds(1L),
+                                    Duration.ofSeconds(2L),
+                                    Duration.ofSeconds(3L)
+                            ))
+                            .build());
+                    put("testQueue4", ReenqueueRetrySettings.builder(ReenqueueRetryType.ARITHMETIC)
+                            .withInitialDelay(Duration.ofSeconds(1L))
+                            .withArithmeticStep(Duration.ofSeconds(2L))
+                            .build());
+                    put("testQueue5", ReenqueueRetrySettings.builder(ReenqueueRetryType.ARITHMETIC)
+                            .withInitialDelay(Duration.ofSeconds(10L))
+                            .withArithmeticStep(Duration.ofSeconds(1L))
+                            .build());
+                    put("testQueue6", ReenqueueRetrySettings.builder(ReenqueueRetryType.GEOMETRIC)
+                            .withInitialDelay(Duration.ofSeconds(1L))
+                            .withGeometricRatio(2L)
+                            .build());
+                    put("testQueue7", ReenqueueRetrySettings.builder(ReenqueueRetryType.GEOMETRIC)
+                            .withInitialDelay(Duration.ofSeconds(10L))
+                            .withGeometricRatio(3L)
+                            .build());
+                }}));
+    }
+
+    @Test
     public void should_parse_processing_modes() throws Exception {
         QueueConfigsReader queueConfigsReader = new QueueConfigsReader("q");
         Collection<QueueConfig> configs = queueConfigsReader.parse(fileSystem.write(
