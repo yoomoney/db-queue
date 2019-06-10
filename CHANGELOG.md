@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=PATCH
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [6.1.4]() (10-06-2019)
+
 * Сборка и публикация артефакта под Java 11
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [6.1.3]() (14-05-2019)
 
 * Добавлен репозиторий с Gradle плагинами
