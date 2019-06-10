@@ -61,7 +61,7 @@ public class QueueRunnerInTransactionTest {
 
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
         TaskPicker taskPicker = mock(TaskPicker.class);
-        TaskRecord taskRecord = new TaskRecord(0, null, 0, ZonedDateTime.now(),
+        TaskRecord taskRecord = new TaskRecord(0, null, 0, 0, 0, ZonedDateTime.now(),
                 ZonedDateTime.now(), null, null);
         when(taskPicker.pickTask(queueConsumer)).thenReturn(taskRecord);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);

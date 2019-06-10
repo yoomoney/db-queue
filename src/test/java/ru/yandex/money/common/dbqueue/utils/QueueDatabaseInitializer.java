@@ -18,14 +18,16 @@ public class QueueDatabaseInitializer {
     public static final String DEFAULT_TABLE_NAME = "queue_test";
 
     private static final String QUEUE_TABLE_DDL = "CREATE TABLE %s (\n" +
-            "  id            BIGSERIAL PRIMARY KEY,\n" +
-            "  queue_name    VARCHAR(128) NOT NULL,\n" +
-            "  task          TEXT,\n" +
-            "  create_time   TIMESTAMP WITH TIME ZONE DEFAULT now(),\n" +
-            "  process_time  TIMESTAMP WITH TIME ZONE DEFAULT now(),\n" +
-            "  attempt       INTEGER                  DEFAULT 0,\n" +
-            "  actor         VARCHAR(128),\n" +
-            "  log_timestamp VARCHAR(128)\n" +
+            "  id                BIGSERIAL PRIMARY KEY,\n" +
+            "  queue_name        VARCHAR(128) NOT NULL,\n" +
+            "  task              TEXT,\n" +
+            "  create_time       TIMESTAMP WITH TIME ZONE DEFAULT now(),\n" +
+            "  process_time      TIMESTAMP WITH TIME ZONE DEFAULT now(),\n" +
+            "  attempt           INTEGER                  DEFAULT 0,\n" +
+            "  reenqueue_attempt INTEGER                  DEFAULT 0,\n" +
+            "  total_attempt     INTEGER                  DEFAULT 0,\n" +
+            "  actor             VARCHAR(128),\n" +
+            "  log_timestamp     TEXT\n" +
             ");" +
             "CREATE INDEX %s_name_time_desc_idx\n" +
             "  ON queue_test (queue_name, process_time, id DESC);\n" +

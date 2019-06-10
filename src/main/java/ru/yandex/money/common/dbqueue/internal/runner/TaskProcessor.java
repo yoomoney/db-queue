@@ -63,7 +63,8 @@ class TaskProcessor {
             long processTaskStarted = millisTimeProvider.getMillis();
             Object payload = queueConsumer.getPayloadTransformer().toObject(taskRecord.getPayload());
             Task task = new Task(queueShard.getShardId(), payload, taskRecord.getAttemptsCount(),
-                    taskRecord.getCreateDate(), taskRecord.getTraceInfo(), taskRecord.getActor());
+                    taskRecord.getReenqueueAttemptsCount(), taskRecord.getTotalAttemptsCount(), taskRecord.getCreateDate(),
+                    taskRecord.getTraceInfo(), taskRecord.getActor());
             TaskExecutionResult executionResult = queueConsumer.execute(task);
             taskLifecycleListener.executed(queueShard.getShardId(), queueConsumer.getQueueConfig().getLocation(),
                     taskRecord,

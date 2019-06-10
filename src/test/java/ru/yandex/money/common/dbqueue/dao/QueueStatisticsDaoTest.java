@@ -28,7 +28,7 @@ public class QueueStatisticsDaoTest extends BaseDaoTest {
 
 
     @Test
-    public void should_count_and_reset_tasks() throws Exception {
+    public void should_count_and_reset_tasks() {
         String table = generateUniqueTable();
         QueueDatabaseInitializer.createTable(table);
 
@@ -64,7 +64,7 @@ public class QueueStatisticsDaoTest extends BaseDaoTest {
     }
 
     @Test
-    public void should_list_pending_tasks() throws Exception {
+    public void should_list_pending_tasks() {
         String table = generateUniqueTable();
         QueueDatabaseInitializer.createTable(table);
 
@@ -74,10 +74,10 @@ public class QueueStatisticsDaoTest extends BaseDaoTest {
             for (int i = 0; i < 15; i++) {
                 new NamedParameterJdbcTemplate(jdbcTemplate).update(
                         String.format("INSERT INTO " +
-                                        "%s(queue_name, task, process_time, create_time, log_timestamp, actor, attempt) " +
+                                        "%s(queue_name, task, process_time, create_time, log_timestamp, actor, attempt, total_attempt) " +
                                         "VALUES " +
                                         "(:queueName, :task, :processTime, :createTime, " +
-                                        ":traceInfo, :actor, :attempt)",
+                                        ":traceInfo, :actor, :attempt, :total_attempt)",
                                 table),
                         new MapSqlParameterSource()
                                 .addValue("queueName", pendingQueueName)
@@ -86,7 +86,8 @@ public class QueueStatisticsDaoTest extends BaseDaoTest {
                                 .addValue("processTime", new Timestamp(1000000000 * i))
                                 .addValue("traceInfo", "traceInfo" + i)
                                 .addValue("actor", "actor" + i)
-                                .addValue("attempt", 2 + i));
+                                .addValue("attempt", 2 + i)
+                                .addValue("total_attempt", 2 + i));
             }
             return Void.class;
         });
@@ -96,7 +97,7 @@ public class QueueStatisticsDaoTest extends BaseDaoTest {
         expectedPendingTasks.put(pendingQueueName, expectedPendingTasksList);
         for (int id = 5; id <= 14; id++) {
             expectedPendingTasksList.add(new TaskRecord(
-                    id + 1, "task" + id, id + 2,
+                    id + 1, "task" + id, id + 2, 0L, id + 2,
                     ZonedDateTime.ofInstant(new Timestamp(100000000 * id).toInstant(), ZoneId.systemDefault()),
                     ZonedDateTime.ofInstant(new Timestamp(1000000000 * id).toInstant(), ZoneId.systemDefault()),
                     "traceInfo" + id, "actor" + id

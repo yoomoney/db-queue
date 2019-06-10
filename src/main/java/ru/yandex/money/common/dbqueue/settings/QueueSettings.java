@@ -35,6 +35,8 @@ public final class QueueSettings {
     @Nonnull
     private final TaskRetryType retryType;
     @Nonnull
+    private final ReenqueueRetrySettings reenqueueRetrySettings;
+    @Nonnull
     private final ProcessingMode processingMode;
     @Nonnull
     private final Map<String, String> additionalSettings;
@@ -45,6 +47,7 @@ public final class QueueSettings {
                           @Nullable Integer threadCount,
                           @Nullable TaskRetryType retryType,
                           @Nullable Duration retryInterval,
+                          @Nullable ReenqueueRetrySettings reenqueueRetrySettings,
                           @Nullable ProcessingMode processingMode,
                           @Nullable Map<String, String> additionalSettings) {
         this.noTaskTimeout = Objects.requireNonNull(noTaskTimeout);
@@ -53,6 +56,9 @@ public final class QueueSettings {
         this.fatalCrashTimeout = fatalCrashTimeout == null ? DEFAULT_TIMEOUT_ON_FATAL_CRASH : fatalCrashTimeout;
         this.retryType = retryType == null ? TaskRetryType.GEOMETRIC_BACKOFF : retryType;
         this.retryInterval = retryInterval == null ? Duration.ofMinutes(1) : retryInterval;
+        this.reenqueueRetrySettings = reenqueueRetrySettings == null
+                ? ReenqueueRetrySettings.createDefault()
+                : reenqueueRetrySettings;
         this.processingMode = processingMode == null ? ProcessingMode.SEPARATE_TRANSACTIONS : processingMode;
         this.additionalSettings = additionalSettings == null ? Collections.emptyMap() :
                 Collections.unmodifiableMap(new HashMap<>(additionalSettings));
@@ -77,6 +83,16 @@ public final class QueueSettings {
     @Nonnull
     public Duration getRetryInterval() {
         return retryInterval;
+    }
+
+    /**
+     * Настройки стратегии переоткладывания задач в случае, если задачу требуется вернуть в очередь.
+     *
+     * @return настройки
+     */
+    @Nonnull
+    public ReenqueueRetrySettings getReenqueueRetrySettings() {
+        return reenqueueRetrySettings;
     }
 
     /**
@@ -180,6 +196,7 @@ public final class QueueSettings {
                 ", processingMode=" + processingMode +
                 ", retryType=" + retryType +
                 ", retryInterval=" + retryInterval +
+                ", reenqueueRetrySettings=" + reenqueueRetrySettings +
                 ", fatalCrashTimeout=" + fatalCrashTimeout +
                 (additionalSettings.isEmpty() ? "" : ", additionalSettings=" + additionalSettings) +
                 '}';
@@ -197,6 +214,7 @@ public final class QueueSettings {
         return threadCount == that.threadCount &&
                 retryType == that.retryType &&
                 processingMode == that.processingMode &&
+                Objects.equals(reenqueueRetrySettings, that.reenqueueRetrySettings) &&
                 Objects.equals(noTaskTimeout, that.noTaskTimeout) &&
                 Objects.equals(betweenTaskTimeout, that.betweenTaskTimeout) &&
                 Objects.equals(fatalCrashTimeout, that.fatalCrashTimeout) &&
@@ -206,7 +224,7 @@ public final class QueueSettings {
 
     @Override
     public int hashCode() {
-        return Objects.hash(threadCount, noTaskTimeout, betweenTaskTimeout, fatalCrashTimeout, retryType,
+        return Objects.hash(threadCount, noTaskTimeout, betweenTaskTimeout, fatalCrashTimeout, retryType, reenqueueRetrySettings,
                 processingMode, retryInterval, additionalSettings);
     }
 
@@ -220,6 +238,7 @@ public final class QueueSettings {
         private Integer threadCount;
         private TaskRetryType retryType;
         private Duration retryInterval;
+        private ReenqueueRetrySettings reenqueueRetrySettings;
         private ProcessingMode processingMode;
         private final Map<String, String> additionalSettings = new HashMap<>();
 
@@ -293,6 +312,17 @@ public final class QueueSettings {
         }
 
         /**
+         * Установить настройки стратегии переоткладывания задач в случае, если задачу требуется вернуть в очередь.
+         *
+         * @param reenqueueRetrySettings настройки
+         * @return билдер настроек очереди
+         */
+        public Builder withReenqueueRetrySettings(@Nullable ReenqueueRetrySettings reenqueueRetrySettings) {
+            this.reenqueueRetrySettings = reenqueueRetrySettings;
+            return this;
+        }
+
+        /**
          * Режим обработки задач в очереди
          *
          * @param processingMode режим обработки
@@ -334,7 +364,7 @@ public final class QueueSettings {
          */
         public QueueSettings build() {
             return new QueueSettings(noTaskTimeout, betweenTaskTimeout, fatalCrashTimeout, threadCount,
-                    retryType, retryInterval, processingMode, additionalSettings);
+                    retryType, retryInterval, reenqueueRetrySettings, processingMode, additionalSettings);
         }
     }
 

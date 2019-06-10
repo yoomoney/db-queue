@@ -20,16 +20,22 @@ class TaskResultHandler {
     private final QueueLocation location;
     @Nonnull
     private final QueueShard queueShard;
+    @Nonnull
+    private final ReenqueueRetryStrategy reenqueueRetryStrategy;
 
     /**
      * Конструктор
      *
      * @param location местоположение очереди
      * @param queueShard шард на котором происходит обработка задачи
+     * @param reenqueueRetryStrategy стратегия для переоткладывания задач
      */
-    TaskResultHandler(@Nonnull QueueLocation location, @Nonnull QueueShard queueShard) {
+    TaskResultHandler(@Nonnull QueueLocation location,
+                      @Nonnull QueueShard queueShard,
+                      @Nonnull ReenqueueRetryStrategy reenqueueRetryStrategy) {
         this.location = Objects.requireNonNull(location);
         this.queueShard = Objects.requireNonNull(queueShard);
+        this.reenqueueRetryStrategy = Objects.requireNonNull(reenqueueRetryStrategy);
     }
 
     /**
@@ -48,12 +54,18 @@ class TaskResultHandler {
                 return;
 
             case REENQUEUE:
-                queueShard.getTransactionTemplate().execute(
-                        status -> queueShard.getQueueDao().reenqueue(location, taskRecord.getId(),
-                                executionResult.getExecutionDelayOrThrow()));
+                queueShard.getTransactionTemplate().execute(status ->
+                        queueShard.getQueueDao().reenqueue(
+                                location,
+                                taskRecord.getId(),
+                                executionResult.getExecutionDelay()
+                                        .orElseGet(() -> reenqueueRetryStrategy.calculateDelay(taskRecord))
+                        )
+                );
                 return;
             case FAIL:
                 return;
+
             default:
                 throw new IllegalStateException("unknown action type: " + executionResult.getActionType());
         }

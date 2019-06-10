@@ -88,7 +88,6 @@ interface RetryTaskStrategy {
         public Duration getBaseRetryInterval() {
             return queueSettings.getRetryInterval();
         }
-
     }
 
     /**
@@ -119,7 +118,6 @@ interface RetryTaskStrategy {
         public Duration getBaseRetryInterval() {
             return queueSettings.getRetryInterval();
         }
-
     }
 
     /**
@@ -150,7 +148,6 @@ interface RetryTaskStrategy {
         public Duration getBaseRetryInterval() {
             return queueSettings.getRetryInterval();
         }
-
     }
 
 }

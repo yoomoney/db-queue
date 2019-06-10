@@ -76,7 +76,7 @@ public class QueueStatisticsDao {
         Map<String, List<TaskRecord>> result = new HashMap<>();
         jdbcTemplate.query(String.format(
                 "SELECT t.id, t.queue_name, substring(t.task for 2000) as payload, t.process_time, " +
-                        "t.attempt, t.create_time, t.log_timestamp as trace_info, t.actor " +
+                        "t.attempt, t.reenqueue_attempt, t.total_attempt, t.create_time, t.log_timestamp as trace_info, t.actor " +
                         "FROM %s t JOIN (SELECT id, row_number() OVER (PARTITION BY queue_name ORDER BY id desc) rn " +
                         "FROM %s WHERE (attempt > 1) OR (attempt = 1 AND process_time < now())) task_ids " +
                         "on task_ids.id=t.id WHERE task_ids.rn<=10", tableName, tableName), rs -> {
@@ -89,6 +89,8 @@ public class QueueStatisticsDao {
                     rs.getLong("id"),
                     rs.getString("payload"),
                     rs.getLong("attempt"),
+                    rs.getLong("reenqueue_attempt"),
+                    rs.getLong("total_attempt"),
                     ZonedDateTime.ofInstant(rs.getTimestamp("create_time").toInstant(),
                             ZoneId.systemDefault()),
                     ZonedDateTime.ofInstant(rs.getTimestamp("process_time").toInstant(),

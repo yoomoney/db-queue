@@ -43,9 +43,9 @@ public class QueueDao {
         requireNonNull(location);
         requireNonNull(enqueueParams);
         return jdbcTemplate.queryForObject(String.format(
-                "INSERT INTO %s(queue_name, task, process_time, log_timestamp, actor) VALUES " +
+                "INSERT INTO %s(queue_name, task, process_time, log_timestamp, actor, reenqueue_attempt, total_attempt) VALUES " +
                         "(:queueName, :task, now() + :executionDelay * INTERVAL '1 SECOND', " +
-                        ":traceInfo, :actor) RETURNING id",
+                        ":traceInfo, :actor, 0, 0) RETURNING id",
                 location.getTableName()),
                 new MapSqlParameterSource()
                         .addValue("queueName", location.getQueueId().asString())
@@ -77,7 +77,7 @@ public class QueueDao {
      * Переставить выполнение задачи на заданный промежуток времени
      *
      * @param location       местоположение очереди
-     * @param taskId         идентификатор (sequence id) задами
+     * @param taskId         идентификатор (sequence id) задачи
      * @param executionDelay промежуток времени
      * @return true, если задача была переставлена, false, если задача не найдена.
      */
@@ -85,7 +85,8 @@ public class QueueDao {
         requireNonNull(location);
         requireNonNull(executionDelay);
         int updatedRows = jdbcTemplate.update(String.format(
-                "UPDATE %s SET  process_time = now() + :executionDelay * INTERVAL '1 SECOND',  attempt = 0 " +
+                "UPDATE %s SET  process_time = now() + :executionDelay * INTERVAL '1 SECOND',  attempt = 0, " +
+                        "reenqueue_attempt = coalesce(reenqueue_attempt, 0) + 1 " +
                         "WHERE id = :id AND queue_name = :queueName", location.getTableName()),
                 new MapSqlParameterSource()
                         .addValue("id", taskId)
@@ -93,6 +94,4 @@ public class QueueDao {
                         .addValue("executionDelay", executionDelay.getSeconds()));
         return updatedRows != 0;
     }
-
-
 }

@@ -1,6 +1,8 @@
 package ru.yandex.money.common.dbqueue.api;
 
 
+import ru.yandex.money.common.dbqueue.settings.ReenqueueRetryType;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
@@ -35,6 +37,7 @@ public final class TaskExecutionResult {
 
     private static final TaskExecutionResult FINISH = new TaskExecutionResult(Type.FINISH);
     private static final TaskExecutionResult FAIL = new TaskExecutionResult(Type.FAIL);
+    private static final TaskExecutionResult REENQUEUE_WITHOUT_DELAY = new TaskExecutionResult(Type.REENQUEUE);
 
     @Nonnull
     private final Type actionType;
@@ -85,7 +88,7 @@ public final class TaskExecutionResult {
 
     /**
      * Указание поставить задачу в очередь повторно, с указанием фиксированного значения задержки.
-     * Попытки обработки сбрасываются, задача будет выполнена через указанный период.
+     * Счетчик неуспешных попыток обработки сбрасывается, задача будет выполнена через указанный период.
      *
      * @param delay фиксированное значение задержки, через которое задача должна быть выполнена повторно
      * @return действие
@@ -94,6 +97,18 @@ public final class TaskExecutionResult {
     public static TaskExecutionResult reenqueue(@Nonnull Duration delay) {
         Objects.requireNonNull(delay);
         return new TaskExecutionResult(Type.REENQUEUE, delay);
+    }
+
+    /**
+     * Указание поставить задачу в очередь повторно, с использованием {@link ReenqueueRetryType стратегии переоткладывания},
+     * заданной в конфигурации очереди.
+     * Счетчик неуспешных попыток обработки сбрасывается.
+     *
+     * @return действие
+     */
+    @Nonnull
+    public static TaskExecutionResult reenqueue() {
+        return REENQUEUE_WITHOUT_DELAY;
     }
 
     /**
