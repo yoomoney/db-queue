@@ -155,8 +155,9 @@ public class QueueExecutionPool {
             throw new IllegalStateException("queues already started");
         }
         started = true;
-        log.info("starting queues");
+        log.info("starting queues: pools={}", poolInstances.size());
         poolInstances.forEach((queueId, queuePoolInstance) -> {
+            log.info("Starting: queueId={}, instances={}", queueId, queuePoolInstance.size());
             queuePoolInstance.forEach((queueShardId, shardPoolInstance) -> {
                 QueueConfig queueConfig = shardPoolInstance.queueConsumer.getQueueConfig();
                 log.info("running queue: queueId={}, shardId={}", queueId, queueShardId);
@@ -218,6 +219,7 @@ public class QueueExecutionPool {
                 poolInstance.queueConsumer.getQueueConfig().getLocation().getQueueId(),
                 poolInstance.queueShard.getShardId(), TERMINATION_TIMEOUT);
         try {
+            poolInstance.queueLoop.terminate();
             poolInstance.queueShardThreadPool.shutdownNow();
             if (!poolInstance.queueShardThreadPool.awaitTermination(
                     TERMINATION_TIMEOUT.getSeconds(), TimeUnit.SECONDS)) {

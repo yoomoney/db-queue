@@ -30,10 +30,15 @@ public interface LoopPolicy {
     /**
      * Приостановить исполнение кода
      *
-     * @param timeout промежуток на который следует приостановить работу
+     * @param timeout       промежуток на который следует приостановить работу
      * @param waitInterrupt признак, что разрешено прервать ожидание и продолжить работу
      */
     void doWait(Duration timeout, WaitInterrupt waitInterrupt);
+
+    /**
+     * Прервать выполнение кода
+     */
+    void doTerminate();
 
     /**
      * Cтратегия выполнения задачи в потоке
@@ -44,10 +49,12 @@ public interface LoopPolicy {
 
         private final Object monitor = new Object();
         private volatile boolean isWakedUp = false;
+        private volatile boolean terminated;
 
         @Override
         public void doRun(Runnable runnable) {
-            while (!Thread.currentThread().isInterrupted()) {
+            terminated = false;
+            while (!terminated && !Thread.currentThread().isInterrupted()) {
                 runnable.run();
             }
 
@@ -86,6 +93,12 @@ public interface LoopPolicy {
                 Thread.currentThread().interrupt();
             }
 
+        }
+
+        @Override
+        public void doTerminate() {
+            terminated = true;
+            log.debug("doTerminate(): threadName={}", Thread.currentThread().getName());
         }
     }
 

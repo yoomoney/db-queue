@@ -47,7 +47,7 @@ public class QueueLoop {
     }
 
     /**
-     * Запустить цикл обработки задач в очерди
+     * Запустить цикл обработки задач в очереди
      *
      * @param shardId       идентификатор шарда, на котором происходит обработка
      * @param queueConsumer выполняемая очередь
@@ -84,6 +84,14 @@ public class QueueLoop {
                 threadLifecycleListener.finished(shardId, queueConsumer.getQueueConfig().getLocation());
             }
         });
+    }
+
+    /**
+     * Прекратить работу цикла обработки задач в очереди
+     *
+     */
+    public void terminate() {
+        loopPolicy.doTerminate();
     }
 
 }

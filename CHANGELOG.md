@@ -1,5 +1,6 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=MINOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+* В QueueLoop добавлен метод для прекращения работы цикла обработки задач
 ### NEXT_VERSION_DESCRIPTION_END
 ## [7.0.1]() (11-06-2019)
 
