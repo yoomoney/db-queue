@@ -84,6 +84,9 @@ public class QueueLoopTest {
         verify(listener).executed(eq(shardId), eq(location), eq(false), anyLong());
         verify(loopPolicy).doWait(waitDuration, LoopPolicy.WaitInterrupt.ALLOW);
         verify(listener).finished(shardId, location);
+
+        queueLoop.terminate();
+        verify(loopPolicy).doTerminate();
     }
 
     @Test
@@ -145,6 +148,11 @@ public class QueueLoopTest {
         public void doWait(Duration timeout, WaitInterrupt waitInterrupt) {
             delegate.doWait(timeout, waitInterrupt);
         }
+
+        @Override
+        public void doTerminate() {
+            delegate.doTerminate();
+        }
     }
 
     private static class SyncLoopPolicy implements LoopPolicy {
@@ -160,6 +168,11 @@ public class QueueLoopTest {
 
         @Override
         public void doWait(Duration timeout, WaitInterrupt waitInterrupt) {
+
+        }
+
+        @Override
+        public void doTerminate() {
 
         }
     }

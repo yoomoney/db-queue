@@ -232,6 +232,7 @@ public class QueueExecutionPoolTest {
         verify(externalExecutor, times(1)).shutdownQueueExecutor();
         verify(queueThreadExecutor, times(2)).shutdownNow();
         verify(queueThreadExecutor, times(2)).awaitTermination(30L, TimeUnit.SECONDS);
+        verify(queueLoop, times(2)).terminate();
     }
 
     private static class DirectExecutor extends AbstractExecutorService {
