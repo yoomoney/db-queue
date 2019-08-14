@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=MINOR
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [7.1.0]() (14-08-2019)
+
 * В QueueLoop добавлен метод для прекращения работы цикла обработки задач
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [7.0.1]() (11-06-2019)
 
 * Поправил javadoc'и для корректной сборки
