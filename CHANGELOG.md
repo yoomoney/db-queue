@@ -1,3 +1,6 @@
+### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_DESCRIPTION_BEGIN
+### NEXT_VERSION_DESCRIPTION_END
 ## [7.1.0]() (14-08-2019)
 
 * В QueueLoop добавлен метод для прекращения работы цикла обработки задач
