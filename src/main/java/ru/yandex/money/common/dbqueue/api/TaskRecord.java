@@ -3,6 +3,8 @@ package ru.yandex.money.common.dbqueue.api;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.ZonedDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -19,13 +21,11 @@ public final class TaskRecord {
     private final long reenqueueAttemptsCount;
     private final long totalAttemptsCount;
     @Nonnull
-    private final ZonedDateTime createDate;
+    private final ZonedDateTime createdAt;
     @Nonnull
-    private final ZonedDateTime processTime;
-    @Nullable
-    private final String traceInfo;
-    @Nullable
-    private final String actor;
+    private final ZonedDateTime nextProcessAt;
+    @Nonnull
+    private final Map<String, String> extData;
 
     /**
      * Конструктор
@@ -35,29 +35,26 @@ public final class TaskRecord {
      * @param attemptsCount          количество попыток исполнения задачи
      * @param reenqueueAttemptsCount количество попыток переоткладывания задачи
      * @param totalAttemptsCount     суммарное количество попыток выполнить задачу
-     * @param createDate             дата постановки задачи
-     * @param processTime            время очередной обработки задачи
-     * @param traceInfo              данные трассировки
-     * @param actor                  бизнесовый идентификатор
+     * @param createdAt             время постановки задачи
+     * @param nextProcessAt            время очередной обработки задачи
+     * @param extData                расширенные данные задачи, ключ - это имя колонки БД
      */
-    public TaskRecord(long id,
-                      @Nullable String payload,
-                      long attemptsCount,
-                      long reenqueueAttemptsCount,
-                      long totalAttemptsCount,
-                      @Nonnull ZonedDateTime createDate,
-                      @Nonnull ZonedDateTime processTime,
-                      @Nullable String traceInfo,
-                      @Nullable String actor) {
+    private TaskRecord(long id,
+                       @Nullable String payload,
+                       long attemptsCount,
+                       long reenqueueAttemptsCount,
+                       long totalAttemptsCount,
+                       @Nonnull ZonedDateTime createdAt,
+                       @Nonnull ZonedDateTime nextProcessAt,
+                       @Nonnull Map<String, String> extData) {
         this.id = id;
         this.payload = payload;
         this.attemptsCount = attemptsCount;
         this.reenqueueAttemptsCount = reenqueueAttemptsCount;
         this.totalAttemptsCount = totalAttemptsCount;
-        this.createDate = createDate;
-        this.processTime = processTime;
-        this.traceInfo = traceInfo;
-        this.actor = actor;
+        this.createdAt = Objects.requireNonNull(createdAt);
+        this.nextProcessAt = Objects.requireNonNull(nextProcessAt);
+        this.extData = Objects.requireNonNull(extData);
     }
 
     /**
@@ -109,23 +106,13 @@ public final class TaskRecord {
     }
 
     /**
-     * Получить дату постановки задачи в очередь
+     * Получить время постановки задачи в очередь
      *
-     * @return дата постановки задачи
+     * @return время постановки задачи
      */
     @Nonnull
-    public ZonedDateTime getCreateDate() {
-        return createDate;
-    }
-
-    /**
-     * Получить данные трассировки
-     *
-     * @return данные трассировки
-     */
-    @Nullable
-    public String getTraceInfo() {
-        return traceInfo;
+    public ZonedDateTime getCreatedAt() {
+        return createdAt;
     }
 
     /**
@@ -134,18 +121,18 @@ public final class TaskRecord {
      * @return время обработки
      */
     @Nonnull
-    public ZonedDateTime getProcessTime() {
-        return processTime;
+    public ZonedDateTime getNextProcessAt() {
+        return nextProcessAt;
     }
 
     /**
-     * Получить бизнесовый идентификатор задачи.
+     * Получить расширенный набор данных задачи
      *
-     * @return идентификатор задачи.
+     * @return дополнительные данные задачи, в ключе содержится имя колонки в БД
      */
-    @Nullable
-    public String getActor() {
-        return actor;
+    @Nonnull
+    public Map<String, String> getExtData() {
+        return extData;
     }
 
     @Override
@@ -162,16 +149,15 @@ public final class TaskRecord {
                 reenqueueAttemptsCount == that.reenqueueAttemptsCount &&
                 totalAttemptsCount == that.totalAttemptsCount &&
                 Objects.equals(payload, that.payload) &&
-                Objects.equals(createDate, that.createDate) &&
-                Objects.equals(processTime, that.processTime) &&
-                Objects.equals(traceInfo, that.traceInfo) &&
-                Objects.equals(actor, that.actor);
+                Objects.equals(createdAt, that.createdAt) &&
+                Objects.equals(nextProcessAt, that.nextProcessAt) &&
+                Objects.equals(extData, that.extData);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, payload, attemptsCount, reenqueueAttemptsCount, totalAttemptsCount, createDate, processTime,
-                traceInfo, actor);
+        return Objects.hash(id, payload, attemptsCount, reenqueueAttemptsCount, totalAttemptsCount,
+                createdAt, nextProcessAt, extData);
     }
 
     @Override
@@ -181,9 +167,78 @@ public final class TaskRecord {
                 ", attemptsCount=" + attemptsCount +
                 ", reenqueueAttemptsCount=" + reenqueueAttemptsCount +
                 ", totalAttemptsCount=" + totalAttemptsCount +
-                ", createDate=" + createDate +
-                ", processTime=" + processTime +
-                (actor != null ? ", actor=" + actor : "") +
+                ", createdAt=" + createdAt +
+                ", nextProcessAt=" + nextProcessAt +
                 '}';
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Билдер для класса {@link TaskRecord}
+     */
+    public static class Builder {
+        private long id;
+        @Nullable
+        private String payload;
+        private long attemptsCount;
+        private long reenqueueAttemptsCount;
+        private long totalAttemptsCount;
+        @Nonnull
+        private ZonedDateTime createdAt = ZonedDateTime.now();
+        @Nonnull
+        private ZonedDateTime nextProcessAt = ZonedDateTime.now();
+        @Nonnull
+        private Map<String, String> extData = new LinkedHashMap<>();
+
+        private Builder() {
+        }
+
+        public Builder withCreatedAt(@Nonnull ZonedDateTime createdAt) {
+            this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
+            return this;
+        }
+
+        public Builder withNextProcessAt(@Nonnull ZonedDateTime nextProcessAt) {
+            this.nextProcessAt = Objects.requireNonNull(nextProcessAt, "nextProcessAt");
+            return this;
+        }
+
+        public Builder withId(long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder withPayload(String payload) {
+            this.payload = payload;
+            return this;
+        }
+
+        public Builder withAttemptsCount(long attemptsCount) {
+            this.attemptsCount = attemptsCount;
+            return this;
+        }
+
+        public Builder withReenqueueAttemptsCount(long reenqueueAttemptsCount) {
+            this.reenqueueAttemptsCount = reenqueueAttemptsCount;
+            return this;
+        }
+
+        public Builder withTotalAttemptsCount(long totalAttemptsCount) {
+            this.totalAttemptsCount = totalAttemptsCount;
+            return this;
+        }
+
+        public Builder withExtData(@Nonnull Map<String, String> extData) {
+            this.extData = Objects.requireNonNull(extData);
+            return this;
+        }
+
+        public TaskRecord build() {
+            return new TaskRecord(id, payload, attemptsCount, reenqueueAttemptsCount,
+                    totalAttemptsCount, createdAt, nextProcessAt, extData);
+        }
     }
 }

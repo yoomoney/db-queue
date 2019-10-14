@@ -1,6 +1,8 @@
 package ru.yandex.money.common.dbqueue.stub;
 
-import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
+import ru.yandex.money.common.dbqueue.internal.processing.MillisTimeProvider;
+
+import java.util.List;
 
 /**
  * @author Oleg Kandaurov
@@ -8,23 +10,17 @@ import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
  */
 public class FakeMillisTimeProvider implements MillisTimeProvider {
 
-    private final long firstTime;
-    private final long secondTime;
+    private final List<Long> times;
     private int invocationCount;
 
-    public FakeMillisTimeProvider(long firstTime, long secondTime) {
-        this.firstTime = firstTime;
-        this.secondTime = secondTime;
+    public FakeMillisTimeProvider(List<Long> times) {
+        this.times = times;
     }
 
     @Override
     public long getMillis() {
+        Long currentTime = times.get(invocationCount);
         invocationCount++;
-        if (invocationCount == 1) {
-            return firstTime;
-        } else if (invocationCount == 2) {
-            return secondTime;
-        }
-        throw new IllegalStateException("no more than two invocations");
+        return currentTime;
     }
 }

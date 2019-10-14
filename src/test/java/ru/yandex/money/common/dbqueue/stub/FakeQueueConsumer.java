@@ -1,7 +1,6 @@
 package ru.yandex.money.common.dbqueue.stub;
 
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
-import ru.yandex.money.common.dbqueue.api.QueueShardRouter;
 import ru.yandex.money.common.dbqueue.api.Task;
 import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
@@ -18,14 +17,12 @@ public class FakeQueueConsumer implements QueueConsumer<String> {
 
     private final QueueConfig queueConfig;
     private final TaskPayloadTransformer<String> transformer;
-    private final QueueShardRouter<String> shardRouter;
     private final Function<Task<String>, TaskExecutionResult> execFunc;
 
     public FakeQueueConsumer(QueueConfig queueConfig, TaskPayloadTransformer<String> transformer,
-                             QueueShardRouter<String> shardRouter, Function<Task<String>, TaskExecutionResult> execFunc) {
+                             Function<Task<String>, TaskExecutionResult> execFunc) {
         this.queueConfig = queueConfig;
         this.transformer = transformer;
-        this.shardRouter = shardRouter;
         this.execFunc = execFunc;
     }
 
@@ -47,9 +44,4 @@ public class FakeQueueConsumer implements QueueConsumer<String> {
         return transformer;
     }
 
-    @Nonnull
-    @Override
-    public QueueShardRouter<String> getConsumerShardsProvider() {
-        return shardRouter;
-    }
 }

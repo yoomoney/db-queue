@@ -1,9 +1,9 @@
 package ru.yandex.money.common.dbqueue.dao;
 
 import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
+import ru.yandex.money.common.dbqueue.config.DatabaseDialect;
+import ru.yandex.money.common.dbqueue.config.QueueTableSchema;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
@@ -12,26 +12,12 @@ import java.time.Duration;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Управление задачами в очереди.
- * <p>
- * Каждый экземпляр данного класса привязан к шарду БД.
+ * Dao для управления задачами в очереди
  *
  * @author Oleg Kandaurov
- * @since 09.07.2017
+ * @since 06.10.2019
  */
-public class QueueDao {
-
-    private final NamedParameterJdbcTemplate jdbcTemplate;
-
-    /**
-     * Конструктор.
-     * <p>
-     * @param jdbcTemplate        spring jdbc template
-     */
-    public QueueDao(JdbcOperations jdbcTemplate) {
-        this.jdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
-    }
-
+public interface QueueDao {
     /**
      * Поставить задачу в очередь на выполнение
      *
@@ -39,22 +25,7 @@ public class QueueDao {
      * @param enqueueParams данные вставляемой задачи
      * @return идентфикатор (sequence id) вставленной задачи
      */
-    public long enqueue(@Nonnull QueueLocation location, @Nonnull EnqueueParams<String> enqueueParams) {
-        requireNonNull(location);
-        requireNonNull(enqueueParams);
-        return jdbcTemplate.queryForObject(String.format(
-                "INSERT INTO %s(queue_name, task, process_time, log_timestamp, actor, reenqueue_attempt, total_attempt) VALUES " +
-                        "(:queueName, :task, now() + :executionDelay * INTERVAL '1 SECOND', " +
-                        ":traceInfo, :actor, 0, 0) RETURNING id",
-                location.getTableName()),
-                new MapSqlParameterSource()
-                        .addValue("queueName", location.getQueueId().asString())
-                        .addValue("task", enqueueParams.getPayload())
-                        .addValue("executionDelay", enqueueParams.getExecutionDelay().getSeconds())
-                        .addValue("traceInfo", enqueueParams.getTraceInfo())
-                        .addValue("actor", enqueueParams.getActor()),
-                Long.class);
-    }
+    long enqueue(@Nonnull QueueLocation location, @Nonnull EnqueueParams<String> enqueueParams);
 
     /**
      * Удалить задачу из очереди.
@@ -63,15 +34,7 @@ public class QueueDao {
      * @param taskId   идентификатор (sequence id) задачи
      * @return true, если задача была удалена, false, если задача не найдена.
      */
-    public boolean deleteTask(@Nonnull QueueLocation location, long taskId) {
-        requireNonNull(location);
-        int updatedRows = jdbcTemplate.update(String.format(
-                "DELETE FROM %s WHERE queue_name = :queueName AND id = :id", location.getTableName()),
-                new MapSqlParameterSource()
-                        .addValue("id", taskId)
-                        .addValue("queueName", location.getQueueId().asString()));
-        return updatedRows != 0;
-    }
+    boolean deleteTask(@Nonnull QueueLocation location, long taskId);
 
     /**
      * Переставить выполнение задачи на заданный промежуток времени
@@ -81,17 +44,35 @@ public class QueueDao {
      * @param executionDelay промежуток времени
      * @return true, если задача была переставлена, false, если задача не найдена.
      */
-    public boolean reenqueue(@Nonnull QueueLocation location, long taskId, @Nonnull Duration executionDelay) {
-        requireNonNull(location);
-        requireNonNull(executionDelay);
-        int updatedRows = jdbcTemplate.update(String.format(
-                "UPDATE %s SET  process_time = now() + :executionDelay * INTERVAL '1 SECOND',  attempt = 0, " +
-                        "reenqueue_attempt = coalesce(reenqueue_attempt, 0) + 1 " +
-                        "WHERE id = :id AND queue_name = :queueName", location.getTableName()),
-                new MapSqlParameterSource()
-                        .addValue("id", taskId)
-                        .addValue("queueName", location.getQueueId().asString())
-                        .addValue("executionDelay", executionDelay.getSeconds()));
-        return updatedRows != 0;
+    boolean reenqueue(@Nonnull QueueLocation location, long taskId, @Nonnull Duration executionDelay);
+
+    /**
+     * Фабрика для создания БД-специфичных DAO для работы с таблицей очередей
+     */
+    class Factory {
+
+        /**
+         * Создать инстанс dao для работы с данными очередями в зависимости от вида БД
+         *
+         * @param databaseDialect     вид базы данных
+         * @param jdbcTemplate     spring jdbc template
+         * @param queueTableSchema схема таблицы очередей
+         * @return dao для работы с очередями
+         */
+        public static QueueDao create(@Nonnull DatabaseDialect databaseDialect,
+                                      @Nonnull JdbcOperations jdbcTemplate,
+                                      @Nonnull QueueTableSchema queueTableSchema) {
+            requireNonNull(databaseDialect);
+            requireNonNull(jdbcTemplate);
+            requireNonNull(queueTableSchema);
+            //noinspection SwitchStatementWithTooFewBranches
+            switch (databaseDialect) {
+                case POSTGRESQL:
+                    return new PostgresQueueDao(jdbcTemplate, queueTableSchema);
+                default:
+                    throw new IllegalArgumentException("unsupported database kind: " + databaseDialect);
+            }
+        }
     }
+
 }

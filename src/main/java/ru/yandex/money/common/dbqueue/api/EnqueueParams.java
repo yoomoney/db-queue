@@ -1,11 +1,16 @@
 package ru.yandex.money.common.dbqueue.api;
 
-import ru.yandex.money.common.dbqueue.dao.QueueActorDao;
+import ru.yandex.money.common.dbqueue.config.QueueTableSchema;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Данные для постановки задачи в очередь.
@@ -19,10 +24,8 @@ public final class EnqueueParams<T> {
     private T payload;
     @Nonnull
     private Duration executionDelay = Duration.ZERO;
-    @Nullable
-    private String traceInfo;
-    @Nullable
-    private String actor;
+    @Nonnull
+    private Map<String, String> extData = new LinkedHashMap<>();
 
     /**
      * Создать параметры постановки с данными задачи.
@@ -32,7 +35,7 @@ public final class EnqueueParams<T> {
      * @return объект с параметрами постановки задачи в очередь
      */
     public static <R> EnqueueParams<R> create(@Nonnull R payload) {
-        Objects.requireNonNull(payload);
+        requireNonNull(payload);
         return new EnqueueParams<R>().withPayload(payload);
     }
 
@@ -56,35 +59,33 @@ public final class EnqueueParams<T> {
      */
     @Nonnull
     public EnqueueParams<T> withExecutionDelay(@Nonnull Duration executionDelay) {
-        this.executionDelay = Objects.requireNonNull(executionDelay);
+        this.executionDelay = requireNonNull(executionDelay);
         return this;
     }
 
     /**
-     * Нетипизированные данные трассировки. К примеру информация в формате open tracing.
+     * Задать расширенный набор данных задачи
      *
-     * @param traceInfo данные трассировки
+     * @param columnName имя колонки
+     * @param value      значение колонки
      * @return параметры постановки задачи в очередь
      */
     @Nonnull
-    public EnqueueParams<T> withTraceInfo(@Nullable String traceInfo) {
-        this.traceInfo = traceInfo;
+    public EnqueueParams<T> withExtData(@Nonnull String columnName, @Nullable String value) {
+        extData.put(requireNonNull(columnName), value);
         return this;
     }
 
     /**
-     * Бизнесовый идентификатор очереди.
-     * В качестве подобного идентификатор можно выбрать ключ сущности, подлежащей обработки
-     * <p>
-     * Может быть также использован для получения данных и внешнего управления очередями
-     * посредством {@link QueueActorDao}
+     * Задать расширенный набор данных задачи.
+     * Функционал включается через {@link QueueTableSchema#getExtFields()}
      *
-     * @param actor идентификатор
+     * @param extData набор расширенных данных, ключ - имя колонки в БД
      * @return параметры постановки задачи в очередь
      */
     @Nonnull
-    public EnqueueParams<T> withActor(@Nullable String actor) {
-        this.actor = actor;
+    public EnqueueParams<T> withExtData(@Nonnull Map<String, String> extData) {
+        this.extData = requireNonNull(extData);
         return this;
     }
 
@@ -109,23 +110,13 @@ public final class EnqueueParams<T> {
     }
 
     /**
-     * Получить данные трассировки
+     * Получить расширенный набор данных задачи
      *
-     * @return данные трассировки
+     * @return дополнительные данные задачи, в ключе содержится имя колонки в БД
      */
-    @Nullable
-    public String getTraceInfo() {
-        return traceInfo;
-    }
-
-    /**
-     * Получить бизнесовый идентификатор
-     *
-     * @return бизнесовый идентификатор
-     */
-    @Nullable
-    public String getActor() {
-        return actor;
+    @Nonnull
+    public Map<String, String> getExtData() {
+        return Collections.unmodifiableMap(extData);
     }
 
     @Override
@@ -139,13 +130,12 @@ public final class EnqueueParams<T> {
         EnqueueParams<?> that = (EnqueueParams<?>) obj;
         return Objects.equals(payload, that.payload) &&
                 Objects.equals(executionDelay, that.executionDelay) &&
-                Objects.equals(traceInfo, that.traceInfo) &&
-                Objects.equals(actor, that.actor);
+                Objects.equals(extData, that.extData);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(payload, executionDelay, traceInfo, actor);
+        return Objects.hash(payload, executionDelay, extData);
     }
 
     @Override
@@ -153,7 +143,6 @@ public final class EnqueueParams<T> {
         return '{' +
                 "executionDelay=" + executionDelay +
                 (payload != null ? ",payload=" + payload : "") +
-                (actor != null ? ", actor=" + actor : "") +
                 '}';
     }
 }

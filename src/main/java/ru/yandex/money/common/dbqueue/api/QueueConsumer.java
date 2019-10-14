@@ -3,7 +3,8 @@ package ru.yandex.money.common.dbqueue.api;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
+import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * Обработчик задач в очереди.
@@ -40,27 +41,13 @@ public interface QueueConsumer<T> {
     TaskPayloadTransformer<T> getPayloadTransformer();
 
     /**
-     * Получить инстанс класс, представляющий шарды для обработки задачи
+     * Исполнитель очереди в режиме {@link ru.yandex.money.common.dbqueue.settings.ProcessingMode#USE_EXTERNAL_EXECUTOR}.
+     * Используется только для вышеназванного режима.
      *
-     * @return шарды БД
+     * @return опциональный обработчик задач в очереди
      */
-    @Nonnull
-    ConsumerShardsProvider getConsumerShardsProvider();
-
-    /**
-     * Предоставление шардов БД для обработки задачи
-     *
-     * @author Oleg Kandaurov
-     * @since 13.08.2018
-     */
-    interface ConsumerShardsProvider {
-
-        /**
-         * Получить список всех шардов, на которых обрабатывается задача.
-         *
-         * @return идентификаторы шардов
-         */
-        @Nonnull
-        Collection<QueueShard> getProcessingShards();
+    default Optional<Executor> getExecutor() {
+        return Optional.empty();
     }
+
 }

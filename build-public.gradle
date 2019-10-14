@@ -27,8 +27,12 @@ apply from: 'dependencies.gradle'
 
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+sourceCompatibility = '8'
+targetCompatibility = '8'
+
+compileJava {
+    options.compilerArgs.addAll(['--release', '8'])
+}
 
 jar {
     manifest {
@@ -50,11 +54,6 @@ jar {
 
 apply plugin: 'idea'
 idea {
-    project {
-        jdkName = '1.8'
-        languageLevel = '1.8'
-        vcs = 'Git'
-    }
     module {
         downloadJavadoc = true
         downloadSources = true
@@ -72,6 +71,9 @@ test {
 }
 
 apply plugin: "jacoco"
+jacoco {
+    toolVersion = '0.8.3'
+}
 jacocoTestReport {
     reports {
         html.enabled = true
@@ -136,7 +138,7 @@ bintray {
         issueTrackerUrl = 'https://github.com/yandex-money-tech/db-queue/issues'
         vcsUrl = 'https://github.com/yandex-money-tech/db-queue.git'
         licenses = ['MIT']
-        labels = ['postgresql', 'queue', 'java', 'database']
+        labels = ['postgresql', 'mysql', 'oracle', 'queue', 'java', 'database']
         publicDownloadNumbers = true
         githubRepo = 'yandex-money-tech/db-queue'
         githubReleaseNotesFile = 'CHANGELOG.md'
