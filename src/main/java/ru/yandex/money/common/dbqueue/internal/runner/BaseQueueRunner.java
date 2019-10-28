@@ -2,7 +2,9 @@ package ru.yandex.money.common.dbqueue.internal.runner;
 
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
-import ru.yandex.money.common.dbqueue.internal.QueueProcessingStatus;
+import ru.yandex.money.common.dbqueue.internal.processing.QueueProcessingStatus;
+import ru.yandex.money.common.dbqueue.internal.processing.TaskPicker;
+import ru.yandex.money.common.dbqueue.internal.processing.TaskProcessor;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;

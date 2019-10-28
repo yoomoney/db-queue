@@ -242,7 +242,7 @@ public final class QueueSettings {
         private ProcessingMode processingMode;
         private final Map<String, String> additionalSettings = new HashMap<>();
 
-        private Builder(){
+        private Builder() {
         }
 
         /**

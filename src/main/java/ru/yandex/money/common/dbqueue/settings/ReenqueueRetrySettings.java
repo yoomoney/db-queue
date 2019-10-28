@@ -20,7 +20,7 @@ public class ReenqueueRetrySettings {
 
     /**
      * Тип стратегии, которая вычисляет задержку перед следующим выполнением задачи.
-     *
+     * <p>
      * Обязательное поле.
      */
     @Nonnull
@@ -28,7 +28,7 @@ public class ReenqueueRetrySettings {
 
     /**
      * Последовательность задержек для выполнения задачи.
-     *
+     * <p>
      * Обязательно при {@code type == ReenqueueRetryType.SEQUENTIAL}.
      */
     @Nullable
@@ -36,7 +36,7 @@ public class ReenqueueRetrySettings {
 
     /**
      * Фиксированная задержка.
-     *
+     * <p>
      * Обязательно при {@code type == ReenqueueRetryType.FIXED}.
      */
     @Nullable
@@ -44,7 +44,7 @@ public class ReenqueueRetrySettings {
 
     /**
      * Первый член прогрессий для вычисления задержек.
-     *
+     * <p>
      * Обязательно при {@code type == ReenqueueRetryType.ARITHMETIC} или {@code type == ReenqueueRetryType.GEOMETRIC}.
      */
     @Nonnull
@@ -52,7 +52,7 @@ public class ReenqueueRetrySettings {
 
     /**
      * Разность арифметической прогрессии.
-     *
+     * <p>
      * Обязательно при {@code type == ReenqueueRetryType.ARITHMETIC}.
      */
     @Nonnull
@@ -60,7 +60,7 @@ public class ReenqueueRetrySettings {
 
     /**
      * Знаменатель геометрической прогрессии.
-     *
+     * <p>
      * Обязательно при {@code type == ReenqueueRetryType.GEOMETRIC}.
      */
     private final long geometricRatio;

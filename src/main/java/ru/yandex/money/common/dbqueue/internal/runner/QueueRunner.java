@@ -1,15 +1,20 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
-import ru.yandex.money.common.dbqueue.api.QueueShard;
-import ru.yandex.money.common.dbqueue.api.TaskLifecycleListener;
-import ru.yandex.money.common.dbqueue.internal.MillisTimeProvider;
-import ru.yandex.money.common.dbqueue.internal.QueueProcessingStatus;
+import ru.yandex.money.common.dbqueue.config.QueueShard;
+import ru.yandex.money.common.dbqueue.config.TaskLifecycleListener;
+import ru.yandex.money.common.dbqueue.internal.pick.PickTaskSettings;
+import ru.yandex.money.common.dbqueue.internal.processing.MillisTimeProvider;
+import ru.yandex.money.common.dbqueue.internal.processing.QueueProcessingStatus;
+import ru.yandex.money.common.dbqueue.internal.processing.ReenqueueRetryStrategy;
+import ru.yandex.money.common.dbqueue.internal.processing.TaskPicker;
+import ru.yandex.money.common.dbqueue.internal.processing.TaskProcessor;
+import ru.yandex.money.common.dbqueue.internal.processing.TaskResultHandler;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import static java.util.Objects.requireNonNull;
@@ -45,46 +50,51 @@ public interface QueueRunner {
          * Создать исполнителя задач очереди
          *
          * @param queueConsumer         очередь обработки задач
-         * @param queueShard              dao взаимодействия с очередью
-         * @param taskLifecycleListener слушатель исполнения задач в очереди
-         * @param externalExecutor      пул через который выполняются задачи в режиме
-         *                              {@link ProcessingMode
-         *                              #USE_EXTERNAL_EXECUTOR}
+         * @param queueShard            шард, на котором будут запущен consumer
+         * @param taskLifecycleListener слушатель процесса обработки задач
          * @return инстанс исполнителя задач
          */
-        @SuppressWarnings("rawtypes")
-        public static QueueRunner createQueueRunner(@Nonnull QueueConsumer queueConsumer, @Nonnull QueueShard queueShard,
-                                                    @Nonnull TaskLifecycleListener taskLifecycleListener,
-                                                    @Nullable Executor externalExecutor) {
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        public static QueueRunner create(@Nonnull QueueConsumer queueConsumer,
+                                         @Nonnull QueueShard queueShard,
+                                         @Nonnull TaskLifecycleListener taskLifecycleListener) {
             requireNonNull(queueConsumer);
             requireNonNull(queueShard);
             requireNonNull(taskLifecycleListener);
 
-            RetryTaskStrategy retryTaskStrategy = RetryTaskStrategy.Factory.create(queueConsumer.getQueueConfig().getSettings());
-            ReenqueueRetryStrategy reenqueueRetryStrategy = ReenqueueRetryStrategy
-                    .create(queueConsumer.getQueueConfig().getSettings().getReenqueueRetrySettings());
+            QueueSettings queueSettings = queueConsumer.getQueueConfig().getSettings();
 
-            PickTaskDao pickTaskDao = new PickTaskDao(queueShard.getShardId(),
-                    queueShard.getJdbcTemplate(), queueShard.getTransactionTemplate());
-            TaskPicker taskPicker = new TaskPicker(pickTaskDao, taskLifecycleListener,
-                    new MillisTimeProvider.SystemMillisTimeProvider(), retryTaskStrategy);
-            TaskResultHandler taskResultHandler = new TaskResultHandler(queueConsumer.getQueueConfig().getLocation(),
+            ReenqueueRetryStrategy reenqueueRetryStrategy = ReenqueueRetryStrategy.Factory
+                    .create(queueSettings.getReenqueueRetrySettings());
+
+            TaskPicker taskPicker = new TaskPicker(queueShard, taskLifecycleListener,
+                    new MillisTimeProvider.SystemMillisTimeProvider(),
+                    new PickTaskSettings(
+                            queueSettings.getRetryType(),
+                            queueSettings.getRetryInterval()));
+
+            TaskResultHandler taskResultHandler = new TaskResultHandler(
+                    queueConsumer.getQueueConfig().getLocation(),
                     queueShard, reenqueueRetryStrategy);
+
             TaskProcessor taskProcessor = new TaskProcessor(queueShard, taskLifecycleListener,
                     new MillisTimeProvider.SystemMillisTimeProvider(), taskResultHandler);
-            QueueSettings settings = queueConsumer.getQueueConfig().getSettings();
 
-            switch (settings.getProcessingMode()) {
+            ProcessingMode processingMode = queueSettings.getProcessingMode();
+            switch (processingMode) {
                 case SEPARATE_TRANSACTIONS:
                     return new QueueRunnerInSeparateTransactions(taskPicker, taskProcessor);
                 case WRAP_IN_TRANSACTION:
                     return new QueueRunnerInTransaction(taskPicker, taskProcessor, queueShard);
                 case USE_EXTERNAL_EXECUTOR:
+                    Optional<Executor> executor = queueConsumer.getExecutor();
                     return new QueueRunnerInExternalExecutor(taskPicker, taskProcessor,
-                            requireNonNull(externalExecutor));
+                            executor.orElseThrow(() -> new IllegalArgumentException("Executor is empty. " +
+                                    "You must provide QueueConsumer#getExecutor in ProcessingMode#USE_EXTERNAL_EXECUTOR")));
                 default:
-                    throw new IllegalStateException("unknown processing mode: " + settings.getProcessingMode());
+                    throw new IllegalStateException("unknown processing mode: " + processingMode);
             }
         }
+
     }
 }

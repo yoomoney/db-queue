@@ -1,5 +1,6 @@
 package ru.yandex.money.common.dbqueue.settings;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
@@ -10,6 +11,7 @@ import java.util.Objects;
  */
 public final class QueueId {
 
+    @Nonnull
     private final String id;
 
     /**
@@ -17,8 +19,8 @@ public final class QueueId {
      *
      * @param id строковое представление идентификатора
      */
-    public QueueId(String id) {
-        this.id = id;
+    public QueueId(@Nonnull String id) {
+        this.id = Objects.requireNonNull(id, "id");
     }
 
     /**
@@ -26,6 +28,7 @@ public final class QueueId {
      *
      * @return идентификатор очереди
      */
+    @Nonnull
     public String asString() {
         return id;
     }

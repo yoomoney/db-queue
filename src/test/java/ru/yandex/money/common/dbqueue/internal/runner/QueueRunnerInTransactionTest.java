@@ -2,9 +2,11 @@ package ru.yandex.money.common.dbqueue.internal.runner;
 
 import org.junit.Test;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
-import ru.yandex.money.common.dbqueue.api.QueueShard;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
-import ru.yandex.money.common.dbqueue.internal.QueueProcessingStatus;
+import ru.yandex.money.common.dbqueue.config.QueueShard;
+import ru.yandex.money.common.dbqueue.internal.processing.QueueProcessingStatus;
+import ru.yandex.money.common.dbqueue.internal.processing.TaskPicker;
+import ru.yandex.money.common.dbqueue.internal.processing.TaskProcessor;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
@@ -12,7 +14,6 @@ import ru.yandex.money.common.dbqueue.settings.QueueSettings;
 import ru.yandex.money.common.dbqueue.stub.FakeTransactionTemplate;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -61,8 +62,7 @@ public class QueueRunnerInTransactionTest {
 
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
         TaskPicker taskPicker = mock(TaskPicker.class);
-        TaskRecord taskRecord = new TaskRecord(0, null, 0, 0, 0, ZonedDateTime.now(),
-                ZonedDateTime.now(), null, null);
+        TaskRecord taskRecord = TaskRecord.builder().build();
         when(taskPicker.pickTask(queueConsumer)).thenReturn(taskRecord);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);
         QueueShard queueShard = mock(QueueShard.class);

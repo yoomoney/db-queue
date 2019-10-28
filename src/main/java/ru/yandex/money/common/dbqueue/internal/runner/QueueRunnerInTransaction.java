@@ -1,12 +1,16 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
-import ru.yandex.money.common.dbqueue.api.QueueShard;
-import ru.yandex.money.common.dbqueue.internal.QueueProcessingStatus;
+import ru.yandex.money.common.dbqueue.config.QueueShard;
+import ru.yandex.money.common.dbqueue.internal.processing.QueueProcessingStatus;
+import ru.yandex.money.common.dbqueue.internal.processing.TaskPicker;
+import ru.yandex.money.common.dbqueue.internal.processing.TaskProcessor;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 
 import javax.annotation.Nonnull;
-import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Исполнитель задач очереди в режиме
@@ -29,16 +33,18 @@ class QueueRunnerInTransaction implements QueueRunner {
      * @param taskProcessor обработчик задачи
      * @param queueShard    шард на котором обрабатываются задачи
      */
-    QueueRunnerInTransaction(@Nonnull TaskPicker taskPicker, @Nonnull TaskProcessor taskProcessor,
+    QueueRunnerInTransaction(@Nonnull TaskPicker taskPicker,
+                             @Nonnull TaskProcessor taskProcessor,
                              @Nonnull QueueShard queueShard) {
-        this.queueShard = Objects.requireNonNull(queueShard);
+        this.queueShard = requireNonNull(queueShard);
         baseQueueRunner = new BaseQueueRunner(taskPicker, taskProcessor, Runnable::run);
     }
 
     @Override
     @Nonnull
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public QueueProcessingStatus runQueue(@Nonnull QueueConsumer queueConsumer) {
-        return queueShard.getTransactionTemplate().execute(status ->
-                baseQueueRunner.runQueue(queueConsumer));
+        return requireNonNull(queueShard.getTransactionTemplate().execute(status ->
+                baseQueueRunner.runQueue(queueConsumer)));
     }
 }

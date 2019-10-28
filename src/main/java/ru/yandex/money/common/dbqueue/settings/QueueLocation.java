@@ -2,6 +2,7 @@ package ru.yandex.money.common.dbqueue.settings;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * Класс, определяющий местоположение очереди
@@ -10,6 +11,12 @@ import java.util.Objects;
  * @since 10.07.2017
  */
 public final class QueueLocation {
+
+    /**
+     * Regexp for SQL injection prevention
+     */
+    private static final Pattern DISALLOWED_CHARS = Pattern.compile("[^a-zA-Z0-9_]*");
+
     @Nonnull
     private final String tableName;
     @Nonnull
@@ -17,7 +24,7 @@ public final class QueueLocation {
 
     private QueueLocation(@Nonnull QueueId queueId, @Nonnull String tableName) {
         this.queueId = Objects.requireNonNull(queueId);
-        this.tableName = Objects.requireNonNull(tableName);
+        this.tableName = DISALLOWED_CHARS.matcher(Objects.requireNonNull(tableName)).replaceAll("");
     }
 
     /**
@@ -82,7 +89,7 @@ public final class QueueLocation {
         private String tableName;
         private QueueId queueId;
 
-        private Builder(){
+        private Builder() {
         }
 
         /**

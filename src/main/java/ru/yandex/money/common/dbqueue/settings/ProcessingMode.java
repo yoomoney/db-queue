@@ -1,5 +1,7 @@
 package ru.yandex.money.common.dbqueue.settings;
 
+import ru.yandex.money.common.dbqueue.api.QueueConsumer;
+
 /**
  * Стратегия выполнения задачи в очереди.
  *
@@ -32,7 +34,7 @@ public enum ProcessingMode {
 
     /**
      * Задача будет успешно обработана минимум один раз, асинхронно, в заданном обработчике
-     * {@link ru.yandex.money.common.dbqueue.api.QueueExternalExecutor}.
+     * {@link QueueConsumer#getExecutor()}.
      * Каждое обращение к БД производится в отдельной транзакции.
      * <p>
      * Данный режим требует дополнительной конфигурации и управления внешним обработчиком.

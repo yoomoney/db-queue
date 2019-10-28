@@ -32,19 +32,10 @@ public class ArchitectureTest {
     }
 
     @Test
-    public void test1() {
-        ArchRule rule = noClasses().that().resideInAnyPackage(
-                fullNames("api..", "dao..", "internal..", "settings..", "init.."))
-                .should().accessClassesThat().resideInAnyPackage(fullNames("spring"))
-                .because("spring context is optional dependency");
-        rule.check(classes);
-    }
-
-    @Test
     public void test2() {
         ArchRule rule = classes().that().resideInAnyPackage(
                 fullNames("api"))
-                .should().accessClassesThat().resideInAnyPackage(fullNames("api", "settings"))
+                .should().accessClassesThat().resideInAnyPackage(fullNames("api..", "settings.."))
                 .orShould().accessClassesThat().resideInAnyPackage("java..")
                 .because("api must not depend on implementation details");
         rule.check(classes);
@@ -72,7 +63,7 @@ public class ArchitectureTest {
     @Test
     public void test5() {
         ArchRule rule = noClasses().that().resideInAnyPackage(
-                fullNames("settings..", "api", "init.."))
+                fullNames("settings..", "api..", "init.."))
                 .should().accessClassesThat().resideInAnyPackage("org.springframework..")
                 .because("api classes must not depend on spring");
         rule.check(classes);
@@ -83,7 +74,7 @@ public class ArchitectureTest {
         ArchRule rule = classes().that().resideInAnyPackage(
                 fullNames("dao..", "internal.."))
                 .should().accessClassesThat().resideInAnyPackage("org.springframework.jdbc..", "java.lang..")
-                .orShould().accessClassesThat().resideInAnyPackage(fullNames("dao..", "api..", "settings..", "internal.."))
+                .orShould().accessClassesThat().resideInAnyPackage(fullNames("dao..", "api..", "settings..", "config..", "internal.."))
                 .because("public classes must depend only on spring jdbc");
         rule.check(classes);
     }
@@ -93,6 +84,5 @@ public class ArchitectureTest {
         return Arrays.stream(relativeName).map(name -> BASE_PACKAGE + "." + name)
                 .collect(Collectors.toList()).toArray(new String[relativeName.length]);
     }
-
 
 }

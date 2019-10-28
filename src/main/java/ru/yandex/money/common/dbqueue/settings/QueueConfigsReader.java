@@ -334,7 +334,7 @@ public class QueueConfigsReader {
         return settings.entrySet().stream()
                 .filter(property -> property.getKey().startsWith(additionalSettingsName))
                 .collect(Collectors.toMap(
-                        entry -> entry.getKey().substring(additionalSettingsName.length(), entry.getKey().length()),
+                        entry -> entry.getKey().substring(additionalSettingsName.length()),
                         Map.Entry::getValue));
     }
 
@@ -392,12 +392,13 @@ public class QueueConfigsReader {
 
     private void overrideExistingSettings(Map<String, String> existingSettings,
                                           Map<String, String> newSettings) {
-        newSettings.forEach((key, value) -> {
-            if (existingSettings.containsKey(key)) {
-                log.info("overriding queue property: name={}, existingValue={}, newValue={}", key,
-                        existingSettings.get(key), value);
+        newSettings.forEach((key, newValue) -> {
+            String existingValue = existingSettings.get(key);
+            if (existingValue != null) {
+                log.info("overriding queue property: name={}, existingValue={}, newValue={}",
+                        key, existingValue, newValue);
             }
-            existingSettings.put(key, value);
+            existingSettings.put(key, newValue);
         });
     }
 

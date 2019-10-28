@@ -2,6 +2,7 @@ package ru.yandex.money.common.dbqueue.api;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.Test;
+import ru.yandex.money.common.dbqueue.config.QueueShardId;
 
 /**
  * @author Oleg Kandaurov
