@@ -1,17 +1,17 @@
-### NEXT_VERSION_TYPE=MAJOR
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [8.0.0]() (28-10-2019)
+
 This version is a major redesign of queue configuration.
 * Deleted `spring` package
 * Changed entry point to `QueueService` instead of `QueueExecutionPool`
 * Renamed and deleted columns, for backward compatibility look at `QueueTableSchema` and `EnqueueParams#getExtData`
-  * Deleted `actor` and `log_timestamp` columns
-  * Renamed `task` column to `payload`
-  * Renamed `create_time` column to `created_at`
-  * Renamed `process_time` column to `next_process_at`
+* Deleted `actor` and `log_timestamp` columns
+* Renamed `task` column to `payload`
+* Renamed `create_time` column to `created_at`
+* Renamed `process_time` column to `next_process_at`
 * Support for arbitrary task data via `QueueTableSchema#getExtFields`
-* Support for relational databases with `FOR UPDATE SKIP LOCKED` feature  
+* Support for relational databases with `FOR UPDATE SKIP LOCKED` feature
 * Updated example configuration in `README.md`
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [7.1.0]() (14-08-2019)
 
 * В QueueLoop добавлен метод для прекращения работы цикла обработки задач
