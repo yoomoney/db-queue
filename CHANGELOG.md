@@ -1,5 +1,8 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=MINOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+
+В запрос для выбора очередной задачи из очереди добавлена сортировка по полям next_process_at и id
+
 ### NEXT_VERSION_DESCRIPTION_END
 ## [8.0.0]() (28-10-2019)
 
