@@ -20,7 +20,7 @@ public class QueueLocationTest {
     @Test
     public void should_filter_special_chars() {
         Assert.assertThat(QueueLocation.builder().withQueueId(new QueueId("1"))
-                .withTableName(" l !@#$%^&*()_+-=1\n;'][{}").build().getTableName(), equalTo("l_1"));
+                .withTableName(" l !@#$%^&*()._+-=1\n;'][{}").build().getTableName(), equalTo("l._1"));
     }
 
 }
