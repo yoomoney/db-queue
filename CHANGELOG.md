@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=PATCH
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [8.0.1]() (08-11-2019)
+
 * [PR#2](https://github.com/yandex-money-tech/db-queue/pull/2) Allow dots as part of a table name. Thanks to [@everplays](https://github.com/everplays).
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [8.0.0]() (28-10-2019)
 
 This version is a major redesign of queue configuration.
