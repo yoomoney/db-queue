@@ -1,8 +1,6 @@
 [![Build Status](https://travis-ci.org/yandex-money-tech/db-queue.svg?branch=master)](https://travis-ci.org/yandex-money-tech/db-queue)
 [![Build status](https://ci.appveyor.com/api/projects/status/2ee4wumomugjnnl7?svg=true)](https://ci.appveyor.com/project/f0y/db-queue)
-[![codecov](https://codecov.io/gh/yandex-money-tech/db-queue/branch/master/graph/badge.svg)](https://codecov.io/gh/yandex-money-tech/db-queue)
-[![Codebeat](https://codebeat.co/badges/ff7a4c21-72fb-446c-b245-ba739240fe49)](https://codebeat.co/projects/github-com-yandex-money-db-queue-master)
-[![Codacy](https://api.codacy.com/project/badge/Grade/78c05240110c427f873895a5a3ee1eae)](https://www.codacy.com/project/f0y/db-queue/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=yandex-money-tech/db-queue&amp;utm_campaign=Badge_Grade_Dashboard)
+[![Codecov](https://codecov.io/gh/yandex-money-tech/db-queue/branch/master/graph/badge.svg)](https://codecov.io/gh/yandex-money-tech/db-queue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Javadoc](https://img.shields.io/badge/javadoc-latest-blue.svg)](https://yandex-money-tech.github.io/db-queue/)
 [![Download](https://api.bintray.com/packages/yandex-money-tech/maven/db-queue/images/download.svg)](https://bintray.com/yandex-money-tech/maven/db-queue/_latestVersion)
@@ -76,7 +74,7 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 <dependency>
   <groupId>com.yandex.money.tech</groupId>
   <artifactId>db-queue</artifactId>
-  <version>8.0.0</version>
+  <version>8.0.1</version>
 </dependency>
 ```
 
@@ -135,14 +133,13 @@ autovacuum_vacuum_cost_limit=500,
 autovacuum_vacuum_scale_factor=0.0001)
 ```
 
-
 ### Code
 
-Example configuration is shown in [example.ExampleConfiguration](https://github.com/yandex-money/db-queue/blob/master/src/test/java/example/ExampleConfiguration.java).
+Example configuration is shown in [example.ExampleConfiguration](https://github.com/yandex-money-tech/db-queue/blob/master/src/test/java/example/ExampleConfiguration.java).
 
 The main steps are:
 * Specify a queue configuration through [QueueConfig](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/settings/QueueConfig.html) instance (or use [QueueConfigsReader](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/settings/QueueConfigsReader.html)).
-* Implement [QueueProducer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueProducer.html) interface or use [TransactionalProducer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/impl/TransactionalProducer.html).
+* Implement [QueueProducer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueProducer.html) interface.
 * Implement [QueueConsumer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueConsumer.html) interface.
 * Create [QueueService](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/init/QueueService.html) and start it.
 * Register `QueueConsumer` in `QueueService`

@@ -15,7 +15,7 @@ public final class QueueLocation {
     /**
      * Regexp for SQL injection prevention
      */
-    private static final Pattern DISALLOWED_CHARS = Pattern.compile("[^a-zA-Z0-9_]*");
+    private static final Pattern DISALLOWED_CHARS = Pattern.compile("[^a-zA-Z0-9_\\.]*");
 
     @Nonnull
     private final String tableName;
