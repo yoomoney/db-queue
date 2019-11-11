@@ -2,7 +2,7 @@
 ### NEXT_VERSION_DESCRIPTION_BEGIN
 
 Sorting by fields `next_process_at` and `id` has been added to the request for selecting the next task from the queue.
-This makes the queue a FIFO data structure.
+This makes the database query run faster increase up to 5 times.
 
 ### NEXT_VERSION_DESCRIPTION_END
 ## [8.0.0]() (28-10-2019)
