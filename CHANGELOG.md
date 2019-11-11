@@ -1,7 +1,8 @@
 ### NEXT_VERSION_TYPE=MINOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
 
-В запрос для выбора очередной задачи из очереди добавлена сортировка по полям next_process_at и id
+Sorting by fields `next_process_at` and `id` has been added to the request for selecting the next task from the queue.
+This makes the queue a FIFO data structure.
 
 ### NEXT_VERSION_DESCRIPTION_END
 ## [8.0.0]() (28-10-2019)
