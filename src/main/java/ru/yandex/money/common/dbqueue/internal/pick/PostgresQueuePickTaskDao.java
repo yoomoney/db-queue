@@ -55,7 +55,7 @@ public class PostgresQueuePickTaskDao implements QueuePickTaskDao {
                 "FROM %s " +
                 "WHERE " + queueTableSchema.getQueueNameField() + " = :queueName " +
                 "  AND " + queueTableSchema.getNextProcessAtField() + " <= now() " +
-                " ORDER BY " + queueTableSchema.getNextProcessAtField() + " ASC, id DESC " +
+                " ORDER BY " + queueTableSchema.getNextProcessAtField() + " ASC " +
                 "LIMIT 1 " +
                 "FOR UPDATE SKIP LOCKED) " +
                 "UPDATE %s q " +

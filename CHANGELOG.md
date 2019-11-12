@@ -1,8 +1,9 @@
 ### NEXT_VERSION_TYPE=MINOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
 
-Sorting by fields `next_process_at` and `id` has been added to the request for selecting the next task from the queue.
-This makes the database query run faster increase up to 5 times.
+Sorting by field `next_process_at` has been added to the request for selecting the next task from the queue. 
+It`s a hint to force Postgres to use an existed index instead of a sequential scan.
+This makes the task selection query run faster increase up to 5 times.
 
 ### NEXT_VERSION_DESCRIPTION_END
 ## [8.0.0]() (28-10-2019)
