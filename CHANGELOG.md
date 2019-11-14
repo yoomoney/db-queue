@@ -1,11 +1,9 @@
-### NEXT_VERSION_TYPE=MINOR
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [8.1.0]() (14-11-2019)
 
-Sorting by field `next_process_at` has been added to the request for selecting the next task from the queue. 
+Sorting by field `next_process_at` has been added to the request for selecting the next task from the queue.
 It`s a hint to force Postgres to use an existed index instead of a sequential scan.
 This makes the task selection query run faster increase up to 5 times.
 
-### NEXT_VERSION_DESCRIPTION_END
 ## [8.0.1]() (08-11-2019)
 
 * [PR#2](https://github.com/yandex-money-tech/db-queue/pull/2) Allow dots as part of a table name. Thanks to [@everplays](https://github.com/everplays).
