@@ -1,3 +1,6 @@
+### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_DESCRIPTION_BEGIN
+### NEXT_VERSION_DESCRIPTION_END
 ## [8.1.0]() (14-11-2019)
 
 Sorting by field `next_process_at` has been added to the request for selecting the next task from the queue.
