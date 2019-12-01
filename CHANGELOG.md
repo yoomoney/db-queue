@@ -1,9 +1,9 @@
-### NEXT_VERSION_TYPE=PATCH
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [8.1.1]() (01-12-2019)
+
 * Generic support added for `Task#builder(QueueShardId)` method.
-* Changed `EnqueueParams#withExtData(Map)` method's logic. Now all entries of given map are drained to 
-  `EnqueueParams#extData` field
-### NEXT_VERSION_DESCRIPTION_END
+* Changed `EnqueueParams#withExtData(Map)` method's logic. Now all entries of given map are drained to
+`EnqueueParams#extData` field
+
 ## [8.1.0]() (14-11-2019)
 
 Sorting by field `next_process_at` has been added to the request for selecting the next task from the queue.
