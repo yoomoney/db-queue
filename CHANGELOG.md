@@ -1,5 +1,8 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=PATCH
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+* Generic support added for `Task#builder(QueueShardId)` method.
+* Changed `EnqueueParams#withExtData(Map)` method's logic. Now all entries of given map are drained to 
+  `EnqueueParams#extData` field
 ### NEXT_VERSION_DESCRIPTION_END
 ## [8.1.0]() (14-11-2019)
 

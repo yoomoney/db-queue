@@ -63,7 +63,7 @@ public class TaskProcessorTest {
 
         verify(listener).started(shardId, location, taskRecord);
         verify(millisTimeProvider, times(2)).getMillis();
-        verify(queueConsumer).execute(Task.builder(shardId)
+        verify(queueConsumer).execute(Task.<String>builder(shardId)
                 .withCreatedAt(taskRecord.getCreatedAt())
                 .withPayload(transformedPayload)
                 .withAttemptsCount(taskRecord.getAttemptsCount())
