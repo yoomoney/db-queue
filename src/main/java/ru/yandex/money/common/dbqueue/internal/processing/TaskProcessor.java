@@ -61,7 +61,7 @@ public class TaskProcessor {
                     taskRecord);
             long processTaskStarted = millisTimeProvider.getMillis();
             Object payload = queueConsumer.getPayloadTransformer().toObject(taskRecord.getPayload());
-            Task task = Task.builder(queueShard.getShardId())
+            Task<?> task = Task.builder(queueShard.getShardId())
                     .withCreatedAt(taskRecord.getCreatedAt())
                     .withPayload(payload)
                     .withAttemptsCount(taskRecord.getAttemptsCount())

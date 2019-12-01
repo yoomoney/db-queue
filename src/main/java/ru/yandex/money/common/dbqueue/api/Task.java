@@ -176,8 +176,15 @@ public final class Task<T> {
                 '}';
     }
 
-    public static Builder builder(@Nonnull QueueShardId shardId) {
-        return new Builder(shardId);
+    /**
+     * Creates builder for {@link Task} objects.
+     *
+     * @param shardId an id of shard
+     * @param <T> a type of task payload
+     * @return new instance of {@link Builder}
+     */
+    public static <T> Builder<T> builder(@Nonnull QueueShardId shardId) {
+        return new Builder<>(shardId);
     }
 
     /**
@@ -201,37 +208,37 @@ public final class Task<T> {
             this.shardId = requireNonNull(shardId, "shardId");
         }
 
-        public Builder withCreatedAt(@Nonnull ZonedDateTime createdAt) {
+        public Builder<T> withCreatedAt(@Nonnull ZonedDateTime createdAt) {
             this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
             return this;
         }
 
-        public Builder withPayload(T payload) {
+        public Builder<T> withPayload(T payload) {
             this.payload = payload;
             return this;
         }
 
-        public Builder withAttemptsCount(long attemptsCount) {
+        public Builder<T> withAttemptsCount(long attemptsCount) {
             this.attemptsCount = attemptsCount;
             return this;
         }
 
-        public Builder withReenqueueAttemptsCount(long reenqueueAttemptsCount) {
+        public Builder<T> withReenqueueAttemptsCount(long reenqueueAttemptsCount) {
             this.reenqueueAttemptsCount = reenqueueAttemptsCount;
             return this;
         }
 
-        public Builder withTotalAttemptsCount(long totalAttemptsCount) {
+        public Builder<T> withTotalAttemptsCount(long totalAttemptsCount) {
             this.totalAttemptsCount = totalAttemptsCount;
             return this;
         }
 
-        public Builder withExtData(@Nonnull Map<String, String> extData) {
+        public Builder<T> withExtData(@Nonnull Map<String, String> extData) {
             this.extData = requireNonNull(extData);
             return this;
         }
 
-        public Task build() {
+        public Task<T> build() {
             return new Task<>(shardId, payload, attemptsCount, reenqueueAttemptsCount,
                     totalAttemptsCount, createdAt, extData);
         }

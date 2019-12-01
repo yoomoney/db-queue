@@ -80,12 +80,14 @@ public final class EnqueueParams<T> {
      * Задать расширенный набор данных задачи.
      * Функционал включается через {@link QueueTableSchema#getExtFields()}
      *
-     * @param extData набор расширенных данных, ключ - имя колонки в БД
+     * @param extData набор расширенных данных, ключ - имя колонки в БД. Все элементы этой коллекции будут перемещены
+     *                во внутреннюю коллекцию builder'а
      * @return параметры постановки задачи в очередь
      */
     @Nonnull
     public EnqueueParams<T> withExtData(@Nonnull Map<String, String> extData) {
-        this.extData = requireNonNull(extData);
+        requireNonNull(extData);
+        this.extData.putAll(extData);
         return this;
     }
 
