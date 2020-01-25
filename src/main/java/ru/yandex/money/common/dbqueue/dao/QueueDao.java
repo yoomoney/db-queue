@@ -69,6 +69,8 @@ public interface QueueDao {
             switch (databaseDialect) {
                 case POSTGRESQL:
                     return new PostgresQueueDao(jdbcTemplate, queueTableSchema);
+                case MSSQL:
+                    return new MssqlQueueDao(jdbcTemplate, queueTableSchema);
                 default:
                     throw new IllegalArgumentException("unsupported database kind: " + databaseDialect);
             }

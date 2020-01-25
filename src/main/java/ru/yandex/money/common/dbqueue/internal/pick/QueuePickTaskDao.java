@@ -54,6 +54,8 @@ public interface QueuePickTaskDao {
             switch (databaseDialect) {
                 case POSTGRESQL:
                     return new PostgresQueuePickTaskDao(jdbcTemplate, queueTableSchema, pickTaskSettings);
+                case MSSQL:
+                    return new MssqlQueuePickTaskDao(jdbcTemplate, queueTableSchema, pickTaskSettings);
                 default:
                     throw new IllegalArgumentException("unsupported database kind: " + databaseDialect);
             }
