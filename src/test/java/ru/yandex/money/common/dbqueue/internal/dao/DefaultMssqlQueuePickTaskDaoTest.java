@@ -7,17 +7,18 @@ import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
 
 /**
  * @author Oleg Kandaurov
- * @since 12.10.2019
+ * @author Behrooz Shabani
+ * @since 25.01.2020
  */
-public class DefaultPostgresQueuePickTaskDaoTest extends PostgresQueuePickTaskDaoTest {
+public class DefaultMssqlQueuePickTaskDaoTest extends MssqlQueuePickTaskDaoTest {
 
     @BeforeClass
     public static void beforeClass() {
-        QueueDatabaseInitializer.databaseType = QueueDatabaseInitializer.DatabaseType.PG;
+        QueueDatabaseInitializer.databaseType = QueueDatabaseInitializer.DatabaseType.MS;
         BaseDaoTest.beforeClass();
     }
 
-    public DefaultPostgresQueuePickTaskDaoTest() {
-        super(TableSchemaType.PG_DEFAULT);
+    public DefaultMssqlQueuePickTaskDaoTest() {
+        super(TableSchemaType.MS_DEFAULT);
     }
 }

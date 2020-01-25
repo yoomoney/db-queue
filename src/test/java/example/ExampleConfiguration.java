@@ -38,6 +38,7 @@ public class ExampleConfiguration {
     @Test
     public void example_config() throws InterruptedException {
         AtomicBoolean isTaskConsumed = new AtomicBoolean(false);
+        QueueDatabaseInitializer.databaseType = QueueDatabaseInitializer.DatabaseType.PG;
         QueueDatabaseInitializer.createDefaultTable("example_task_table");
 
         QueueShard shard = new QueueShard(DatabaseDialect.POSTGRESQL,

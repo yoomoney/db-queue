@@ -5,6 +5,8 @@ build:
 
 before_build:
   - SET PATH=%JAVA_HOME%\bin;%PATH%\
+  - ps: Install-Module DockerMsftProvider -Force
+  - ps: Install-Package Docker -ProviderName DockerMsftProvider -Force
 
 build_script:
 - gradlew-public.bat -b build-public.gradle clean build --info --no-daemon

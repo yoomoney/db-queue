@@ -10,5 +10,6 @@ public enum DatabaseDialect {
     /**
      * БД PostgreSQL выше или равной версии 9.5
      */
-    POSTGRESQL
+    POSTGRESQL,
+    MSSQL
 }
