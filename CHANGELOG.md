@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=MINOR
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [8.2.0]() (03-02-2020)
+
 * Update gradle version 4.10.2 -> 6.0.1
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [8.1.1]() (01-12-2019)
 
 * Generic support added for `Task#builder(QueueShardId)` method.
