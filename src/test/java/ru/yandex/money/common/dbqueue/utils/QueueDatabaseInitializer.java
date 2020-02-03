@@ -2,13 +2,16 @@ package ru.yandex.money.common.dbqueue.utils;
 
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 import com.opentable.db.postgres.embedded.EmbeddedPostgres;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.containers.MSSQLServerContainerProvider;
+import org.testcontainers.utility.TestcontainersConfiguration;
 import ru.yandex.money.common.dbqueue.config.QueueTableSchema;
 
 import javax.sql.DataSource;
@@ -76,8 +79,8 @@ public class QueueDatabaseInitializer {
             "  id    int identity(1,1) not null,\n" +
             "  qn    varchar(127) not null,\n" +
             "  pl    text,\n" +
-            "  ct    datetime not null default CURRENT_TIMESTAMP,\n" +
-            "  pt    datetime not null default CURRENT_TIMESTAMP,\n" +
+            "  ct    datetimeoffset not null default SYSDATETIMEOFFSET(),\n" +
+            "  pt    datetimeoffset not null default SYSDATETIMEOFFSET(),\n" +
             "  at    integer not null         default 0,\n" +
             "  rat   integer not null         default 0,\n" +
             "  tat   integer not null         default 0,\n" +
@@ -92,8 +95,8 @@ public class QueueDatabaseInitializer {
             "  id                int identity(1,1) not null,\n" +
             "  queue_name        varchar(127) not null,\n" +
             "  payload           text,\n" +
-            "  created_at        datetime not null default CURRENT_TIMESTAMP,\n" +
-            "  next_process_at   datetime not null default CURRENT_TIMESTAMP,\n" +
+            "  created_at        datetimeoffset not null default SYSDATETIMEOFFSET(),\n" +
+            "  next_process_at   datetimeoffset not null default SYSDATETIMEOFFSET(),\n" +
             "  attempt           integer not null         default 0,\n" +
             "  reenqueue_attempt integer not null         default 0,\n" +
             "  total_attempt     integer not null         default 0,\n" +
@@ -154,8 +157,14 @@ public class QueueDatabaseInitializer {
             return;
         }
         SQLServerDataSource dataSource;
-        JdbcDatabaseContainer containerInstance = new MSSQLServerContainerProvider().newInstance();
-        containerInstance.addEnv("TZ", ZoneId.systemDefault().toString());
+
+        String ryukImage = System.getProperty("testcontainers.ryuk.container.image");
+        TestcontainersConfiguration.getInstance()
+                .updateGlobalConfig("ryuk.container.image", ryukImage);
+
+        String mssqlImage = System.getProperty("testcontainers.mssql.container.image");
+
+        MSSQLServerContainer containerInstance = new MSSQLServerContainer<>(mssqlImage);
         containerInstance.start();
         URI uri = URI.create(containerInstance.getJdbcUrl().substring(5));
         dataSource = new SQLServerDataSource();

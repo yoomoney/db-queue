@@ -62,7 +62,7 @@ public class PostgresQueuePickTaskDao implements QueuePickTaskDao {
                 "SET " +
                 "  " + queueTableSchema.getNextProcessAtField() + " = %s, " +
                 "  " + queueTableSchema.getAttemptField() + " = " + queueTableSchema.getAttemptField() + " + 1, " +
-                "  " + queueTableSchema.getTotalAttemptField() + " = coalesce(" + queueTableSchema.getTotalAttemptField() + ", 0) + 1 " +
+                "  " + queueTableSchema.getTotalAttemptField() + " = " + queueTableSchema.getTotalAttemptField() + " + 1 " +
                 "FROM cte " +
                 "WHERE q.id = cte.id " +
                 "RETURNING q.id, " +

@@ -39,7 +39,7 @@ public class QueueServiceTest {
     @Test
     public void should_not_register_queue_when_thread_count_is_zero() throws Exception {
 
-        QueueConsumer consumer = mock(QueueConsumer.class);
+        QueueConsumer<?> consumer = mock(QueueConsumer.class);
         when(consumer.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
                         .withQueueId(new QueueId("test")).build(),
@@ -57,7 +57,7 @@ public class QueueServiceTest {
 
     @Test
     public void should_not_do_any_operations_when_queue_is_not_registered() throws Exception {
-        QueueConsumer consumer = mock(QueueConsumer.class);
+        QueueConsumer<?> consumer = mock(QueueConsumer.class);
         QueueId queueId = new QueueId("test");
         when(consumer.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
@@ -129,7 +129,7 @@ public class QueueServiceTest {
     @Test
     public void should_not_register_queue_when_already_registered() throws Exception {
 
-        QueueConsumer consumer = mock(QueueConsumer.class);
+        QueueConsumer<?> consumer = mock(QueueConsumer.class);
         when(consumer.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
                         .withQueueId(new QueueId("queue1")).build(),
@@ -146,7 +146,7 @@ public class QueueServiceTest {
 
     @Test
     public void should_work_with_more_than_one_queue() {
-        QueueConsumer consumer1 = mock(QueueConsumer.class);
+        QueueConsumer<?> consumer1 = mock(QueueConsumer.class);
         QueueId queueId1 = new QueueId("queue1");
         when(consumer1.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
@@ -155,7 +155,7 @@ public class QueueServiceTest {
                         .withNoTaskTimeout(Duration.ZERO)
                         .withThreadCount(1)
                         .withBetweenTaskTimeout(Duration.ZERO).build()));
-        QueueConsumer consumer2 = mock(QueueConsumer.class);
+        QueueConsumer<?> consumer2 = mock(QueueConsumer.class);
         QueueId queueId2 = new QueueId("queue2");
         when(consumer2.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
@@ -215,7 +215,7 @@ public class QueueServiceTest {
 
     @Test
     public void should_work_with_more_than_one_shard() {
-        QueueConsumer consumer1 = mock(QueueConsumer.class);
+        QueueConsumer<?> consumer1 = mock(QueueConsumer.class);
         QueueId queueId1 = new QueueId("queue1");
         when(consumer1.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
@@ -275,7 +275,7 @@ public class QueueServiceTest {
 
     @Test
     public void should_await_queue_termination() {
-        QueueConsumer consumer = mock(QueueConsumer.class);
+        QueueConsumer<?> consumer = mock(QueueConsumer.class);
         QueueId queueId = new QueueId("queue1");
         when(consumer.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
@@ -299,7 +299,7 @@ public class QueueServiceTest {
 
     @Test
     public void should_await_termination() {
-        QueueConsumer consumer = mock(QueueConsumer.class);
+        QueueConsumer<?> consumer = mock(QueueConsumer.class);
         QueueId queueId = new QueueId("queue1");
         when(consumer.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")

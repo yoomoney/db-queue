@@ -51,7 +51,7 @@ public class MssqlQueueDao implements QueueDao {
                 (queueTableSchema.getExtFields().isEmpty() ? "" :
                         queueTableSchema.getExtFields().stream().collect(Collectors.joining(", ", ", ", ""))) +
                 ") OUTPUT inserted.id VALUES " +
-                "(:queueName, :payload, dateadd(ss, :executionDelay, getdate()), 0, 0" +
+                "(:queueName, :payload, dateadd(ss, :executionDelay, SYSDATETIMEOFFSET()), 0, 0" +
                 (queueTableSchema.getExtFields().isEmpty() ? "" : queueTableSchema.getExtFields().stream()
                         .map(field -> ":" + field).collect(Collectors.joining(", ", ", ", ""))) +
                 ")";
@@ -60,10 +60,10 @@ public class MssqlQueueDao implements QueueDao {
                 " = :queueName AND id = :id";
 
         reenqueueTaskSql = "UPDATE %s SET " + queueTableSchema.getNextProcessAtField() +
-                " = dateadd(ss, :executionDelay, getdate()), " +
+                " = dateadd(ss, :executionDelay, SYSDATETIMEOFFSET()), " +
                 queueTableSchema.getAttemptField() + " = 0, " +
                 queueTableSchema.getReenqueueAttemptField() +
-                " = coalesce(" + queueTableSchema.getReenqueueAttemptField() + ", 0) + 1 " +
+                " = " + queueTableSchema.getReenqueueAttemptField() + " + 1 " +
                 "WHERE id = :id AND " +
                 queueTableSchema.getQueueNameField() + " = :queueName";
     }

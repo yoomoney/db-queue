@@ -62,7 +62,7 @@ public class PostgresQueueDao implements QueueDao {
                 " = now() + :executionDelay * INTERVAL '1 SECOND', " +
                 queueTableSchema.getAttemptField() + " = 0, " +
                 queueTableSchema.getReenqueueAttemptField() +
-                " = coalesce(" + queueTableSchema.getReenqueueAttemptField() + ", 0) + 1 " +
+                " = " + queueTableSchema.getReenqueueAttemptField() + " + 1 " +
                 "WHERE id = :id AND " +
                 queueTableSchema.getQueueNameField() + " = :queueName";
     }

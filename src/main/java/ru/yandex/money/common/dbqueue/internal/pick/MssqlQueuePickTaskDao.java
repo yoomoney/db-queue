@@ -48,7 +48,7 @@ public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
                 "SELECT id " +
                 "FROM %s with (readpast, updlock) " +
                 "WHERE " + queueTableSchema.getQueueNameField() + " = :queueName " +
-                "  AND " + queueTableSchema.getNextProcessAtField() + " <= getdate() " +
+                "  AND " + queueTableSchema.getNextProcessAtField() + " <= SYSDATETIMEOFFSET() " +
                 " ORDER BY " + queueTableSchema.getNextProcessAtField() + " ASC " +
                 "offset 0 rows fetch next 1 rows only " +
                 ") " +
@@ -56,7 +56,7 @@ public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
                 "SET " +
                 "  " + queueTableSchema.getNextProcessAtField() + " = %s, " +
                 "  " + queueTableSchema.getAttemptField() + " = " + queueTableSchema.getAttemptField() + " + 1, " +
-                "  " + queueTableSchema.getTotalAttemptField() + " = coalesce(" + queueTableSchema.getTotalAttemptField() + ", 0) + 1 " +
+                "  " + queueTableSchema.getTotalAttemptField() + " = " + queueTableSchema.getTotalAttemptField() + " + 1 " +
                 "OUTPUT inserted.id, " +
                 "inserted." + queueTableSchema.getPayloadField() + ", " +
                 "inserted." + queueTableSchema.getAttemptField() + ", " +
@@ -121,11 +121,11 @@ public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
         Objects.requireNonNull(taskRetryType);
         switch (taskRetryType) {
             case GEOMETRIC_BACKOFF:
-                return "dateadd(ss, power(2, " + queueTableSchema.getAttemptField() + ") * :retryInterval, getdate())";
+                return "dateadd(ss, power(2, " + queueTableSchema.getAttemptField() + ") * :retryInterval, SYSDATETIMEOFFSET())";
             case ARITHMETIC_BACKOFF:
-                return "dateadd(ss, (1 + (" + queueTableSchema.getAttemptField() + " * 2)) * :retryInterval, getdate())";
+                return "dateadd(ss, (1 + (" + queueTableSchema.getAttemptField() + " * 2)) * :retryInterval, SYSDATETIMEOFFSET())";
             case LINEAR_BACKOFF:
-                return "dateadd(ss, :retryInterval, getdate())";
+                return "dateadd(ss, :retryInterval, SYSDATETIMEOFFSET())";
             default:
                 throw new IllegalStateException("unknown retry type: " + taskRetryType);
         }

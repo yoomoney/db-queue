@@ -161,7 +161,7 @@ public abstract class MssqlQueuePickTaskDaoTest extends BaseDaoTest {
     private TaskRecord resetProcessTimeAndPick(QueueLocation location, QueuePickTaskDao pickTaskDao, Long enqueueId) {
         executeInTransaction(() -> {
             jdbcTemplate.update("update " + tableName +
-                    " set " + tableSchema.getNextProcessAtField() + "=? where id=" + enqueueId, new Timestamp(new Date().getTime()));
+                    " set " + tableSchema.getNextProcessAtField() + "= SYSDATETIMEOFFSET() where id=" + enqueueId);
         });
 
         TaskRecord taskRecord = null;

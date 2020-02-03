@@ -8,8 +8,11 @@ package ru.yandex.money.common.dbqueue.config;
  */
 public enum DatabaseDialect {
     /**
-     * БД PostgreSQL выше или равной версии 9.5
+     * PostgreSQL (version equal or higher than 9.5)
      */
     POSTGRESQL,
+    /**
+     * MSSQL
+     */
     MSSQL
 }
