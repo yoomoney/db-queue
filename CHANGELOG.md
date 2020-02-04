@@ -1,5 +1,6 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=MINOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+* MSSQL support. Thanks to [@everplays](https://github.com/everplays).
 ### NEXT_VERSION_DESCRIPTION_END
 ## [8.2.0]() (03-02-2020)
 

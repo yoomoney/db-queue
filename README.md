@@ -1,5 +1,4 @@
 [![Build Status](https://travis-ci.org/yandex-money-tech/db-queue.svg?branch=master)](https://travis-ci.org/yandex-money-tech/db-queue)
-[![Build status](https://ci.appveyor.com/api/projects/status/2ee4wumomugjnnl7?svg=true)](https://ci.appveyor.com/project/f0y/db-queue)
 [![Codecov](https://codecov.io/gh/yandex-money-tech/db-queue/branch/master/graph/badge.svg)](https://codecov.io/gh/yandex-money-tech/db-queue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Javadoc](https://img.shields.io/badge/javadoc-latest-blue.svg)](https://yandex-money-tech.github.io/db-queue/)
@@ -36,7 +35,7 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 ## Features
 
 * Persistent working-queue
-* Support for PostgreSQL with version higher or equal to 9.5.
+* Support for PostgreSQL, MSSQL.
 * Storing queue tasks in a separate tables or in the same table ([QueueLocation](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/settings/QueueLocation.html)).
 * Storing queue tasks in a separate databases for horizontal scaling ([QueueShard](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/config/QueueShard.html)).
 * Delayed task execution.
@@ -49,7 +48,7 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 
 ## Database support
 
-As of now the library supports only PostgreSQL as backing database, however library architecture
+As of now the library supports PostgreSQL and MSSQL as backing database, however library architecture
 makes it easy to add other relational databases which has support for transactions and "for update skip locked" feature,  
 for example MySql, Oracle, H2.  
 Feel free to add support for other databases via pull request.
@@ -74,7 +73,7 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 <dependency>
   <groupId>com.yandex.money.tech</groupId>
   <artifactId>db-queue</artifactId>
-  <version>8.0.1</version>
+  <version>8.3.0</version>
 </dependency>
 ```
 
@@ -131,6 +130,25 @@ CREATE TABLE queue_tasks (...) WITH (
 autovacuum_vacuum_cost_delay=5, 
 autovacuum_vacuum_cost_limit=500,
 autovacuum_vacuum_scale_factor=0.0001)
+```
+
+### MSSQL
+
+Create table (with index) where tasks will be stored.
+```sql
+CREATE TABLE queue_tasks (
+  id                INT IDENTITY(1,1) NOT NULL,
+  queue_name        TEXT NOT NULL,
+  payload           TEXT,
+  created_at        DATETIMEOFFSET NOT NULL  DEFAULT SYSDATETIMEOFFSET(),
+  next_process_at   DATETIMEOFFSET NOT NULL  DEFAULT SYSDATETIMEOFFSET(),
+  attempt           INTEGER NOT NULL         DEFAULT 0,
+  reenqueue_attempt INTEGER NOT NULL         DEFAULT 0,
+  total_attempt     INTEGER NOT NULL         DEFAULT 0,
+  PRIMARY KEY (id)
+);
+CREATE INDEX queue_tasks_name_time_desc_idx
+  ON queue_tasks (queue_name, next_process_at, id DESC);
 ```
 
 ### Code

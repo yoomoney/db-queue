@@ -23,12 +23,13 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Реализация класса взаимодействия с PostgreSQL для выборки задач
+ * Реализация класса взаимодействия с MsSQL для выборки задач
  *
  * @author Oleg Kandaurov
- * @since 15.07.2017
+ * @author Behrooz Shabani
+ * @since 25.01.2020
  */
-public class PostgresQueuePickTaskDao implements QueuePickTaskDao {
+public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final String pickTaskSql;
@@ -36,14 +37,7 @@ public class PostgresQueuePickTaskDao implements QueuePickTaskDao {
     private final PickTaskSettings pickTaskSettings;
     private final String nextProcessTimeSql;
 
-    /**
-     * Конструктор
-     *
-     * @param jdbcTemplate     spring jdbc template
-     * @param queueTableSchema схема таблицы очередей
-     * @param pickTaskSettings настройки выборки задач
-     */
-    public PostgresQueuePickTaskDao(@Nonnull JdbcOperations jdbcTemplate,
+    public MssqlQueuePickTaskDao(@Nonnull JdbcOperations jdbcTemplate,
                                     @Nonnull QueueTableSchema queueTableSchema,
                                     @Nonnull PickTaskSettings pickTaskSettings) {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(requireNonNull(jdbcTemplate));
@@ -52,28 +46,28 @@ public class PostgresQueuePickTaskDao implements QueuePickTaskDao {
         this.nextProcessTimeSql = getNextProcessTimeSql(pickTaskSettings.getRetryType(), queueTableSchema);
         pickTaskSql = "WITH cte AS (" +
                 "SELECT id " +
-                "FROM %s " +
+                "FROM %s with (readpast, updlock) " +
                 "WHERE " + queueTableSchema.getQueueNameField() + " = :queueName " +
-                "  AND " + queueTableSchema.getNextProcessAtField() + " <= now() " +
+                "  AND " + queueTableSchema.getNextProcessAtField() + " <= SYSDATETIMEOFFSET() " +
                 " ORDER BY " + queueTableSchema.getNextProcessAtField() + " ASC " +
-                "LIMIT 1 " +
-                "FOR UPDATE SKIP LOCKED) " +
-                "UPDATE %s q " +
+                "offset 0 rows fetch next 1 rows only " +
+                ") " +
+                "UPDATE %s " +
                 "SET " +
                 "  " + queueTableSchema.getNextProcessAtField() + " = %s, " +
                 "  " + queueTableSchema.getAttemptField() + " = " + queueTableSchema.getAttemptField() + " + 1, " +
                 "  " + queueTableSchema.getTotalAttemptField() + " = " + queueTableSchema.getTotalAttemptField() + " + 1 " +
-                "FROM cte " +
-                "WHERE q.id = cte.id " +
-                "RETURNING q.id, " +
-                "q." + queueTableSchema.getPayloadField() + ", " +
-                "q." + queueTableSchema.getAttemptField() + ", " +
-                "q." + queueTableSchema.getReenqueueAttemptField() + ", " +
-                "q." + queueTableSchema.getTotalAttemptField() + ", " +
-                "q." + queueTableSchema.getCreatedAtField() + ", " +
-                "q." + queueTableSchema.getNextProcessAtField() +
+                "OUTPUT inserted.id, " +
+                "inserted." + queueTableSchema.getPayloadField() + ", " +
+                "inserted." + queueTableSchema.getAttemptField() + ", " +
+                "inserted." + queueTableSchema.getReenqueueAttemptField() + ", " +
+                "inserted." + queueTableSchema.getTotalAttemptField() + ", " +
+                "inserted." + queueTableSchema.getCreatedAtField() + ", " +
+                "inserted." + queueTableSchema.getNextProcessAtField() +
                 (queueTableSchema.getExtFields().isEmpty() ? "" : queueTableSchema.getExtFields().stream()
-                        .map(field -> "q." + field).collect(Collectors.joining(", ", ", ", "")));
+                        .map(field -> "inserted." + field).collect(Collectors.joining(", ", ", ", ""))) + " " +
+                "FROM cte " +
+                "WHERE %s.id = cte.id";
     }
 
     @Override
@@ -82,12 +76,12 @@ public class PostgresQueuePickTaskDao implements QueuePickTaskDao {
         requireNonNull(location);
         MapSqlParameterSource placeholders = new MapSqlParameterSource()
                 .addValue("queueName", location.getQueueId().asString())
-                .addValue("retryInterval", pickTaskSettings.getRetryInterval().toString());
+                .addValue("retryInterval", pickTaskSettings.getRetryInterval().getSeconds());
 
         return jdbcTemplate.execute(String.format(
                 pickTaskSql,
                 location.getTableName(), location.getTableName(),
-                nextProcessTimeSql),
+                nextProcessTimeSql, location.getTableName()),
                 placeholders,
                 (PreparedStatement ps) -> {
                     try (ResultSet rs = ps.executeQuery()) {
@@ -127,11 +121,11 @@ public class PostgresQueuePickTaskDao implements QueuePickTaskDao {
         Objects.requireNonNull(taskRetryType);
         switch (taskRetryType) {
             case GEOMETRIC_BACKOFF:
-                return "now() + power(2, " + queueTableSchema.getAttemptField() + ") * :retryInterval :: interval";
+                return "dateadd(ss, power(2, " + queueTableSchema.getAttemptField() + ") * :retryInterval, SYSDATETIMEOFFSET())";
             case ARITHMETIC_BACKOFF:
-                return "now() + (1 + (" + queueTableSchema.getAttemptField() + " * 2)) * :retryInterval :: interval";
+                return "dateadd(ss, (1 + (" + queueTableSchema.getAttemptField() + " * 2)) * :retryInterval, SYSDATETIMEOFFSET())";
             case LINEAR_BACKOFF:
-                return "now() + :retryInterval :: interval";
+                return "dateadd(ss, :retryInterval, SYSDATETIMEOFFSET())";
             default:
                 throw new IllegalStateException("unknown retry type: " + taskRetryType);
         }

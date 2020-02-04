@@ -6,9 +6,9 @@ import org.junit.Test;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.dao.BaseDaoTest;
-import ru.yandex.money.common.dbqueue.dao.PostgresQueueDao;
+import ru.yandex.money.common.dbqueue.dao.MssqlQueueDao;
 import ru.yandex.money.common.dbqueue.internal.pick.PickTaskSettings;
-import ru.yandex.money.common.dbqueue.internal.pick.PostgresQueuePickTaskDao;
+import ru.yandex.money.common.dbqueue.internal.pick.MssqlQueuePickTaskDao;
 import ru.yandex.money.common.dbqueue.internal.pick.QueuePickTaskDao;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.TaskRetryType;
@@ -27,19 +27,20 @@ import static org.hamcrest.CoreMatchers.nullValue;
 
 /**
  * @author Oleg Kandaurov
- * @since 15.07.2017
+ * @author Behrooz Shabani
+ * @since 25.01.2020
  */
 @Ignore
-public abstract class PostgresQueuePickTaskDaoTest extends BaseDaoTest {
+public abstract class MssqlQueuePickTaskDaoTest extends BaseDaoTest {
 
-    private final PostgresQueueDao queueDao = new PostgresQueueDao(jdbcTemplate, tableSchema);
+    private final MssqlQueueDao queueDao = new MssqlQueueDao(jdbcTemplate, tableSchema);
 
     /**
      * Из-за особенностей windows какая-то фигня со временем БД
      */
     private final static Duration WINDOWS_OS_DELAY = Duration.ofSeconds(2);
 
-    public PostgresQueuePickTaskDaoTest(TableSchemaType tableSchemaType) {
+    public MssqlQueuePickTaskDaoTest(TableSchemaType tableSchemaType) {
         super(tableSchemaType);
     }
 
@@ -48,7 +49,7 @@ public abstract class PostgresQueuePickTaskDaoTest extends BaseDaoTest {
         QueueLocation location = generateUniqueLocation();
         executeInTransaction(() ->
                 queueDao.enqueue(location, new EnqueueParams<String>().withExecutionDelay(Duration.ofHours(1))));
-        PostgresQueuePickTaskDao pickTaskDao = new PostgresQueuePickTaskDao(jdbcTemplate, tableSchema,
+        MssqlQueuePickTaskDao pickTaskDao = new MssqlQueuePickTaskDao(jdbcTemplate, tableSchema,
                 new PickTaskSettings(TaskRetryType.ARITHMETIC_BACKOFF, Duration.ofMinutes(1)));
         TaskRecord taskRecord = pickTaskDao.pickTask(location);
         Assert.assertThat(taskRecord, is(nullValue()));
@@ -63,7 +64,7 @@ public abstract class PostgresQueuePickTaskDaoTest extends BaseDaoTest {
                 EnqueueParams.create(payload)));
 
         TaskRecord taskRecord = null;
-        PostgresQueuePickTaskDao pickTaskDao = new PostgresQueuePickTaskDao(jdbcTemplate,
+        MssqlQueuePickTaskDao pickTaskDao = new MssqlQueuePickTaskDao(jdbcTemplate,
                 tableSchema, new PickTaskSettings(TaskRetryType.ARITHMETIC_BACKOFF, Duration.ofMinutes(1)));
         while (taskRecord == null) {
             taskRecord = executeInTransaction(() -> pickTaskDao.pickTask(location));
@@ -92,7 +93,7 @@ public abstract class PostgresQueuePickTaskDaoTest extends BaseDaoTest {
         ZonedDateTime afterPickingTask;
         TaskRecord taskRecord;
         PickTaskSettings pickTaskSettings = new PickTaskSettings(TaskRetryType.LINEAR_BACKOFF, Duration.ofMinutes(3));
-        PostgresQueuePickTaskDao pickTaskDao = new PostgresQueuePickTaskDao(jdbcTemplate,
+        MssqlQueuePickTaskDao pickTaskDao = new MssqlQueuePickTaskDao(jdbcTemplate,
                 tableSchema, pickTaskSettings);
 
         Long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, new EnqueueParams<>()));
@@ -116,7 +117,7 @@ public abstract class PostgresQueuePickTaskDaoTest extends BaseDaoTest {
         TaskRecord taskRecord;
 
         PickTaskSettings pickTaskSettings = new PickTaskSettings(TaskRetryType.ARITHMETIC_BACKOFF, Duration.ofMinutes(1));
-        PostgresQueuePickTaskDao pickTaskDao = new PostgresQueuePickTaskDao(jdbcTemplate,
+        MssqlQueuePickTaskDao pickTaskDao = new MssqlQueuePickTaskDao(jdbcTemplate,
                 tableSchema, pickTaskSettings);
 
         Long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, new EnqueueParams<>()));
@@ -141,7 +142,7 @@ public abstract class PostgresQueuePickTaskDaoTest extends BaseDaoTest {
         TaskRecord taskRecord;
 
         PickTaskSettings pickTaskSettings = new PickTaskSettings(TaskRetryType.GEOMETRIC_BACKOFF, Duration.ofMinutes(1));
-        PostgresQueuePickTaskDao pickTaskDao = new PostgresQueuePickTaskDao(jdbcTemplate,
+        MssqlQueuePickTaskDao pickTaskDao = new MssqlQueuePickTaskDao(jdbcTemplate,
                 tableSchema, pickTaskSettings);
 
         Long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, new EnqueueParams<>()));
@@ -160,7 +161,7 @@ public abstract class PostgresQueuePickTaskDaoTest extends BaseDaoTest {
     private TaskRecord resetProcessTimeAndPick(QueueLocation location, QueuePickTaskDao pickTaskDao, Long enqueueId) {
         executeInTransaction(() -> {
             jdbcTemplate.update("update " + tableName +
-                    " set " + tableSchema.getNextProcessAtField() + "= now() where id=" + enqueueId);
+                    " set " + tableSchema.getNextProcessAtField() + "= SYSDATETIMEOFFSET() where id=" + enqueueId);
         });
 
         TaskRecord taskRecord = null;

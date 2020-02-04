@@ -15,12 +15,13 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Dao для управления задачами в очереди БД PostgreSQL.
+ * Dao для управления задачами в очереди БД MsSQL.
  *
  * @author Oleg Kandaurov
- * @since 09.07.2017
+ * @author Behrooz Shabani
+ * @since 25.01.2020
  */
-public class PostgresQueueDao implements QueueDao {
+public class MssqlQueueDao implements QueueDao {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final String enqueueSql;
@@ -30,12 +31,12 @@ public class PostgresQueueDao implements QueueDao {
     private final QueueTableSchema queueTableSchema;
 
     /**
-     * Конструктор
+     * constructor
      *
      * @param jdbcTemplate     spring jdbc template
-     * @param queueTableSchema схема таблицы очередей
+     * @param queueTableSchema definition of queue table
      */
-    public PostgresQueueDao(@Nonnull JdbcOperations jdbcTemplate,
+    public MssqlQueueDao(@Nonnull JdbcOperations jdbcTemplate,
                             @Nonnull QueueTableSchema queueTableSchema) {
         requireNonNull(jdbcTemplate);
 
@@ -49,17 +50,17 @@ public class PostgresQueueDao implements QueueDao {
                 queueTableSchema.getTotalAttemptField() +
                 (queueTableSchema.getExtFields().isEmpty() ? "" :
                         queueTableSchema.getExtFields().stream().collect(Collectors.joining(", ", ", ", ""))) +
-                ") VALUES " +
-                "(:queueName, :payload, now() + :executionDelay * INTERVAL '1 SECOND', 0, 0" +
+                ") OUTPUT inserted.id VALUES " +
+                "(:queueName, :payload, dateadd(ss, :executionDelay, SYSDATETIMEOFFSET()), 0, 0" +
                 (queueTableSchema.getExtFields().isEmpty() ? "" : queueTableSchema.getExtFields().stream()
                         .map(field -> ":" + field).collect(Collectors.joining(", ", ", ", ""))) +
-                ") RETURNING id";
+                ")";
 
         deleteTaskSql = "DELETE FROM %s WHERE " + queueTableSchema.getQueueNameField() +
                 " = :queueName AND id = :id";
 
         reenqueueTaskSql = "UPDATE %s SET " + queueTableSchema.getNextProcessAtField() +
-                " = now() + :executionDelay * INTERVAL '1 SECOND', " +
+                " = dateadd(ss, :executionDelay, SYSDATETIMEOFFSET()), " +
                 queueTableSchema.getAttemptField() + " = 0, " +
                 queueTableSchema.getReenqueueAttemptField() +
                 " = " + queueTableSchema.getReenqueueAttemptField() + " + 1 " +

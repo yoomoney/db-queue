@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.internal.runner;
 
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import ru.yandex.money.common.dbqueue.api.QueueConsumer;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import ru.yandex.money.common.dbqueue.internal.processing.QueueProcessingStatus;
@@ -75,7 +75,7 @@ public class QueueRunnerInExternalExecutorTest {
 
         assertThat(status, equalTo(QueueProcessingStatus.PROCESSED));
 
-        verify(executor).execute(Matchers.any());
+        verify(executor).execute(ArgumentMatchers.any());
         verify(taskPicker).pickTask(queueConsumer);
         verify(taskProcessor).processTask(queueConsumer, taskRecord);
     }

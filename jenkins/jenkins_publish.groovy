@@ -1,1 +1,4 @@
-jobFactory.libraryJobs({onlyJ11BuildRequired enabled})
+jobFactory.libraryJobs({
+    buildAgentLabel 'docker && jdk'
+    requiredJDK 'JAVA_11'
+})

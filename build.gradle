@@ -8,3 +8,16 @@ groupIdSuffix = "common"
 artifactID = "yamoney-db-queue"
 
 apply from: 'dependencies.gradle'
+
+dependencyManagement {
+    dependencies {
+        dependency 'net.java.dev.jna:jna-platform:5.5.0' // required by org.testcontainers:testcontainers
+        dependency 'net.java.dev.jna:jna:5.5.0' // required by org.testcontainers:testcontainers
+        dependency 'com.microsoft.sqlserver:mssql-jdbc:8.2.0.jre8'
+    }
+}
+
+tasks.withType(Test) {
+    systemProperty "testcontainers.ryuk.container.image", "docker.nexus.yamoney.ru/testcontainers/ryuk:0.2.3"
+    systemProperty "testcontainers.mssql.container.image", "docker.nexus.yamoney.ru/mssql/server:2019-CU1-ubuntu-16.04"
+}

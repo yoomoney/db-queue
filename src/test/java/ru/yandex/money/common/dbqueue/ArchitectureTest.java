@@ -26,8 +26,7 @@ public class ArchitectureTest {
 
     @Before
     public void importClasses() {
-        classes = new ClassFileImporter(new ImportOptions()
-                .with(new ImportOption.DontIncludeTests()))
+        classes = new ClassFileImporter(new ImportOptions())
                 .importPackages(BASE_PACKAGE);
     }
 

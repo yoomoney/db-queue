@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 public class BaseDaoTest {
 
     public enum TableSchemaType {
-        DEFAULT, CUSTOM
+        PG_DEFAULT, PG_CUSTOM, MS_DEFAULT, MS_CUSTOM
     }
 
     private static final AtomicLong queueCounter = new AtomicLong();
@@ -34,11 +34,19 @@ public class BaseDaoTest {
 
     public BaseDaoTest(TableSchemaType tableSchemaType) {
         switch (tableSchemaType) {
-            case CUSTOM:
+            case PG_CUSTOM:
                 tableName = QueueDatabaseInitializer.CUSTOM_TABLE_NAME;
                 tableSchema = QueueDatabaseInitializer.CUSTOM_SCHEMA;
                 return;
-            case DEFAULT:
+            case PG_DEFAULT:
+                tableName = QueueDatabaseInitializer.DEFAULT_TABLE_NAME;
+                tableSchema = QueueDatabaseInitializer.DEFAULT_SCHEMA;
+                return;
+            case MS_CUSTOM:
+                tableName = QueueDatabaseInitializer.CUSTOM_TABLE_NAME;
+                tableSchema = QueueDatabaseInitializer.CUSTOM_SCHEMA;
+                return;
+            case MS_DEFAULT:
                 tableName = QueueDatabaseInitializer.DEFAULT_TABLE_NAME;
                 tableSchema = QueueDatabaseInitializer.DEFAULT_SCHEMA;
                 return;
@@ -49,6 +57,7 @@ public class BaseDaoTest {
 
     @BeforeClass
     public static void beforeClass() {
+        QueueDatabaseInitializer.initialize();
         jdbcTemplate = QueueDatabaseInitializer.getJdbcTemplate();
         transactionTemplate = QueueDatabaseInitializer.getTransactionTemplate();
     }
