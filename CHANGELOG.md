@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=MINOR
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [8.3.0]() (04-02-2020)
+
 * MSSQL support. Thanks to [@everplays](https://github.com/everplays).
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [8.2.0]() (03-02-2020)
 
 * Update gradle version 4.10.2 -> 6.0.1
