@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=PATCH
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [8.3.1]() (07-02-2020)
+
 * Rename jenkins job file
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [8.3.0]() (04-02-2020)
 
 * MSSQL support. Thanks to [@everplays](https://github.com/everplays).
