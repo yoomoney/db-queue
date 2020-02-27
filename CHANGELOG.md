@@ -1,5 +1,6 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=PATCH
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+* Don't add bibucket pull request link into changelog.md on release
 ### NEXT_VERSION_DESCRIPTION_END
 ## [8.3.1]() (07-02-2020)
 
