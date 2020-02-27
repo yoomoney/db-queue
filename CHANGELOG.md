@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=PATCH
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [8.3.2]() (27-02-2020)
+
 * Don't add bibucket pull request link into changelog.md on release
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [8.3.1]() (07-02-2020)
 
 * Rename jenkins job file
