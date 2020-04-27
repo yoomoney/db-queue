@@ -4,7 +4,7 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
- * Конфигурация очереди
+ * Queue configuration with database table location and task processing settings.
  *
  * @author Oleg Kandaurov
  * @since 09.07.2017
@@ -17,10 +17,10 @@ public final class QueueConfig {
     private final QueueSettings settings;
 
     /**
-     * Конструктор конфигурации очереди
+     * Constructor for queue configuration
      *
-     * @param location местоположение очереди
-     * @param settings настройки очереди
+     * @param location Queue location
+     * @param settings Queue settings
      */
     public QueueConfig(@Nonnull QueueLocation location,
                        @Nonnull QueueSettings settings) {
@@ -29,9 +29,9 @@ public final class QueueConfig {
     }
 
     /**
-     * Получить местоположение очереди
+     * Get queue location.
      *
-     * @return местоположение очереди
+     * @return Queue location.
      */
     @Nonnull
     public QueueLocation getLocation() {
@@ -39,9 +39,9 @@ public final class QueueConfig {
     }
 
     /**
-     * Получить настройки очереди
+     * Get queue settings.
      *
-     * @return настройки очереди
+     * @return Queue settings.
      */
     @Nonnull
     public QueueSettings getSettings() {

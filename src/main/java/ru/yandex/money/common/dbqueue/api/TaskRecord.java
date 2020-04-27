@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Сырые данные задачи, выбранные из БД.
+ * Raw database record with task parameters and payload
  *
  * @author Oleg Kandaurov
  * @since 09.07.2017
@@ -28,16 +28,16 @@ public final class TaskRecord {
     private final Map<String, String> extData;
 
     /**
-     * Конструктор
+     * Constructor for raw database record with task parameters and payload.
      *
-     * @param id                     идентификатор (sequence id) задачи
-     * @param payload                сырые данные задачи
-     * @param attemptsCount          количество попыток исполнения задачи
-     * @param reenqueueAttemptsCount количество попыток переоткладывания задачи
-     * @param totalAttemptsCount     суммарное количество попыток выполнить задачу
-     * @param createdAt             время постановки задачи
-     * @param nextProcessAt            время очередной обработки задачи
-     * @param extData                расширенные данные задачи, ключ - это имя колонки БД
+     * @param id                     Unique (sequence id) identifier of the task.
+     * @param payload                Raw task payload.
+     * @param attemptsCount          Number of attempts to execute the task.
+     * @param reenqueueAttemptsCount Number of attempts to execute the task.
+     * @param totalAttemptsCount     Sum of all attempts to execute the task.
+     * @param createdAt              Date and time when the task was added into the queue.
+     * @param nextProcessAt          Date and time of the next task execution.
+     * @param extData                Map of external user-defined parameters, key is the column name in the tasks table.
      */
     private TaskRecord(long id,
                        @Nullable String payload,
@@ -58,18 +58,18 @@ public final class TaskRecord {
     }
 
     /**
-     * Получить идентификатор (sequence id) задачи
+     * Get unique (sequence id) identifier of the task.
      *
-     * @return идентификатор задачи
+     * @return task identifier
      */
     public long getId() {
         return id;
     }
 
     /**
-     * Получить сырые данные задачи
+     * Get raw task payload.
      *
-     * @return данные задачи
+     * @return task payload
      */
     @Nullable
     public String getPayload() {
@@ -77,38 +77,39 @@ public final class TaskRecord {
     }
 
     /**
-     * Получить количество попыток исполнения задачи после последнего re-enqueue, включая текущую.
+     * Get number of attempts to execute the task, including the current one.
      *
-     * @return количество попыток исполнения
+     * @return number of attempts to execute the task.
      */
     public long getAttemptsCount() {
         return attemptsCount;
     }
 
     /**
-     * Получить количество попыток переоткладывания задачи.
+     * Get number of attempts to postpone (re-enqueue) the task.
      *
-     * @return количество попыток переоткладывания
+     * @return number of attempts to postpone (re-enqueue) the task.
      */
     public long getReenqueueAttemptsCount() {
         return reenqueueAttemptsCount;
     }
 
     /**
-     * Получить суммарное количество попыток выполнить задачу.
-     * Этот счетчик учитывает все попытки, включая неуспешные и с возвратом в очередь (re-enqueue),
-     * и никогда не сбрасывается.
+     * Get sum of all attempts to execute the task,
+     * including all task re-enqueue attempts and all failed attempts.
+     * <br>
+     * <strong>This counter should never be reset.</strong>
      *
-     * @return суммарное количество попыток выполнения
+     * @return sum of all attempts to execute the task
      */
     public long getTotalAttemptsCount() {
         return totalAttemptsCount;
     }
 
     /**
-     * Получить время постановки задачи в очередь
+     * Get date and time when the task was added into the queue.
      *
-     * @return время постановки задачи
+     * @return date and time when the task was added into the queue.
      */
     @Nonnull
     public ZonedDateTime getCreatedAt() {
@@ -116,9 +117,9 @@ public final class TaskRecord {
     }
 
     /**
-     * Получить время следущей обработки задачи
+     * Get date and time of the next task execution.
      *
-     * @return время обработки
+     * @return Date and time of the next task execution.
      */
     @Nonnull
     public ZonedDateTime getNextProcessAt() {
@@ -126,9 +127,10 @@ public final class TaskRecord {
     }
 
     /**
-     * Получить расширенный набор данных задачи
+     * Get the map of external user-defined parameters,
+     * where the key is the column name in the tasks table.
      *
-     * @return дополнительные данные задачи, в ключе содержится имя колонки в БД
+     * @return map of external user-defined parameters, where the key is the column name in the tasks table.
      */
     @Nonnull
     public Map<String, String> getExtData() {
@@ -177,7 +179,7 @@ public final class TaskRecord {
     }
 
     /**
-     * Билдер для класса {@link TaskRecord}
+     * Builder for the {@link TaskRecord} class
      */
     public static class Builder {
         private long id;

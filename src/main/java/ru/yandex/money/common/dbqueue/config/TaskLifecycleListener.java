@@ -7,7 +7,7 @@ import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import javax.annotation.Nonnull;
 
 /**
- * Слушатель хода обработки задачи в очереди
+ * Listener for task processing lifecycle.
  *
  * @author Oleg Kandaurov
  * @since 09.07.2017
@@ -15,76 +15,75 @@ import javax.annotation.Nonnull;
 public interface TaskLifecycleListener {
 
     /**
-     * Событие выборки задачи из очереди.
+     * Event of task picking from the queue.
      * <p>
-     * Вызывается если в очереди есть задача, доступная для обработки.
+     * Triggered when there is a task in the queue, which is ready for processing.
      * <p>
-     * Может быть использовано для разбора проблем с производительностью БД.
+     * Might be useful for monitoring problems with database performance.
      *
-     * @param shardId      идентификатор шарда на котором происходит обработка
-     * @param location     местоположение очереди
-     * @param taskRecord   данные задачи
-     * @param pickTaskTime время выборки задачи
+     * @param shardId      Shard identifier, which processes the queue.
+     * @param location     Queue location.
+     * @param taskRecord   Raw task data.
+     * @param pickTaskTime Time spent on picking the task from the queue in millis.
      */
     void picked(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord,
                 long pickTaskTime);
 
     /**
-     * Событие начала обработки задачи.
+     * The start event of task processing.
      * <p>
-     * Вызывается всегда, если задача была выбрана.
+     * Always triggered when task was picked.
      * <p>
-     * Может быть использовано для выставления записи в контекст логирования.
+     * Might be useful for updating a logging context.
      *
-     * @param shardId    идентификатор шарда на котором происходит обработка
-     * @param location   местоположение очереди
-     * @param taskRecord данные задачи
+     * @param shardId    Shard identifier, which processes the queue.
+     * @param location   Queue location.
+     * @param taskRecord Raw task data.
      */
     void started(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord);
 
     /**
-     * Событие завершения выполнения клиентской логики в очереди.
+     * Event for completion of client logic when task processing.
      * <p>
-     * Вызывается в случае, когда задача завершила работу штатно.
+     * Always triggered when task processing has completed successfully.
      * <p>
-     * Может быть использовано для различного рода мониторинга
-     * успеха выполнения бизнес логики.
+     * Might be useful for monitoring successful execution of client logic.
      *
-     * @param shardId         идентификатор шарда на котором происходит обработка
-     * @param location        местоположение очереди
-     * @param taskRecord      данные задачи
-     * @param executionResult результат выполнения задачи
-     * @param processTaskTime время обработки задачи, не включая время выборки
+     * @param shardId         Shard identifier, which processes the queue.
+     * @param location        Queue location.
+     * @param taskRecord      Raw task data.
+     * @param executionResult Result of task processing.
+     * @param processTaskTime Time spent on task processing in millis, without the time for task picking from the queue.
      */
     void executed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord,
                   @Nonnull TaskExecutionResult executionResult, long processTaskTime);
 
     /**
-     * Событие завершение обработки задачи в очереди.
+     * Event for completion the task execution in the queue.
      * <p>
-     * Вызывается всегда, если задача была взята на обработку.
-     * Вызов происходит даже после {@link #crashed}
+     * Always triggered when task was picked up for processing.
+     * Called even after {@link #crashed}.
      * <p>
-     * Может быть использовано для восстановления исходного состояния контекста логирования.
+     * Might be useful for recovery of initial logging context state.
      *
-     * @param shardId    идентификатор шарда на котором происходит обработка
-     * @param location   местоположение очереди
-     * @param taskRecord данные задачи
+     * @param shardId    Shard identifier, which processes the queue.
+     * @param location   Queue location.
+     * @param taskRecord Raw task data.
      */
     void finished(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord);
 
 
     /**
-     * Событие нештатной обработки очереди.
+     * Event for abnormal queue processing.
      * <p>
-     * Вызывается в случае непредвиденной ошибки при выполнении очереди.
+     * Triggered when unexpected error occurs during task processing.
      * <p>
-     * Может быть использовано для отслеживания ошибок в работе системы.
+     * Might be useful for tracking and monitoring errors in the system.
      *
-     * @param shardId    идентификатор шарда на котором происходит обработка
-     * @param location   местоположение очереди
-     * @param taskRecord данные задачи
-     * @param exc        исключение, вызвавшее ошибку
+     * @param shardId    Shard identifier, which processes the queue.
+     * @param location   Queue location.
+     * @param taskRecord Raw task data.
+     * @param exc        An error caused the crash.
      */
     void crashed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location, @Nonnull TaskRecord taskRecord,
                  @Nonnull Exception exc);

@@ -3,28 +3,28 @@ package ru.yandex.money.common.dbqueue.api;
 import javax.annotation.Nullable;
 
 /**
- * Сериализатор/десериализатор данных в очереди.
+ * Marshaller and unmarshaller for the payload in the task
  *
- * @param <T> тип данных задачи
+ * @param <T> The type of the payload in the task
  * @author Oleg Kandaurov
  * @since 10.07.2017
  */
 public interface TaskPayloadTransformer<T> {
 
     /**
-     * Преобразовать строковые данные задачи в объект.
+     * Unmarshall the string payload from the task into the object with task data
      *
-     * @param payload данные задачи
-     * @return объект с данными задачи
+     * @param payload task payload
+     * @return Object with task data
      */
     @Nullable
     T toObject(@Nullable String payload);
 
     /**
-     * Преобразовать объект с данными задачи в строку.
+     * Marshall the typed object with task parameters into string payload.
      *
-     * @param payload данные задачи
-     * @return строка с данными задачи
+     * @param payload task payload
+     * @return string with the task payload.
      */
     @Nullable
     String fromObject(@Nullable T payload);

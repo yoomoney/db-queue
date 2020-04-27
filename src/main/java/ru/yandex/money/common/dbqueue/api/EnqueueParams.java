@@ -1,7 +1,5 @@
 package ru.yandex.money.common.dbqueue.api;
 
-import ru.yandex.money.common.dbqueue.config.QueueTableSchema;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
@@ -13,9 +11,9 @@ import java.util.Objects;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Данные для постановки задачи в очередь.
+ * Parameters with typed payload to enqueue the task
  *
- * @param <T> тип данных в задаче
+ * @param <T> A type of the payload in the task
  * @author Oleg Kandaurov
  * @since 12.07.2017
  */
@@ -28,11 +26,11 @@ public final class EnqueueParams<T> {
     private Map<String, String> extData = new LinkedHashMap<>();
 
     /**
-     * Создать параметры постановки с данными задачи.
+     * Create new task parameters with payload
      *
-     * @param payload данные задачи
-     * @param <R>     Тип данных задачи
-     * @return объект с параметрами постановки задачи в очередь
+     * @param payload task payload
+     * @param <R>     The type of the payload in the task
+     * @return An object with task parameters and a payload
      */
     public static <R> EnqueueParams<R> create(@Nonnull R payload) {
         requireNonNull(payload);
@@ -40,10 +38,10 @@ public final class EnqueueParams<T> {
     }
 
     /**
-     * Задать данные задачи.
+     * Add a typed payload to the task parameters
      *
-     * @param payload данные задачи
-     * @return параметры постановки задачи в очередь
+     * @param payload Task payload
+     * @return A reference to the same object with added payload
      */
     @Nonnull
     public EnqueueParams<T> withPayload(@Nullable T payload) {
@@ -52,10 +50,11 @@ public final class EnqueueParams<T> {
     }
 
     /**
-     * Задать задержку выполнения очереди.
+     * Add an execution delay for the task.
+     * The given task will not be executed before current date and time plus the execution delay.
      *
-     * @param executionDelay задержка выполнения
-     * @return параметры постановки задачи в очередь
+     * @param executionDelay Execution delay, {@linkplain Duration#ZERO} if not set.
+     * @return A reference to the same object with execution delay set.
      */
     @Nonnull
     public EnqueueParams<T> withExecutionDelay(@Nonnull Duration executionDelay) {
@@ -64,11 +63,14 @@ public final class EnqueueParams<T> {
     }
 
     /**
-     * Задать расширенный набор данных задачи
+     * Add the external user parameter for the task.
+     * If the column name is already present in the external user parameters,
+     * then the original value will be replaced by the new one.
      *
-     * @param columnName имя колонки
-     * @param value      значение колонки
-     * @return параметры постановки задачи в очередь
+     * @param columnName The name of the user-defined column in tasks table.
+     *                   The column <strong>must</strong> exist in the tasks table.
+     * @param value      The value of the user-defined parameter
+     * @return A reference to the same object of the task parameters with external user parameter.
      */
     @Nonnull
     public EnqueueParams<T> withExtData(@Nonnull String columnName, @Nullable String value) {
@@ -77,12 +79,15 @@ public final class EnqueueParams<T> {
     }
 
     /**
-     * Задать расширенный набор данных задачи.
-     * Функционал включается через {@link QueueTableSchema#getExtFields()}
+     * Update the task parameters with the map of external user-defined parameters,
+     * a map where the key is the name of the user-defined column in tasks table,
+     * and the value is the value of the user-defined parameter.
      *
-     * @param extData набор расширенных данных, ключ - имя колонки в БД. Все элементы этой коллекции будут перемещены
-     *                во внутреннюю коллекцию builder'а
-     * @return параметры постановки задачи в очередь
+     * @param extData Map of external user-defined parameters, key is the column name in the tasks table.
+     *                All elements of that collection will be <strong>added</strong> to those
+     *                already present in task parameters object,
+     *                the value will replace the existing value on a duplicate key.
+     * @return A reference to the same object of the task parameters with external user-defined parameters map.
      */
     @Nonnull
     public EnqueueParams<T> withExtData(@Nonnull Map<String, String> extData) {
@@ -92,9 +97,9 @@ public final class EnqueueParams<T> {
     }
 
     /**
-     * Получить данные задачи
+     * Get task payload
      *
-     * @return данные задачи
+     * @return Typed task payload
      */
     @Nullable
     public T getPayload() {
@@ -102,9 +107,9 @@ public final class EnqueueParams<T> {
     }
 
     /**
-     * Получить задержку выполнения задачи
+     * Get the task execution delay, a {@linkplain Duration#ZERO} is the default one if not set.
      *
-     * @return задержка выполнения задачи
+     * @return Task execution delay.
      */
     @Nonnull
     public Duration getExecutionDelay() {
@@ -112,9 +117,11 @@ public final class EnqueueParams<T> {
     }
 
     /**
-     * Получить расширенный набор данных задачи
+     * Get the <strong>unmodifiable</strong> map of extended user-defined parameters for the task:
+     * a map where the key is the name of the user-defined column in tasks table,
+     * and the value is the value of the user-defined parameter.
      *
-     * @return дополнительные данные задачи, в ключе содержится имя колонки в БД
+     * @return Map of external user-defined parameters, where the key is the column name in the tasks table.
      */
     @Nonnull
     public Map<String, String> getExtData() {

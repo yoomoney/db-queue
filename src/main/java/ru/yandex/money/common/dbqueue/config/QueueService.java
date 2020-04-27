@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Сервис управлящий регистрацией, запуском, приостановкой и завершением обработчиков очередей
+ * A service for managing start, pause and shutdown of task processors.
  *
  * @author Oleg Kandaurov
  * @since 14.07.2017
@@ -33,7 +33,7 @@ public class QueueService {
     @Nonnull
     private final List<QueueShard> queueShards;
     @Nonnull
-    private final BiFunction<QueueShard, QueueConsumer, QueueExecutionPool> queueExecutionPoolFactory;
+    private final BiFunction<QueueShard, QueueConsumer<?>, QueueExecutionPool> queueExecutionPoolFactory;
 
     public QueueService(@Nonnull List<QueueShard> queueShards,
                         @Nonnull ThreadLifecycleListener threadLifecycleListener,
@@ -44,7 +44,7 @@ public class QueueService {
     }
 
     QueueService(@Nonnull List<QueueShard> queueShards,
-                 @Nonnull BiFunction<QueueShard, QueueConsumer, QueueExecutionPool> queueExecutionPoolFactory) {
+                 @Nonnull BiFunction<QueueShard, QueueConsumer<?>, QueueExecutionPool> queueExecutionPoolFactory) {
         this.queueShards = requireNonNull(queueShards, "queueShards");
         this.queueExecutionPoolFactory = requireNonNull(queueExecutionPoolFactory, "queueExecutionPoolFactory");
     }
@@ -61,11 +61,11 @@ public class QueueService {
     }
 
     /**
-     * Зарегистрировать обработчик очереди
+     * Register new task processor of given payload type.
      *
-     * @param consumer обработчик очереди
-     * @param <T>      тип обработчика
-     * @return признак успеха регистрации
+     * @param consumer Task processor.
+     * @param <T>      Type of the processor (type of the payload in the task).
+     * @return Attribute of successful task processor registration.
      */
     public <T> boolean registerQueue(@Nonnull QueueConsumer<T> consumer) {
         requireNonNull(consumer);
@@ -89,7 +89,7 @@ public class QueueService {
     }
 
     /**
-     * Запустить обработку всех очередей
+     * Start tasks processing in all queues registered in the service.
      */
     public void start() {
         log.info("starting all queues");
@@ -97,9 +97,9 @@ public class QueueService {
     }
 
     /**
-     * Запустить обработку одной очереди
+     * Start tasks processing in one given queue.
      *
-     * @param queueId идентификатор очереди
+     * @param queueId Queue identifier.
      */
     public void start(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
@@ -108,7 +108,8 @@ public class QueueService {
     }
 
     /**
-     * Завершить обработку всех очередей, семантика аналогична {@link ExecutorService#shutdownNow()}
+     * Stop tasks processing in all queues registered in the service,
+     * semantic is the same as for {@link ExecutorService#shutdownNow()}.
      */
     public void shutdown() {
         log.info("shutting down all queues");
@@ -116,9 +117,10 @@ public class QueueService {
     }
 
     /**
-     * Завершить обработку очереди, семантика аналогична {@link ExecutorService#shutdownNow()}
+     * Stop tasks processing in one given queue,
+     * semantic is the same as for {@link ExecutorService#shutdownNow()}.
      *
-     * @param queueId идентификатор очереди
+     * @param queueId Queue identifier.
      */
     public void shutdown(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
@@ -127,11 +129,12 @@ public class QueueService {
     }
 
     /**
-     * Получить признак, что обработка очереди завершена методом {@link QueueService#shutdown()}.
-     * Семантика аналогична {@link ExecutorService#isShutdown()}
+     * Get attribute that the tasks processing was stopped in one specific queue
+     * with {@link QueueService#shutdown()} method.
+     * Semantic is the same as for {@link ExecutorService#isShutdown()}.
      *
-     * @param queueId идентификатор очереди
-     * @return true если обработка очереди завершена
+     * @param queueId Queue identifier.
+     * @return true if the tasks processing was stopped.
      */
     public boolean isShutdown(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
@@ -140,21 +143,22 @@ public class QueueService {
     }
 
     /**
-     * Получить признак, что обработка всех очередей завершена методом {@link QueueService#shutdown()}.
-     * Семантика аналогична {@link ExecutorService#isShutdown()}
+     * Get attribute that the tasks processing was stopped in all registered queues
+     * with {@link QueueService#shutdown()}.
+     * Semantic is the same as for {@link ExecutorService#isShutdown()}.
      *
-     * @return true если обработка очередей завершена
+     * @return true if the tasks processing was stopped.
      */
     public boolean isShutdown() {
         return registeredQueues.keySet().stream().allMatch(this::isShutdown);
     }
 
     /**
-     * Получить признак, что очередь завершила обработку задач.
-     * Семантика аналогична {@link ExecutorService#isTerminated()}
+     * Get attribute that all the processing task threads were successfully terminated in the specified queue.
+     * Semantic is the same as for {@link ExecutorService#isTerminated()}.
      *
-     * @param queueId идентификатор очереди
-     * @return true если все в задачи в очереди завершены
+     * @param queueId Queue identifier.
+     * @return true if all the task threads were terminated in specified queue.
      */
     public boolean isTerminated(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
@@ -162,20 +166,20 @@ public class QueueService {
     }
 
     /**
-     * Получить признак, что все очереди завершили обработку задач.
-     * Семантика аналогична {@link ExecutorService#isTerminated()}
+     * Get attribute that all queues finished their execution and all task threads were terminated.
+     * Semantic is the same as for {@link ExecutorService#isTerminated()}.
      *
-     * @return true если все в задачи во всех очередях завершены
+     * @return true if all task threads in all queues were terminated.
      */
     public boolean isTerminated() {
         return registeredQueues.keySet().stream().allMatch(this::isTerminated);
     }
 
     /**
-     * Приостановить обработку очереди.
-     * Запустить обработку вновь можно методом {@link QueueService#start(QueueId)}
+     * Pause task processing in specified queue.
+     * To start the processing again, use {{@link QueueService#start(QueueId)} method.
      *
-     * @param queueId идентификатор очереди
+     * @param queueId Queue identifier.
      */
     public void pause(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
@@ -184,8 +188,8 @@ public class QueueService {
     }
 
     /**
-     * Приостановить обработку всех очереди.
-     * Запустить обработку вновь можно методом {@link QueueService#start()}
+     * Pause task processing in all queues.
+     * To start the processing again, use {@link QueueService#start()} method.
      */
     public void pause() {
         log.info("pausing all queues");
@@ -193,19 +197,19 @@ public class QueueService {
     }
 
     /**
-     * Получить признак, что все очереди приостановлены методом {@link QueueService#pause()}
+     * Get attribute that all queues were paused with {@link QueueService#pause()} method.
      *
-     * @return true если очереди приостановлена
+     * @return true if queues were paused.
      */
     public boolean isPaused() {
         return registeredQueues.keySet().stream().allMatch(this::isPaused);
     }
 
     /**
-     * Получить признак, что очередь приостановлена методом {@link QueueService#pause(QueueId)}
+     * Get attribute that the specified queue were paused with {@link QueueService#pause(QueueId)} method.
      *
-     * @param queueId идентификатор очереди
-     * @return true если очередь приостановлена
+     * @param queueId Queue identifier.
+     * @return true if specified queue were paused.
      */
     public boolean isPaused(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
@@ -214,11 +218,11 @@ public class QueueService {
     }
 
     /**
-     * Дождаться завершения обработки всех задач всех очередей в заданный таймаут.
-     * Семантика аналогична {@link ExecutorService#awaitTermination(long, TimeUnit)}
+     * Wait for tasks (and threads) termination in all queues within given timeout.
+     * Semantic is the same as for {@link ExecutorService#awaitTermination(long, TimeUnit)}.
      *
-     * @param timeout таймаут ожидания
-     * @return список очередей, которые не завершили работу
+     * @param timeout Wait timeout.
+     * @return List of queues, which didn't stop their work (didn't terminate).
      */
     public List<QueueId> awaitTermination(@Nonnull Duration timeout) {
         requireNonNull(timeout, "timeout");
@@ -230,12 +234,12 @@ public class QueueService {
     }
 
     /**
-     * Дождаться завершения обработки задач очереди в заданный таймаут.
-     * Семантика аналогична {@link ExecutorService#awaitTermination(long, TimeUnit)}
+     * Wait for tasks (and threads) termination in specified queue within given timeout.
+     * Semantic is the same as for {@link ExecutorService#awaitTermination(long, TimeUnit)}.
      *
-     * @param queueId идентификатор очереди
-     * @param timeout таймаут ожидания
-     * @return список шардов на которых не была завершена работа
+     * @param queueId Queue identifier.
+     * @param timeout Wait timeout.
+     * @return List of shards, where the work didn't stop (working threads on which were not terminated).
      */
     public List<QueueShardId> awaitTermination(@Nonnull QueueId queueId, @Nonnull Duration timeout) {
         requireNonNull(queueId, "queueId");
@@ -251,18 +255,19 @@ public class QueueService {
     }
 
     /**
-     * Принудительно продолжить обработку задач в очереди.
+     * Force continue task processing in specified queue by given shard identifier.
      * <p>
-     * Продолжение обработки происходит только если очередь была приостановлена по событию
-     * {@link ru.yandex.money.common.dbqueue.settings.QueueConfigsReader#SETTING_NO_TASK_TIMEOUT}
+     * Processing continues only if the queue were paused with
+     * {@link ru.yandex.money.common.dbqueue.settings.QueueConfigsReader#SETTING_NO_TASK_TIMEOUT} event.
      * <p>
-     * Может быть полезно для очередей, которые относятся к взаимодействию с пользователем,
-     * поскольку пользователю зачастую требуется быстрый отклик на свои действия.
-     * Используется после постановки задачи на выполнение, поэтому следует делать только после завершения транзакции
-     * по вставке задачи. Также возможно применение в тестах для их ускорения.
+     * It might be useful for queues which interact with the end user,
+     * whereas the end users might often expect possibly the quickest response on their actions.
+     * Applies right after a task enqueue,
+     * therefore should be called only after successful task insertion transaction.
+     * Applies also to tests to improve the speed of test execution.
      *
-     * @param queueId      идентификатор очереди
-     * @param queueShardId идентфикатор шарда
+     * @param queueId      Queue identifier.
+     * @param queueShardId Shard identifier.
      */
     public void wakeup(@Nonnull QueueId queueId, @Nonnull QueueShardId queueShardId) {
         requireNonNull(queueId, "queueId");

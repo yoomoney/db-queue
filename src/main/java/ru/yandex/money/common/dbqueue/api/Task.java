@@ -13,9 +13,9 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Параметры типизированной задачи, поставляемые в обработчик очереди.
+ * Typed task wrapper with parameters, which is supplied to the {@linkplain QueueConsumer} task processor
  *
- * @param <T> тип данных задачи
+ * @param <T> The type of the payload in the task
  * @author Oleg Kandaurov
  * @since 10.07.2017
  */
@@ -34,16 +34,16 @@ public final class Task<T> {
     private final Map<String, String> extData;
 
     /**
-     * Конструктор типизированных параметров задачи
+     * Constructor of typed task wrapper with task parameters.
      *
-     * @param shardId                идентификатор шарда, с которого была взята задача
-     * @param payload                данные задачи
-     * @param attemptsCount          количество попыток выполнения, включая текущую
-     * @param reenqueueAttemptsCount количество попыток переоткладывания задачи
-     * @param totalAttemptsCount     суммарное количество попыток выполнить задачу, включая все попытки переоткладывания
-     *                               и все неудачные попытки
-     * @param createdAt             время помещения задачи в очередь
-     * @param extData                расширенные данные задачи, ключ - это имя колонки БД
+     * @param shardId                Shard identifier from which the task executor took the task.
+     * @param payload                Task payload.
+     * @param attemptsCount          Number of attempts to execute the task, including the current one.
+     * @param reenqueueAttemptsCount Number of attempts to postpone (re-enqueue) the task.
+     * @param totalAttemptsCount     Sum of all attempts to execute the task,
+     *                               including all task re-enqueue attempts and all failed attempts.
+     * @param createdAt              Date and time when the task was added into the queue.
+     * @param extData                Map of external user-defined parameters, key is the column name in the tasks table.
      */
     private Task(@Nonnull QueueShardId shardId, @Nullable T payload,
                  long attemptsCount, long reenqueueAttemptsCount, long totalAttemptsCount,
@@ -58,9 +58,9 @@ public final class Task<T> {
     }
 
     /**
-     * Получить типизированные данные задачи
+     * Get typed task payload.
      *
-     * @return типизированные данные задачи
+     * @return Typed task payload.
      */
     @Nonnull
     public Optional<T> getPayload() {
@@ -68,10 +68,9 @@ public final class Task<T> {
     }
 
     /**
-     * Получить типизированные данные задачи или выбросить исключение
-     * при их отсутствии.
+     * Get typed task payload or throw {@linkplain IllegalArgumentException} if not present.
      *
-     * @return типизированные данные задачи
+     * @return Typed task payload.
      */
     @Nonnull
     public T getPayloadOrThrow() {
@@ -82,38 +81,38 @@ public final class Task<T> {
     }
 
     /**
-     * Получить количество попыток исполнения задачи после последнего re-enqueue, включая текущую.
+     * Get number of attempts to execute the task, including the current one.
      *
-     * @return количество попыток исполнения
+     * @return Number of attempts to execute the task.
      */
     public long getAttemptsCount() {
         return attemptsCount;
     }
 
     /**
-     * Получить количество попыток переоткладывания задачи.
+     * Get number of attempts to postpone (re-enqueue) the task.
      *
-     * @return количество попыток переоткладывания
+     * @return Number of attempts to postpone (re-enqueue) the task.
      */
     public long getReenqueueAttemptsCount() {
         return reenqueueAttemptsCount;
     }
 
     /**
-     * Получить суммарное количество попыток выполнить задачу.
-     * Этот счетчик учитывает все попытки, включая неуспешные и с возвратом в очередь (re-enqueue),
-     * и никогда не сбрасывается.
+     * Get sum of all attempts to execute the task, including all task re-enqueue attempts and all failed attempts.
+     * <br>
+     * <strong>This counter should never be reset.</strong>
      *
-     * @return суммарное количество попыток выполнения
+     * @return Sum of all attempts to execute the task.
      */
     public long getTotalAttemptsCount() {
         return totalAttemptsCount;
     }
 
     /**
-     * Получить время постановки задачи в очередь
+     * Get date and time when the task was added into the queue.
      *
-     * @return время постановки задачи
+     * @return Date and time when the task was added into the queue.
      */
     @Nonnull
     public ZonedDateTime getCreatedAt() {
@@ -121,9 +120,9 @@ public final class Task<T> {
     }
 
     /**
-     * Получить идентификатор шарда, с которого была взята задача
+     * Get the shard identifier from which the task executor took the task.
      *
-     * @return идентификатор шарда
+     * @return Shard identifier from which the task executor took the task.
      */
     @Nonnull
     public QueueShardId getShardId() {
@@ -131,9 +130,9 @@ public final class Task<T> {
     }
 
     /**
-     * Получить расширенный набор данных задачи
+     * Get the map of external user-defined parameters, where the key is the column name in the tasks table.
      *
-     * @return дополнительные данные задачи, в ключе содержится имя колонки в БД
+     * @return Map of external user-defined parameters, where the key is the column name in the tasks table.
      */
     @Nonnull
     public Map<String, String> getExtData() {
@@ -177,20 +176,20 @@ public final class Task<T> {
     }
 
     /**
-     * Creates builder for {@link Task} objects.
+     * Creates a builder for {@link Task} objects.
      *
-     * @param shardId an id of shard
-     * @param <T> a type of task payload
-     * @return new instance of {@link Builder}
+     * @param shardId An id of shard.
+     * @param <T>     A type of task payload.
+     * @return A new instance of the {@link Builder} builder.
      */
     public static <T> Builder<T> builder(@Nonnull QueueShardId shardId) {
         return new Builder<>(shardId);
     }
 
     /**
-     * Билдер для класса {@link Task}
+     * Builder for the {@link Task} wrapper.
      *
-     * @param <T> тип данных задачи
+     * @param <T> The type of the payload in the task.
      */
     public static class Builder<T> {
         @Nonnull

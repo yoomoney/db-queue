@@ -5,18 +5,19 @@ import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
 import javax.annotation.Nullable;
 
 /**
- * Пустой преобразователь данных очереди.
+ * Default payload transformer, which performs no transformation
+ * and returns the same string as in the raw payload.
  * <p>
- * Используется в случае, когда преобразование данных не требуется.
+ * Use where no transformation required.
  */
 public final class NoopPayloadTransformer implements TaskPayloadTransformer<String> {
 
     private static final NoopPayloadTransformer INSTANCE = new NoopPayloadTransformer();
 
     /**
-     * Получить инстанс преобразователя.
+     * Get payload transformer instance.
      *
-     * @return инстанс преобразователя. Возвращается синглтон.
+     * @return Singleton of transformer.
      */
     public static NoopPayloadTransformer getInstance() {
         return INSTANCE;

@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Dao для управления задачами в очереди БД PostgreSQL.
+ * Database access object to manage tasks in the queue for PostgreSQL database type.
  *
  * @author Oleg Kandaurov
  * @since 09.07.2017
@@ -30,10 +30,10 @@ public class PostgresQueueDao implements QueueDao {
     private final QueueTableSchema queueTableSchema;
 
     /**
-     * Конструктор
+     * Constructor
      *
-     * @param jdbcTemplate     spring jdbc template
-     * @param queueTableSchema схема таблицы очередей
+     * @param jdbcTemplate     Reference to Spring JDBC template.
+     * @param queueTableSchema Queue table scheme.
      */
     public PostgresQueueDao(@Nonnull JdbcOperations jdbcTemplate,
                             @Nonnull QueueTableSchema queueTableSchema) {

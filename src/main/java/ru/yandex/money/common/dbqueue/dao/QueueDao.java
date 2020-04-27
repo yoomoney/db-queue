@@ -12,52 +12,52 @@ import java.time.Duration;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Dao для управления задачами в очереди
+ * Database access object to manage tasks in the queue.
  *
  * @author Oleg Kandaurov
  * @since 06.10.2019
  */
 public interface QueueDao {
     /**
-     * Поставить задачу в очередь на выполнение
+     * Add a new task in the queue for processing.
      *
-     * @param location      местоположение очереди
-     * @param enqueueParams данные вставляемой задачи
-     * @return идентфикатор (sequence id) вставленной задачи
+     * @param location      Queue location.
+     * @param enqueueParams Parameters of the task
+     * @return Identifier (sequence id) of new inserted task.
      */
     long enqueue(@Nonnull QueueLocation location, @Nonnull EnqueueParams<String> enqueueParams);
 
     /**
-     * Удалить задачу из очереди.
+     * Remove (delete) task from the queue.
      *
-     * @param location местоположение очеред
-     * @param taskId   идентификатор (sequence id) задачи
-     * @return true, если задача была удалена, false, если задача не найдена.
+     * @param location Queue location.
+     * @param taskId   Identifier (sequence id) of the task.
+     * @return true, if task was deleted from database, false, when task with given id was not found.
      */
     boolean deleteTask(@Nonnull QueueLocation location, long taskId);
 
     /**
-     * Переставить выполнение задачи на заданный промежуток времени
+     * Postpone task processing for given time period (current date and time plus execution delay).
      *
-     * @param location       местоположение очереди
-     * @param taskId         идентификатор (sequence id) задачи
-     * @param executionDelay промежуток времени
-     * @return true, если задача была переставлена, false, если задача не найдена.
+     * @param location       Queue location.
+     * @param taskId         Identifier (sequence id) of the task.
+     * @param executionDelay Task execution delay.
+     * @return true, if task was successfully postponed, false, when task was not found.
      */
     boolean reenqueue(@Nonnull QueueLocation location, long taskId, @Nonnull Duration executionDelay);
 
     /**
-     * Фабрика для создания БД-специфичных DAO для работы с таблицей очередей
+     * Factory for establishment of database-specific DAO to work with queue table.
      */
     class Factory {
 
         /**
-         * Создать инстанс dao для работы с данными очередями в зависимости от вида БД
+         * Create a new instance of database-specific DAO based on database type (dialect).
          *
-         * @param databaseDialect     вид базы данных
-         * @param jdbcTemplate     spring jdbc template
-         * @param queueTableSchema схема таблицы очередей
-         * @return dao для работы с очередями
+         * @param databaseDialect  Database type (dialect).
+         * @param jdbcTemplate     Reference to Spring JDBC template.
+         * @param queueTableSchema Queue table scheme.
+         * @return New database-specific DAO instance.
          */
         public static QueueDao create(@Nonnull DatabaseDialect databaseDialect,
                                       @Nonnull JdbcOperations jdbcTemplate,

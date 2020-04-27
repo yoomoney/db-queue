@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Настройки стратегии переоткладывания задач в случае, если задачу требуется вернуть в очередь.
+ * Settings for the task postponing strategy
+ * when the task should be brought back to the queue.
  *
  * @author Dmitry Komarov
  * @since 21.05.2019
@@ -19,49 +20,49 @@ public class ReenqueueRetrySettings {
     private static final long DEFAULT_GEOMETRIC_RATIO = 2L;
 
     /**
-     * Тип стратегии, которая вычисляет задержку перед следующим выполнением задачи.
+     * Strategy type, which computes delay to the next processing of the same task.
      * <p>
-     * Обязательное поле.
+     * Required field.
      */
     @Nonnull
     private final ReenqueueRetryType type;
 
     /**
-     * Последовательность задержек для выполнения задачи.
+     * Sequence of delays for task processing.
      * <p>
-     * Обязательно при {@code type == ReenqueueRetryType.SEQUENTIAL}.
+     * Required when {@code type == ReenqueueRetryType.SEQUENTIAL}.
      */
     @Nullable
     private final List<Duration> sequentialPlan;
 
     /**
-     * Фиксированная задержка.
+     * Fixed delay.
      * <p>
-     * Обязательно при {@code type == ReenqueueRetryType.FIXED}.
+     * Required when {@code type == ReenqueueRetryType.FIXED}.
      */
     @Nullable
     private final Duration fixedDelay;
 
     /**
-     * Первый член прогрессий для вычисления задержек.
+     * The first term of the progression to compute delays.
      * <p>
-     * Обязательно при {@code type == ReenqueueRetryType.ARITHMETIC} или {@code type == ReenqueueRetryType.GEOMETRIC}.
+     * Required when {@code type == ReenqueueRetryType.ARITHMETIC} or {@code type == ReenqueueRetryType.GEOMETRIC}.
      */
     @Nonnull
     private final Duration initialDelay;
 
     /**
-     * Разность арифметической прогрессии.
+     * The difference of the arithmetic progression.
      * <p>
-     * Обязательно при {@code type == ReenqueueRetryType.ARITHMETIC}.
+     * Required when {@code type == ReenqueueRetryType.ARITHMETIC}.
      */
     @Nonnull
     private final Duration arithmeticStep;
 
     /**
-     * Знаменатель геометрической прогрессии.
+     * Denominator of the geometric progression.
      * <p>
-     * Обязательно при {@code type == ReenqueueRetryType.GEOMETRIC}.
+     * Required when {@code type == ReenqueueRetryType.GEOMETRIC}.
      */
     private final long geometricRatio;
 
@@ -85,10 +86,10 @@ public class ReenqueueRetrySettings {
     }
 
     /**
-     * Получить план для переоткладывания задачи или выбросить исключение при его отсутствии.
+     * Get the sequential plan of delays for task processing or throw an exception when plan is not present.
      *
-     * @return план переоткладывания
-     * @throws IllegalStateException если план равен {@code null}
+     * @return Sequential plan of delays
+     * @throws IllegalStateException when plan is not present.
      */
     @Nonnull
     public List<Duration> getSequentialPlanOrThrow() {
@@ -99,10 +100,10 @@ public class ReenqueueRetrySettings {
     }
 
     /**
-     * Получить фиксированную задержку.
+     * Get fixed delay.
      *
-     * @return фиксированная задержка
-     * @see IllegalStateException если задержка равна {@code null}
+     * @return Fixed delay.
+     * @see IllegalStateException when fixed delay is not present.
      */
     @Nonnull
     public Duration getFixedDelayOrThrow() {
@@ -171,7 +172,7 @@ public class ReenqueueRetrySettings {
     }
 
     /**
-     * Вспомогательный класс для построения новых экземпляров {@link ReenqueueRetrySettings}.
+     * A builder for creating new instances of {@link ReenqueueRetrySettings}.
      */
     public static class Builder {
 
