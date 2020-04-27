@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * Настройки очереди
+ * Queue settings
  *
  * @author Oleg Kandaurov
  * @since 10.07.2017
@@ -65,9 +65,9 @@ public final class QueueSettings {
     }
 
     /**
-     * Получить стратегию повтора задачи
+     * Get task execution retry strategy.
      *
-     * @return стратегия повтора задачи
+     * @return Task execution retry strategy.
      */
     @Nonnull
     public TaskRetryType getRetryType() {
@@ -75,9 +75,9 @@ public final class QueueSettings {
     }
 
     /**
-     * Получить базовый интервал повтора задачи
+     * Get retry interval for task execution.
      *
-     * @return интервал повтора задачи
+     * @return Task retry interval.
      * @see TaskRetryType
      */
     @Nonnull
@@ -86,9 +86,10 @@ public final class QueueSettings {
     }
 
     /**
-     * Настройки стратегии переоткладывания задач в случае, если задачу требуется вернуть в очередь.
+     * Settings for the task postponing strategy
+     * when the task should be brought back to the queue.
      *
-     * @return настройки
+     * @return Task postponing settings.
      */
     @Nonnull
     public ReenqueueRetrySettings getReenqueueRetrySettings() {
@@ -96,18 +97,18 @@ public final class QueueSettings {
     }
 
     /**
-     * Получить количество потоков обработки очереди.
+     * Get number of threads for processing tasks in the queue.
      *
-     * @return количество потоков
+     * @return Number of processing threads.
      */
     public int getThreadCount() {
         return threadCount;
     }
 
     /**
-     * Получить задержку обработки при отсутствии задач на обработку
+     * Get delay duration between picking tasks from the queue if there are no task for processing.
      *
-     * @return таймаут при отсутствии задач
+     * @return Delay when there are no tasks to process.
      */
     @Nonnull
     public Duration getNoTaskTimeout() {
@@ -115,9 +116,9 @@ public final class QueueSettings {
     }
 
     /**
-     * Получить задержку выполенения после обработки очередной задачи
+     * Get delay duration between picking tasks from the queue after the task was processed.
      *
-     * @return таймаут после обработки очередной задачи
+     * @return Delay after next task was processed.
      */
     @Nonnull
     public Duration getBetweenTaskTimeout() {
@@ -125,9 +126,9 @@ public final class QueueSettings {
     }
 
     /**
-     * Получить таймаут на который поток очереди засыпает после непредвиденной ошибки
+     * Get delay duration when task execution thread sleeps after unexpected error.
      *
-     * @return таймаут после непредиденной ошибки
+     * @return Delay after unexpected error.
      */
     @Nonnull
     public Duration getFatalCrashTimeout() {
@@ -135,9 +136,9 @@ public final class QueueSettings {
     }
 
     /**
-     * Получить режим обработки очереди
+     * Get task processing mode in the queue.
      *
-     * @return режим обработки очереди
+     * @return Task processing mode.
      */
     @Nonnull
     public ProcessingMode getProcessingMode() {
@@ -145,9 +146,9 @@ public final class QueueSettings {
     }
 
     /**
-     * Получить все дополнительные настройки очереди.
+     * Get all additional properties for the queue.
      *
-     * @return дополнительные настройки очереди
+     * @return Additional queue properties.
      */
     @Nonnull
     public Map<String, String> getAdditionalSettings() {
@@ -155,10 +156,10 @@ public final class QueueSettings {
     }
 
     /**
-     * Получить строковое значение дополнительной настройки
+     * Get string value of additional queue property.
      *
-     * @param settingName имя настройки
-     * @return значение настройки
+     * @param settingName Name of the property.
+     * @return Property value.
      */
     @Nonnull
     public String getProperty(@Nonnull String settingName) {
@@ -168,10 +169,10 @@ public final class QueueSettings {
     }
 
     /**
-     * Получить значение настройки в формате Duration
+     * Get {@linkplain Duration} value of additional queue property.
      *
-     * @param settingName имя настройки
-     * @return значение настройки
+     * @param settingName Name of the property.
+     * @return Property value.
      */
     @Nonnull
     public Duration getDurationProperty(@Nonnull String settingName) {
@@ -179,9 +180,9 @@ public final class QueueSettings {
     }
 
     /**
-     * Создать билдер настроек
+     * Create a new builder for queue settings.
      *
-     * @return билдер настроек
+     * @return A new builder for queue settings.
      */
     public static Builder builder() {
         return new Builder();
@@ -229,7 +230,7 @@ public final class QueueSettings {
     }
 
     /**
-     * Билдер настроек очереди
+     * A builder for queue settings.
      */
     public static class Builder {
         private Duration noTaskTimeout;
@@ -246,10 +247,11 @@ public final class QueueSettings {
         }
 
         /**
-         * Установить задержку обработки в случае отсутствия задач в очереди
+         * Set delay duration between picking tasks from the queue
+         * if there are no task for processing.
          *
-         * @param noTaskTimeout таймаут задержки
-         * @return билдер настроек очереди
+         * @param noTaskTimeout Delay when there are no tasks to process.
+         * @return Reference to the same builder.
          */
         public Builder withNoTaskTimeout(@Nonnull Duration noTaskTimeout) {
             this.noTaskTimeout = Objects.requireNonNull(noTaskTimeout);
@@ -257,10 +259,11 @@ public final class QueueSettings {
         }
 
         /**
-         * Установить задержку между обработкой задач в очередиы
+         * Set delay duration between picking tasks from the queue
+         * after the task was processed.
          *
-         * @param betweenTaskTimeout таймаут задержки
-         * @return билдер настроек очереди
+         * @param betweenTaskTimeout Delay after next task was processed.
+         * @return Reference to the same builder.
          */
         public Builder withBetweenTaskTimeout(@Nonnull Duration betweenTaskTimeout) {
             this.betweenTaskTimeout = Objects.requireNonNull(betweenTaskTimeout);
@@ -268,10 +271,10 @@ public final class QueueSettings {
         }
 
         /**
-         * Установить задержку обработки после непредвиденной ошибки при обработке очереди
+         * Set delay duration after unexpected error.
          *
-         * @param fatalCrashTimeout таймаут после непридвиденной ошибки
-         * @return билдер настроек очереди
+         * @param fatalCrashTimeout Delay after unexpected error.
+         * @return Reference to the same builder.
          */
         public Builder withFatalCrashTimeout(@Nullable Duration fatalCrashTimeout) {
             this.fatalCrashTimeout = fatalCrashTimeout;
@@ -279,10 +282,10 @@ public final class QueueSettings {
         }
 
         /**
-         * Установить количество потоков обработки очереди
+         * Set number of threads for processing tasks in the queue.
          *
-         * @param threadCount количество потоков
-         * @return билдер настроек очереди
+         * @param threadCount Number of processing threads.
+         * @return Reference to the same builder.
          */
         public Builder withThreadCount(@Nullable Integer threadCount) {
             this.threadCount = threadCount;
@@ -290,10 +293,10 @@ public final class QueueSettings {
         }
 
         /**
-         * Установить стратегию повтора неуспешной задачи
+         * Set task execution retry strategy.
          *
-         * @param taskRetryType стратегия повтора
-         * @return билдер настроек очереди
+         * @param taskRetryType Task execution retry strategy.
+         * @return Reference to the same builder.
          */
         public Builder withRetryType(@Nullable TaskRetryType taskRetryType) {
             this.retryType = taskRetryType;
@@ -301,10 +304,10 @@ public final class QueueSettings {
         }
 
         /**
-         * Установить базовый интервал повтора задачи
+         * Set retry interval for task execution.
          *
-         * @param retryInterval интервал повтора
-         * @return билдер настроек очереди
+         * @param retryInterval Task retry interval.
+         * @return Reference to the same builder.
          */
         public Builder withRetryInterval(@Nullable Duration retryInterval) {
             this.retryInterval = retryInterval;
@@ -312,10 +315,11 @@ public final class QueueSettings {
         }
 
         /**
-         * Установить настройки стратегии переоткладывания задач в случае, если задачу требуется вернуть в очередь.
+         * Set Settings for the task postponing strategy
+         * when the task should be brought back to the queue.
          *
-         * @param reenqueueRetrySettings настройки
-         * @return билдер настроек очереди
+         * @param reenqueueRetrySettings Task postponing settings.
+         * @return Reference to the same builder.
          */
         public Builder withReenqueueRetrySettings(@Nullable ReenqueueRetrySettings reenqueueRetrySettings) {
             this.reenqueueRetrySettings = reenqueueRetrySettings;
@@ -323,10 +327,10 @@ public final class QueueSettings {
         }
 
         /**
-         * Режим обработки задач в очереди
+         * Set task processing mode in the queue.
          *
-         * @param processingMode режим обработки
-         * @return билдер настроек очереди
+         * @param processingMode Task processing mode.
+         * @return Reference to the same builder.
          */
         public Builder withProcessingMode(@Nullable ProcessingMode processingMode) {
             this.processingMode = processingMode;
@@ -334,10 +338,10 @@ public final class QueueSettings {
         }
 
         /**
-         * Установить набор дополнительных настроек.
+         * Set the map of additional properties for the queue.
          *
-         * @param additionalSettings дополнительные настройки
-         * @return билдер настроек очереди
+         * @param additionalSettings Additional properties for the queue.
+         * @return Reference to the same builder.
          */
         public Builder withAdditionalSettings(@Nonnull Map<String, String> additionalSettings) {
             Objects.requireNonNull(additionalSettings);
@@ -346,11 +350,11 @@ public final class QueueSettings {
         }
 
         /**
-         * Установить значение дополнительной настройку
+         * Set additional property for the queue.
          *
-         * @param settingName имя настройки
-         * @param value       значение настройки
-         * @return билдер настроек очереди
+         * @param settingName Property name.
+         * @param value       Property value.
+         * @return Reference to the same builder.
          */
         public Builder putSetting(String settingName, String value) {
             additionalSettings.put(settingName, value);
@@ -358,9 +362,9 @@ public final class QueueSettings {
         }
 
         /**
-         * Сконструировать объект настроек.
+         * Create new queue settings object.
          *
-         * @return объект настроек
+         * @return A new queue settings object.
          */
         public QueueSettings build() {
             return new QueueSettings(noTaskTimeout, betweenTaskTimeout, fatalCrashTimeout, threadCount,

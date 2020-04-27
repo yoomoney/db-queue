@@ -12,7 +12,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Фабрика потоков для обработчиков очередей
+ * Thread factory for tasks execution pool.
  *
  * @author Oleg Kandaurov
  * @since 02.10.2019

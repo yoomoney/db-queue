@@ -7,44 +7,44 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 
 /**
- * Обработчик задач в очереди.
+ * Task processor for the queue
  *
- * @param <T> Тип данных задачи в очереди
+ * @param <T> The type of the payload in the task
  * @author Oleg Kandaurov
  * @since 09.07.2017
  */
 public interface QueueConsumer<T> {
 
     /**
-     * Обработать задачу.
+     * Process the task from the queue
      *
-     * @param task задача на обработку
-     * @return результат выполнения очереди
+     * @param task A typed task for processing
+     * @return A result of task processing
      */
     @Nonnull
     TaskExecutionResult execute(@Nonnull Task<T> task);
 
     /**
-     * Получить конфигурацию данной очереди.
+     * Get queue configuration
      *
-     * @return конфигурация очереди
+     * @return Queue configuration
      */
     @Nonnull
     QueueConfig getQueueConfig();
 
     /**
-     * Предоставить преобразователь данных задачи.
+     * Get task payload transformer, which transform the task's {@linkplain String} payload into the type of the task
      *
-     * @return преобразователь данных
+     * @return Task payload transformer
      */
     @Nonnull
     TaskPayloadTransformer<T> getPayloadTransformer();
 
     /**
-     * Исполнитель очереди в режиме {@link ru.yandex.money.common.dbqueue.settings.ProcessingMode#USE_EXTERNAL_EXECUTOR}.
-     * Используется только для вышеназванного режима.
+     * Task executor for {@link ru.yandex.money.common.dbqueue.settings.ProcessingMode#USE_EXTERNAL_EXECUTOR} mode.
+     * Applies only to that mode
      *
-     * @return опциональный обработчик задач в очереди
+     * @return {@linkplain Optional} of external task executor
      */
     default Optional<Executor> getExecutor() {
         return Optional.empty();

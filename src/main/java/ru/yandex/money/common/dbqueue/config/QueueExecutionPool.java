@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Пул управлящий запуском, приостановкой и завершением обработчиков очереди на заданном шарде
+ * Task execution pool: manages start, pause and shutdown of task executors on the assigned shard.
  *
  * @author Oleg Kandaurov
  * @since 14.07.2017
@@ -28,7 +28,7 @@ class QueueExecutionPool {
     private static final Logger log = LoggerFactory.getLogger(QueueExecutionPool.class);
 
     @Nonnull
-    private final QueueConsumer queueConsumer;
+    private final QueueConsumer<?> queueConsumer;
     @Nonnull
     private final QueueShard queueShard;
     @Nonnull
@@ -40,7 +40,7 @@ class QueueExecutionPool {
 
     private boolean started = false;
 
-    QueueExecutionPool(@Nonnull QueueConsumer queueConsumer,
+    QueueExecutionPool(@Nonnull QueueConsumer<?> queueConsumer,
                        @Nonnull QueueShard queueShard,
                        @Nonnull TaskLifecycleListener taskLifecycleListener,
                        @Nonnull ThreadLifecycleListener threadLifecycleListener) {
@@ -58,7 +58,7 @@ class QueueExecutionPool {
                 QueueRunner.Factory.create(queueConsumer, queueShard, taskLifecycleListener));
     }
 
-    QueueExecutionPool(@Nonnull QueueConsumer queueConsumer,
+    QueueExecutionPool(@Nonnull QueueConsumer<?> queueConsumer,
                        @Nonnull QueueShard queueShard,
                        @Nonnull QueueLoop queueLoop,
                        @Nonnull ExecutorService executor,
@@ -75,16 +75,16 @@ class QueueExecutionPool {
     }
 
     /**
-     * Получить идентификатор шарда, который обрабатывает текущий пул.
+     * Get identifier of the shard, which will be managed with the execution pool.
      *
-     * @return идентификатор шарда
+     * @return Shard identifier.
      */
     QueueShardId getQueueShardId() {
         return queueShard.getShardId();
     }
 
     /**
-     * Запустить обработку задач в очереди
+     * Start task processing in the queue
      */
     void start() {
         if (!started) {
@@ -99,7 +99,7 @@ class QueueExecutionPool {
     }
 
     /**
-     * Завершить обработку очереди, семантика аналогична {@link ExecutorService#shutdownNow()}
+     * Stop tasks processing, semantic is the same as for {@link ExecutorService#shutdownNow()}
      */
     void shutdown() {
         log.info("shutting down queue: queueId={}, shardId={}", getQueueId(), queueShard.getShardId());
@@ -107,8 +107,8 @@ class QueueExecutionPool {
     }
 
     /**
-     * Приостановить обработку очереди.
-     * Запустить обработку вновь можно методом {@link QueueExecutionPool#start()}
+     * Pause task processing.
+     * To start the processing again, use {@link QueueExecutionPool#start()} method
      */
     void pause() {
         log.info("pausing queue: queueId={}, shardId={}", getQueueId(), queueShard.getShardId());
@@ -116,40 +116,40 @@ class QueueExecutionPool {
     }
 
     /**
-     * Получить признак, что очередь приостановлена методом {@link QueueExecutionPool#pause()}
+     * Get attribute that the tasks processing was paused with {@link QueueExecutionPool#pause()} method.
      *
-     * @return true если очередь приостановлена
+     * @return true if the tasks processing was paused.
      */
     boolean isPaused() {
         return queueLoop.isPaused();
     }
 
     /**
-     * Получить признак, что обработка очереди завершена методом {@link QueueExecutionPool#shutdown()}.
-     * Семантика аналогична {@link ExecutorService#isShutdown()}
+     * Get attribute that the tasks processing was stopped with {@link QueueExecutionPool#shutdown()} method.
+     * Semantic is the same as for {@link ExecutorService#isShutdown()}.
      *
-     * @return true если обработка очереди завершена
+     * @return true if the tasks processing was stopped.
      */
     boolean isShutdown() {
         return executor.isShutdown();
     }
 
     /**
-     * Получить признак, что все потоки обработки очереди завершились успехом.
-     * Семантика аналогична {@link ExecutorService#isTerminated()}
+     * Get attribute that all the processing threads were successfully terminated.
+     * Semantic is the same as for {@link ExecutorService#isTerminated()}.
      *
-     * @return true если все потоки обработки очереди завершены
+     * @return true if all the threads were successfully terminated.
      */
     boolean isTerminated() {
         return executor.isTerminated();
     }
 
     /**
-     * Дождаться завершения обработки задач в заданный таймаут.
-     * Семантика аналогична {@link ExecutorService#awaitTermination(long, TimeUnit)}
+     * Wait for tasks (and threads) termination within given timeout.
+     * Semantic is the same as for {@link ExecutorService#awaitTermination(long, TimeUnit)}.
      *
-     * @param timeout таймаут ожидания
-     * @return true если все задачи завершились в заданный таймаут
+     * @param timeout waiting timeout
+     * @return true if all the threads were successfully terminated within given timeout.
      */
     boolean awaitTermination(@Nonnull Duration timeout) {
         requireNonNull(timeout, "timeout");
@@ -164,9 +164,8 @@ class QueueExecutionPool {
     }
 
     /**
-     * Принудительно продолжить обработку задач в очереди,
-     * если обработка была приостановлена по событию
-     * {@link ru.yandex.money.common.dbqueue.settings.QueueConfigsReader#SETTING_NO_TASK_TIMEOUT}
+     * Force continue task processing if processing was paused
+     * with {@link ru.yandex.money.common.dbqueue.settings.QueueConfigsReader#SETTING_NO_TASK_TIMEOUT} event.
      */
     void wakeup() {
         queueLoop.wakeup();

@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * Класс, определяющий местоположение очереди
+ * Queue location in the database.
  *
  * @author Oleg Kandaurov
  * @since 10.07.2017
@@ -28,9 +28,9 @@ public final class QueueLocation {
     }
 
     /**
-     * Получить имя таблицы
+     * Get queue table name.
      *
-     * @return имя таблицы
+     * @return Table name.
      */
     @Nonnull
     public String getTableName() {
@@ -38,9 +38,9 @@ public final class QueueLocation {
     }
 
     /**
-     * Получить идентификатор очереди
+     * Get queue identifier.
      *
-     * @return идентификатор очереди
+     * @return Queue identifier.
      */
     @Nonnull
     public QueueId getQueueId() {
@@ -74,16 +74,16 @@ public final class QueueLocation {
     }
 
     /**
-     * Создать билдер местоположения очереди
+     * Create a new builder for queue location.
      *
-     * @return билдер местоположения
+     * @return A builder for queue location.
      */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Билдер для класса {@link QueueLocation}
+     * A builder for class {@link QueueLocation}.
      */
     public static class Builder {
         private String tableName;
@@ -93,10 +93,10 @@ public final class QueueLocation {
         }
 
         /**
-         * Задать имя таблицы, в которой лежат задачи очереди
+         * Set table name for queue tasks.
          *
-         * @param tableName имя таблицы
-         * @return билдер
+         * @param tableName Table name.
+         * @return Reference to the same builder.
          */
         public Builder withTableName(@Nonnull String tableName) {
             this.tableName = Objects.requireNonNull(tableName);
@@ -104,10 +104,10 @@ public final class QueueLocation {
         }
 
         /**
-         * Задать идентификатор очереди
+         * Set queue identifier.
          *
-         * @param queueId идентификатор очереди
-         * @return билдер
+         * @param queueId Queue identifier.
+         * @return Reference to the same builder.
          */
         public Builder withQueueId(@Nonnull QueueId queueId) {
             this.queueId = Objects.requireNonNull(queueId);
@@ -115,9 +115,9 @@ public final class QueueLocation {
         }
 
         /**
-         * Сконструировать местоположение очереди
+         * Build queue location object.
          *
-         * @return местоположение очереди
+         * @return Queue location  object.
          */
         public QueueLocation build() {
             return new QueueLocation(queueId, tableName);

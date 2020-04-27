@@ -1,7 +1,7 @@
 package ru.yandex.money.common.dbqueue.settings;
 
 /**
- * Стратегия по которой производится откладывание задачи в случае повтора.
+ * Strategy type for the task deferring in case of retry.
  *
  * @author Oleg Kandaurov
  * @since 10.07.2017
@@ -9,23 +9,23 @@ package ru.yandex.money.common.dbqueue.settings;
 public enum TaskRetryType {
 
     /**
-     * Задача откладывается по геометрической прогрессии относительно интервала
+     * The task is deferred exponentially relative to the interval
      * {@link QueueSettings#getRetryInterval()}
-     * Знаменатель прогрессии равен двум.
-     * Первые 6 членов: 1 2 4 8 16 32
+     * The denominator of the progression equals 2.
+     * First 6 terms: 1 2 4 8 16 32
      */
     GEOMETRIC_BACKOFF,
     /**
-     * Задача откладывается по арифметической прогрессии относительно интервала
+     * The task is deferred by an arithmetic progression relative to the interval
      * {@link QueueSettings#getRetryInterval()}.
-     * Разность прогрессии равна двум.
-     * Первые 6 членов: 1 3 5 7 9 11
+     * The difference of progression equals 2.
+     * First 6 terms: 1 3 5 7 9 11
      */
     ARITHMETIC_BACKOFF,
     /**
-     * Задача откладывает с фиксированной задержкой.
+     * The task is deferred with fixed delay.
      * <p>
-     * Значение фиксированной задержки устанавливается через настройку
+     * Fixed delay value is set through
      * {@link QueueSettings#getRetryInterval()}
      */
     LINEAR_BACKOFF

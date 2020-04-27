@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Схема именования таблиц в базе данных
+ * Scheme for column names of queue table in the database.
  *
  * @author Oleg Kandaurov
  * @since 05.10.2019
@@ -70,9 +70,10 @@ public class QueueTableSchema {
     }
 
     /**
-     * Колонка в БД маппится на {@link TaskRecord#getPayload()}
+     * Field with a column name for task payload.
+     * Column maps onto {@link TaskRecord#getPayload()}.
      *
-     * @return имя колонки
+     * @return Column name.
      */
     @Nonnull
     public String getPayloadField() {
@@ -80,9 +81,10 @@ public class QueueTableSchema {
     }
 
     /**
-     * Колонка в БД маппится на {@link TaskRecord#getAttemptsCount()}
+     * Field with a column name for task execution attempts count.
+     * Column maps onto {@link TaskRecord#getAttemptsCount()}.
      *
-     * @return имя колонки
+     * @return Column name.
      */
     @Nonnull
     public String getAttemptField() {
@@ -90,9 +92,10 @@ public class QueueTableSchema {
     }
 
     /**
-     * Колонка в БД маппится на {@link TaskRecord#getReenqueueAttemptsCount()}
+     * Field with a column name for task execution re-enqueue attempts count.
+     * Column maps onto {@link TaskRecord#getReenqueueAttemptsCount()}.
      *
-     * @return имя колонки
+     * @return Column name.
      */
     @Nonnull
     public String getReenqueueAttemptField() {
@@ -100,9 +103,10 @@ public class QueueTableSchema {
     }
 
     /**
-     * Колонка в БД маппится на {@link TaskRecord#getTotalAttemptsCount()}
+     * Field with a column name for task execution total attempts count.
+     * Column maps onto {@link TaskRecord#getTotalAttemptsCount()}.
      *
-     * @return имя колонки
+     * @return Column name.
      */
     @Nonnull
     public String getTotalAttemptField() {
@@ -110,9 +114,10 @@ public class QueueTableSchema {
     }
 
     /**
-     * Колонка в БД маппится на {@link TaskRecord#getCreatedAt()}
+     * Field with a column name for task creation date and time.
+     * Column maps onto {@link TaskRecord#getCreatedAt()}.
      *
-     * @return имя колонки
+     * @return Column name.
      */
     @Nonnull
     public String getCreatedAtField() {
@@ -120,9 +125,9 @@ public class QueueTableSchema {
     }
 
     /**
-     * Колонка с временем обработки задачи
+     * Field with a column name for task processing date and time (task will be processed after this date).
      *
-     * @return имя колонки
+     * @return Column name.
      */
     @Nonnull
     public String getNextProcessAtField() {
@@ -130,9 +135,9 @@ public class QueueTableSchema {
     }
 
     /**
-     * Колонка с именем очереди
+     * Field with a column name for the queue name.
      *
-     * @return имя колонки
+     * @return Column name.
      */
     @Nonnull
     public String getQueueNameField() {
@@ -140,9 +145,10 @@ public class QueueTableSchema {
     }
 
     /**
-     * Дополнительный набор текстовых колонок, маппится на {@link TaskRecord#getExtData()}
+     * Additional list of column names ({@code TEXT} type),
+     * which are mapping onto {@link TaskRecord#getExtData()}.
      *
-     * @return имя колонок
+     * @return List of column names.
      */
     @Nonnull
     public List<String> getExtFields() {
@@ -154,7 +160,7 @@ public class QueueTableSchema {
     }
 
     /**
-     * Билдер для класса {@link QueueTableSchema}
+     * Builder for {@link QueueTableSchema} class.
      */
     public static class Builder {
         private String queueNameField = "queue_name";

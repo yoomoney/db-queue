@@ -3,26 +3,26 @@ package ru.yandex.money.common.dbqueue.api;
 import javax.annotation.Nonnull;
 
 /**
- * Постановщик задач в очередь.
+ * Task producer for the queue, which adds a new task into the queue.
  *
- * @param <T> тип данных задачи
+ * @param <T> The type of the payload in the task
  * @author Oleg Kandaurov
  * @since 10.07.2017
  */
 public interface QueueProducer<T> {
 
     /**
-     * Поместить задачу в очередь.
+     * Add a new task into the queue
      *
-     * @param enqueueParams параметры постановки задачи в очередь
-     * @return идентификатор (sequence id) вставленной задачи
+     * @param enqueueParams Parameters with typed payload to enqueue the task
+     * @return Unique (sequence id) identifier of added task
      */
     long enqueue(@Nonnull EnqueueParams<T> enqueueParams);
 
     /**
-     * Предоставить преобразователь данных задачи.
+     * Get task payload transformer, which transform the task's payload into the {@linkplain String}
      *
-     * @return преобразователь данных
+     * @return Task payload transformer
      */
     @Nonnull
     TaskPayloadTransformer<T> getPayloadTransformer();

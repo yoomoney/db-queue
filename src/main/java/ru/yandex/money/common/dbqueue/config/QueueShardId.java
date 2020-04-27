@@ -4,7 +4,7 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
- * Хранилище данных о шарде
+ * Storage for shard information.
  *
  * @author Oleg Kandaurov
  * @since 30.07.2017
@@ -15,18 +15,18 @@ public final class QueueShardId {
     private final String id;
 
     /**
-     * Конструктор
+     * Constructor
      *
-     * @param id идентификатор шарда
+     * @param id Shard identifier.
      */
     public QueueShardId(@Nonnull String id) {
         this.id = Objects.requireNonNull(id);
     }
 
     /**
-     * Получить идентификатор шарда
+     * Get shard identifier.
      *
-     * @return идентификатор шарда
+     * @return Shard identifier.
      */
     @Nonnull
     public String asString() {
