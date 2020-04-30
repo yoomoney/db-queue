@@ -7,7 +7,7 @@ import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import javax.annotation.Nonnull;
 
 /**
- * Пустой слушатель событий потока
+ * Empty listener for task processing thread in the queue.
  *
  * @author Oleg Kandaurov
  * @since 02.10.2019

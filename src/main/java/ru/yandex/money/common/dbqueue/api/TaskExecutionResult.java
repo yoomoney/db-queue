@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Описывает действие, которое следует предпринять после обработки очередной задачи.
+ * The action, which should be performed after the task processing.
  *
  * @author Oleg Kandaurov
  * @since 09.07.2017
@@ -18,19 +18,19 @@ import java.util.Optional;
 public final class TaskExecutionResult {
 
     /**
-     * Действие, выполняемое после обработки задачи
+     * Action performed after task processing
      */
     public enum Type {
         /**
-         * Переставить выполнение задачи
+         * Postpone (re-enqueue) the task, so that the task will be executed again
          */
         REENQUEUE,
         /**
-         * Завершить задачу
+         * Finish the task, task will be removed from the queue
          */
         FINISH,
         /**
-         * Сигнализировать о неуспешном выполнении задачи
+         * Notify on error task execution, task will be postponed and executed again
          */
         FAIL
     }
@@ -54,9 +54,9 @@ public final class TaskExecutionResult {
     }
 
     /**
-     * Получить действие, выполняемое после обработки задачи
+     * Get action, which should be performed after the task processing.
      *
-     * @return действие после обработки
+     * @return action, which should be performed after the task processing.
      */
     @Nonnull
     public Type getActionType() {
@@ -64,9 +64,9 @@ public final class TaskExecutionResult {
     }
 
     /**
-     * Получить время задержки обработки.
+     * Get task execution delay.
      *
-     * @return время задержки обработки
+     * @return task execution delay.
      */
     @Nonnull
     public Optional<Duration> getExecutionDelay() {
@@ -74,9 +74,11 @@ public final class TaskExecutionResult {
     }
 
     /**
-     * Получить время задержки обработки или выбросить исключение.
+     * Get task execution delay or throw an {@linkplain IllegalStateException}
+     * when task execution delay is not present.
      *
-     * @return время задержки обработки
+     * @return task execution delay.
+     * @throws IllegalStateException An exception when task execution delay is not present.
      */
     @Nonnull
     public Duration getExecutionDelayOrThrow() {
@@ -87,11 +89,12 @@ public final class TaskExecutionResult {
     }
 
     /**
-     * Указание поставить задачу в очередь повторно, с указанием фиксированного значения задержки.
-     * Счетчик неуспешных попыток обработки сбрасывается, задача будет выполнена через указанный период.
+     * Instruction to re-enqueue the task with determined execution delay.
+     * <br>
+     * Re-enqueue attempts counter will be reset, task will be executed again after the given execution delay.
      *
-     * @param delay фиксированное значение задержки, через которое задача должна быть выполнена повторно
-     * @return действие
+     * @param delay determined execution delay, after which the task will be executed again.
+     * @return Task execution action.
      */
     @Nonnull
     public static TaskExecutionResult reenqueue(@Nonnull Duration delay) {
@@ -100,11 +103,11 @@ public final class TaskExecutionResult {
     }
 
     /**
-     * Указание поставить задачу в очередь повторно, с использованием {@link ReenqueueRetryType стратегии переоткладывания},
-     * заданной в конфигурации очереди.
-     * Счетчик неуспешных попыток обработки сбрасывается.
+     * Instruction to re-enqueue the task using the {@link ReenqueueRetryType re-enqueue strategy}
+     * established in the queue configuration.
+     * Re-enqueue attempts counter will be reset.
      *
-     * @return действие
+     * @return Task execution action.
      */
     @Nonnull
     public static TaskExecutionResult reenqueue() {
@@ -112,9 +115,10 @@ public final class TaskExecutionResult {
     }
 
     /**
-     * Указание повторить задачу позже
+     * Instruction to execute the task again later according to the {@link ReenqueueRetryType re-enqueue strategy}
+     * established in the queue configuration.
      *
-     * @return действие
+     * @return Task execution action.
      */
     @Nonnull
     public static TaskExecutionResult fail() {
@@ -122,9 +126,9 @@ public final class TaskExecutionResult {
     }
 
     /**
-     * Указание завершить обработку задачи
+     * Instruction to finish task processing and remove the task from the queue
      *
-     * @return действие
+     * @return Task execution action.
      */
     @Nonnull
     public static TaskExecutionResult finish() {

@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Данные подключения к шарду БД
+ * Properties for connection to a database shard.
  *
  * @author Oleg Kandaurov
  * @since 13.08.2018
@@ -30,13 +30,13 @@ public class QueueShard {
     private final QueueDao queueDao;
 
     /**
-     * Конструктор
+     * Constructor
      *
-     * @param databaseDialect        вид базы данных
-     * @param queueTableSchema    схема таблицы очередей
-     * @param shardId             идентификатор шарда
-     * @param jdbcTemplate        spring jdbc template
-     * @param transactionTemplate spring transaction template
+     * @param databaseDialect     Database type (dialect)
+     * @param queueTableSchema    Queue table scheme.
+     * @param shardId             Shard identifier.
+     * @param jdbcTemplate        Reference to Spring JDBC template.
+     * @param transactionTemplate Reference to Spring Transaction template.
      */
     public QueueShard(@Nonnull DatabaseDialect databaseDialect,
                       @Nonnull QueueTableSchema queueTableSchema,
@@ -52,9 +52,9 @@ public class QueueShard {
     }
 
     /**
-     * Получить идентификатор данного шарда
+     * Get shard identifier.
      *
-     * @return идентификатор шарда
+     * @return Shard identifier.
      */
     @Nonnull
     public QueueShardId getShardId() {
@@ -62,9 +62,9 @@ public class QueueShard {
     }
 
     /**
-     * Получить jdbc template данного шарда
+     * Get reference to the Spring JDBC template for that shard.
      *
-     * @return jdbc template данного шарда
+     * @return Reference to Spring JDBC template.
      */
     @Nonnull
     public JdbcOperations getJdbcTemplate() {
@@ -72,9 +72,9 @@ public class QueueShard {
     }
 
     /**
-     * Получить transaction template данного шарда
+     * Get reference to the Spring Transaction template for that shard.
      *
-     * @return transaction template данного шарда
+     * @return Reference to Spring Transaction template.
      */
     @Nonnull
     public TransactionOperations getTransactionTemplate() {
@@ -82,9 +82,9 @@ public class QueueShard {
     }
 
     /**
-     * Возвращает объект для работы с хранилищем очереди на заданном шарде
+     * Get reference to database access object to work with queue storage on that shard.
      *
-     * @return dao для работы с очередью
+     * @return Reference to database access object to work with the queue.
      */
     @Nonnull
     public QueueDao getQueueDao() {
@@ -92,9 +92,9 @@ public class QueueShard {
     }
 
     /**
-     * Возвращает вид БД для текущего шарда
+     * Get database type for that shard.
      *
-     * @return вид базы данных
+     * @return Database type.
      */
     @Nonnull
     public DatabaseDialect getDatabaseDialect() {
@@ -102,9 +102,9 @@ public class QueueShard {
     }
 
     /**
-     * Возвращает схема таблицы очередей для текущего шарда
+     * Get queue table schema for that shard.
      *
-     * @return схема таблицы очередей
+     * @return Queue table schema.
      */
     @Nonnull
     public QueueTableSchema getQueueTableSchema() {

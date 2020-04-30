@@ -6,8 +6,9 @@ import ru.yandex.money.common.dbqueue.api.TaskRecord;
 import java.time.Duration;
 
 /**
- * Тип стратегии, которая вычисляет задержку перед следующим выполнением задачи в случае, если задачу
- * {@link TaskExecutionResult.Type#REENQUEUE требуется вернуть в очередь}.
+ * Type of the strategy, which computes the delay before
+ * the next task execution if the task has to be brought back
+ * {@link TaskExecutionResult.Type#REENQUEUE to the queue}.
  *
  * @author Dmitry Komarov
  * @since 21.05.2019
@@ -15,12 +16,12 @@ import java.time.Duration;
 public enum ReenqueueRetryType {
 
     /**
-     * Задача откладывается на время, задаваемое вручную с помощью вызова
-     * {@link TaskExecutionResult#reenqueue(Duration)}.
+     * The task is deferred by the delay set manually with method
+     * {@link TaskExecutionResult#reenqueue(Duration)} call.
      * <p>
-     * Является значением по-умолчанию для стратегии переоткладывания задачи.
+     * Default value for the task postponing strategy.
      * <p>
-     * Пример настроек
+     * Settings example:
      * <pre>
      * {@code db-queue.queueName.reenqueue-retry-type=manual}
      * </pre>
@@ -28,62 +29,71 @@ public enum ReenqueueRetryType {
     MANUAL,
 
     /**
-     * Задача откладывается на время, задаваемое с помощью последовательности задержек. Задержка выбирается из
-     * последовательности согласно {@link TaskRecord#getReenqueueAttemptsCount() номеру попытки переотложить задачу}.
-     * Если номер попытки превышает размер заданной последовательности, будет выбран последний ее член.
+     * The task is deferred by the delay set with the sequence of delays.
+     * Delay is selected from the sequence according
+     * to {@link TaskRecord#getReenqueueAttemptsCount() the number of task processing attempt}.
+     * If the attempt number is bigger than the index of the last item in the sequence,
+     * then the last item will be used.
      * <p>
-     * Например, пусть в настройках задана следующая последовательность:
+     * For example, let the following sequence is set out in the settings:
      * <pre>
      * {@code
      * db-queue.queueName.reenqueue-retry-type=sequential
      * db-queue.queueName.reenqueue-retry-plan=PT1S,PT10S,PT1M,P7D}
      * </pre>
-     * Для первой попытки переотложить задачу будет выбрана задержка в размере 1 секунды ({@code PT1S}),
-     * для второй - 10 секунд и т.д. Для пятой попытки и всех последующих - задержка составляет 7 дней.
+     * For the first attempt to defer the task a delay of 1 second will be chosen ({@code PT1S}),
+     * for the second one it will be 10 seconds and so forth.
+     * For the fifth attempt and all the next after the delay will be 7 days.
      */
     SEQUENTIAL,
 
     /**
-     * Задача откладывается на фиксированное время, заданное в конфигурации.
+     * The task is deferred by the fixed delay, which is set in configuration.
      * <p>
-     * Пример настроек
+     * Settings example:
      * <pre>
      * {@code
      * db-queue.queueName.reenqueue-retry-type=fixed
      * db-queue.queueName.reenqueue-retry-delay=PT10S}
      * </pre>
-     * То есть для каждой попытки задача будет отложена на 10 секунд.
+     * Means that for each attempt the task will be deferred for 10 seconds.
      */
     FIXED,
 
     /**
-     * Задача откладывается на время, задаваемое с помощью арифметической прогрессии. Член прогрессии выбирается
-     * согласно {@link TaskRecord#getReenqueueAttemptsCount() номеру попытки переотложить задачу}.
+     * The task is deferred by the delay set using an arithmetic progression.
+     * The term of progression selected according
+     * to {@link TaskRecord#getReenqueueAttemptsCount() the number of attempt to postpone the task processing}.
      * <p>
-     * Прогрессия задается парой значений: первым членом ({@code reenqueue-retry-initial-delay})
-     * и разностью ({@code reenqueue-retry-step}).
+     * The progression is set by a pair of values: the initial term ({@code reenqueue-retry-initial-delay})
+     * and the difference ({@code reenqueue-retry-step}).
+     * <p>
+     * Settings example:
      * <pre>
      * {@code
      * db-queue.queueName.reenqueue-retry-type=arithmetic
      * db-queue.queueName.reenqueue-retry-initial-delay=PT1S
      * db-queue.queueName.reenqueue-retry-step=PT2S}
      * </pre>
-     * Таким образом задача будет откладываться со следующими задержками: 1c, 3c, 5c, 7c, ...
+     * Means that the task will be deferred with following delays: {@code 1 second, 3 seconds, 5 seconds, 7 seconds, ...}
      */
     ARITHMETIC,
 
     /**
-     * Задача откладывается на время, задаваемое с помощью геометрической прогрессии. Член прогрессии выбирается
-     * согласно {@link TaskRecord#getReenqueueAttemptsCount() номеру попытки переотложить задачу}.
+     * The task is deferred by the delay set using a geometric progression
+     * The term of progression selected according to
+     * {@link TaskRecord#getReenqueueAttemptsCount() the number of attempt to postpone the task processing}.
      * <p>
-     * Прогрессия задается парой значений: первым членом и целочисленным знаменателем.
+     * The progression is set by a pair of values: the initial term and the integer denominator.
+     * <p>
+     * Settings example:
      * <pre>
      * {@code
      * db-queue.queueName.reenqueue-retry-type=geometric
      * db-queue.queueName.reenqueue-retry-initial-delay=PT1S
      * db-queue.queueName.reenqueue-retry-ratio=2}
      * </pre>
-     * Таким образом задача будет откладываться со следующими задержками: 1с, 2с, 4с, 8с, ...
+     * Means that the task will be deferred with following delays: {@code 1 second, 2 seconds, 4 seconds, 8 seconds, ...}
      */
     GEOMETRIC
 }

@@ -4,7 +4,7 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
- * Идентификатор очереди
+ * Queue identifier.
  *
  * @author Oleg Kandaurov
  * @since 27.09.2017
@@ -15,18 +15,18 @@ public final class QueueId {
     private final String id;
 
     /**
-     * Конструктор
+     * Constructor
      *
-     * @param id строковое представление идентификатора
+     * @param id String representation of queue identifier.
      */
     public QueueId(@Nonnull String id) {
         this.id = Objects.requireNonNull(id, "id");
     }
 
     /**
-     * Получить строковое представление идентификатора
+     * Get string representation of queue identifier.
      *
-     * @return идентификатор очереди
+     * @return Queue identifier.
      */
     @Nonnull
     public String asString() {

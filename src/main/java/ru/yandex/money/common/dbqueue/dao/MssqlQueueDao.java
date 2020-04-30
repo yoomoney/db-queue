@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Dao для управления задачами в очереди БД MsSQL.
+ * Database access object to manage tasks in the queue for Microsoft SQL server database type.
  *
  * @author Oleg Kandaurov
  * @author Behrooz Shabani
@@ -31,10 +31,10 @@ public class MssqlQueueDao implements QueueDao {
     private final QueueTableSchema queueTableSchema;
 
     /**
-     * constructor
+     * Constructor
      *
-     * @param jdbcTemplate     spring jdbc template
-     * @param queueTableSchema definition of queue table
+     * @param jdbcTemplate     Reference to Spring JDBC template.
+     * @param queueTableSchema Queue table scheme.
      */
     public MssqlQueueDao(@Nonnull JdbcOperations jdbcTemplate,
                             @Nonnull QueueTableSchema queueTableSchema) {
