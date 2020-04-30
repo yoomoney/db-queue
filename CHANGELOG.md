@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=PATCH
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [8.3.3]() (30-04-2020)
+
 * JavaDoc translation for public packages. Thanks to [Dmitrii Tretiakov](https://github.com/talbot).
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [8.3.2]() (27-02-2020)
 
 * Don't add bibucket pull request link into changelog.md on release
