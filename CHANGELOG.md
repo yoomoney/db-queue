@@ -1,5 +1,6 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=PATCH
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+* JavaDoc translation for public packages. Thanks to [Dmitrii Tretiakov](https://github.com/talbot).
 ### NEXT_VERSION_DESCRIPTION_END
 ## [8.3.2]() (27-02-2020)
 
