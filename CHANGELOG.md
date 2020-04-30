@@ -1,3 +1,6 @@
+### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_DESCRIPTION_BEGIN
+### NEXT_VERSION_DESCRIPTION_END
 ## [8.3.3]() (30-04-2020)
 
 * JavaDoc translation for public packages. Thanks to [Dmitrii Tretiakov](https://github.com/talbot).
