@@ -1,11 +1,11 @@
-### NEXT_VERSION_TYPE=MINOR
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [8.4.0]() (20-05-2020)
+
 * Oracle support
 * Customization of id field in `QueueTableSchema`
 * Seconds granularity in task processing time
-* Id generation in `QueueDao` via separate sequences which can be specified in `QueueLocation.Builder.withIdSequence(String)` 
-  or `id-sequence` in file config.
-### NEXT_VERSION_DESCRIPTION_END
+* Id generation in `QueueDao` via separate sequences which can be specified in `QueueLocation.Builder.withIdSequence(String)`
+or `id-sequence` in file config.
+
 ## [8.3.3]() (30-04-2020)
 
 * JavaDoc translation for public packages. Thanks to [Dmitrii Tretiakov](https://github.com/talbot).
