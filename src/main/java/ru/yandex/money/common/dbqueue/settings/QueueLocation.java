@@ -56,6 +56,8 @@ public final class QueueLocation {
     /**
      * Get id sequence name.
      *
+     * Use for databases which doesn't have automatically incremented primary keys, for example Oracle 11g
+     *
      * @return database sequence name for generating primary key of tasks table.
      */
     public Optional<String> getIdSequence() {
@@ -67,6 +69,7 @@ public final class QueueLocation {
         return '{' +
                 "id=" + queueId +
                 ",table=" + tableName +
+                (idSequence != null ? ",idSequence=" + idSequence : "") +
                 '}';
     }
 

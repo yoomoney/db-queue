@@ -25,6 +25,10 @@ apply plugin: 'maven-publish'
 apply plugin: 'java'
 apply from: 'dependencies.gradle'
 
+dependencies {
+    testCompile 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
+}
+
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
 sourceCompatibility = '8'

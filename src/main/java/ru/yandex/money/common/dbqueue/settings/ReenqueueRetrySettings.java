@@ -152,8 +152,8 @@ public class ReenqueueRetrySettings {
                 type == that.type &&
                 Objects.equals(sequentialPlan, that.sequentialPlan) &&
                 Objects.equals(fixedDelay, that.fixedDelay) &&
-                initialDelay.equals(that.initialDelay) &&
-                arithmeticStep.equals(that.arithmeticStep);
+                Objects.equals(initialDelay, that.initialDelay) &&
+                Objects.equals(arithmeticStep, that.arithmeticStep);
     }
 
     @Override
