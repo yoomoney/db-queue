@@ -11,6 +11,7 @@ import ru.yandex.money.common.dbqueue.api.TaskExecutionResult;
 import ru.yandex.money.common.dbqueue.config.DatabaseDialect;
 import ru.yandex.money.common.dbqueue.config.QueueShard;
 import ru.yandex.money.common.dbqueue.config.QueueShardId;
+import ru.yandex.money.common.dbqueue.config.QueueTableSchema;
 import ru.yandex.money.common.dbqueue.config.TaskLifecycleListener;
 import ru.yandex.money.common.dbqueue.settings.ProcessingMode;
 import ru.yandex.money.common.dbqueue.settings.QueueConfig;
@@ -28,7 +29,6 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static ru.yandex.money.common.dbqueue.api.TaskExecutionResult.finish;
-import static ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer.DEFAULT_SCHEMA;
 
 /**
  * @author Oleg Kandaurov
@@ -67,7 +67,7 @@ public class QueueRunnerFactoryTest {
                 .withQueueId(new QueueId("testQueue")).build();
         QueueConsumer queueConsumer = new ConsumerWithExternalExecutor(new QueueConfig(location, settings), mock(Executor.class));
         QueueRunner queueRunner = QueueRunner.Factory.create(queueConsumer,
-                new QueueShard(DatabaseDialect.POSTGRESQL, DEFAULT_SCHEMA, new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
+                new QueueShard(DatabaseDialect.POSTGRESQL, QueueTableSchema.builder().build(), new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
                 mock(TaskLifecycleListener.class));
 
         assertThat(queueRunner, CoreMatchers.instanceOf(QueueRunnerInExternalExecutor.class));
@@ -87,7 +87,7 @@ public class QueueRunnerFactoryTest {
             }
         };
         QueueRunner queueRunner = QueueRunner.Factory.create(queueConsumer,
-                new QueueShard(DatabaseDialect.POSTGRESQL, DEFAULT_SCHEMA, new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
+                new QueueShard(DatabaseDialect.POSTGRESQL, QueueTableSchema.builder().build(), new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
                 mock(TaskLifecycleListener.class));
 
         assertThat(queueRunner, CoreMatchers.instanceOf(QueueRunnerInExternalExecutor.class));
@@ -103,7 +103,7 @@ public class QueueRunnerFactoryTest {
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
 
         QueueRunner queueRunner = QueueRunner.Factory.create(queueConsumer,
-                new QueueShard(DatabaseDialect.POSTGRESQL, DEFAULT_SCHEMA, new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
+                new QueueShard(DatabaseDialect.POSTGRESQL, QueueTableSchema.builder().build(), new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
                 mock(TaskLifecycleListener.class));
 
         assertThat(queueRunner, CoreMatchers.instanceOf(QueueRunnerInSeparateTransactions.class));
@@ -119,7 +119,7 @@ public class QueueRunnerFactoryTest {
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location, settings));
 
         QueueRunner queueRunner = QueueRunner.Factory.create(queueConsumer,
-                new QueueShard(DatabaseDialect.POSTGRESQL, DEFAULT_SCHEMA, new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
+                new QueueShard(DatabaseDialect.POSTGRESQL, QueueTableSchema.builder().build(), new QueueShardId("s1"), mock(JdbcOperations.class), mock(TransactionOperations.class)),
                 mock(TaskLifecycleListener.class));
 
         assertThat(queueRunner, CoreMatchers.instanceOf(QueueRunnerInTransaction.class));

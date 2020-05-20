@@ -25,6 +25,10 @@ apply plugin: 'maven-publish'
 apply plugin: 'java'
 apply from: 'dependencies.gradle'
 
+dependencies {
+    testCompile 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
+}
+
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
 sourceCompatibility = '8'
@@ -138,7 +142,7 @@ bintray {
         issueTrackerUrl = 'https://github.com/yandex-money-tech/db-queue/issues'
         vcsUrl = 'https://github.com/yandex-money-tech/db-queue.git'
         licenses = ['MIT']
-        labels = ['postgresql', 'mssql', 'queue', 'java', 'database']
+        labels = ['postgresql', 'mssql', 'oracle', 'queue', 'java', 'database']
         publicDownloadNumbers = true
         githubRepo = 'yandex-money-tech/db-queue'
         githubReleaseNotesFile = 'CHANGELOG.md'
@@ -148,9 +152,4 @@ bintray {
             vcsTag = project.version
         }
     }
-}
-
-tasks.withType(Test) {
-    systemProperty "testcontainers.ryuk.container.image", "quay.io/testcontainers/ryuk:0.2.3"
-    systemProperty "testcontainers.mssql.container.image", "mcr.microsoft.com/mssql/server:2019-CU1-ubuntu-16.04"
 }

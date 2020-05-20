@@ -52,6 +52,21 @@ public class QueueConfigsReaderTest {
     }
 
     @Test
+    public void should_read_simple_config_with_id_sequence() throws Exception {
+        QueueConfigsReader queueConfigsReader = new QueueConfigsReader("q");
+        Collection<QueueConfig> configs = queueConfigsReader.parse(fileSystem.write(
+                "q.testQueue.table=foo",
+                "q.testQueue.id-sequence=sequence",
+                "q.testQueue.between-task-timeout=PT0.1S",
+                "q.testQueue.no-task-timeout=PT5S"));
+        assertThat(configs, equalTo(Collections.singletonList(
+                new QueueConfig(QueueLocation.builder().withTableName("foo")
+                        .withQueueId(new QueueId("testQueue")).withIdSequence("sequence").build(),
+                        QueueSettings.builder().withBetweenTaskTimeout(Duration.ofMillis(100L))
+                                .withNoTaskTimeout(Duration.ofSeconds(5L)).build()))));
+    }
+
+    @Test
     public void should_read_simple_config_with_null_override_file() throws Exception {
         QueueConfigsReader queueConfigsReader = new QueueConfigsReader("q");
         Collection<QueueConfig> configs = queueConfigsReader.parse(fileSystem.write(
@@ -326,7 +341,7 @@ public class QueueConfigsReaderTest {
 
     final class FileSystemRule implements TestRule {
 
-        private AtomicInteger counter = new AtomicInteger();
+        private final AtomicInteger counter = new AtomicInteger();
 
         private FileSystem fileSystem;
 

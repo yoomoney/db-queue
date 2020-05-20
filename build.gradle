@@ -9,6 +9,10 @@ artifactID = "yamoney-db-queue"
 
 apply from: 'dependencies.gradle'
 
+dependencies {
+    testCompile 'com.oracle.jdbc:ojdbc7:12.1.0.2'
+}
+
 dependencyManagement {
     dependencies {
         dependency 'net.java.dev.jna:jna-platform:5.5.0' // required by org.testcontainers:testcontainers
@@ -20,6 +24,8 @@ dependencyManagement {
 tasks.withType(Test) {
     systemProperty "testcontainers.ryuk.container.image", "docker.nexus.yamoney.ru/testcontainers/ryuk:0.2.3"
     systemProperty "testcontainers.mssql.container.image", "docker.nexus.yamoney.ru/mssql/server:2019-CU1-ubuntu-16.04"
+    systemProperty "testcontainers.postgresql.container.image", "docker.nexus.yamoney.ru/postgres:9.5"
+    systemProperty "testcontainers.oracle.container.image", "docker-ym.nexus.yamoney.ru/yamoney/oracle-xe-11g-test:1.0.0"
 }
 
 releaseSettings {

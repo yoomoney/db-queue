@@ -3,22 +3,27 @@ package ru.yandex.money.common.dbqueue.internal.dao;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
 import ru.yandex.money.common.dbqueue.api.TaskRecord;
-import ru.yandex.money.common.dbqueue.dao.BaseDaoTest;
-import ru.yandex.money.common.dbqueue.dao.MssqlQueueDao;
+import ru.yandex.money.common.dbqueue.config.QueueTableSchema;
+import ru.yandex.money.common.dbqueue.dao.QueueDao;
 import ru.yandex.money.common.dbqueue.internal.pick.PickTaskSettings;
-import ru.yandex.money.common.dbqueue.internal.pick.MssqlQueuePickTaskDao;
 import ru.yandex.money.common.dbqueue.internal.pick.QueuePickTaskDao;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.TaskRetryType;
 
 import java.math.BigInteger;
-import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -27,21 +32,34 @@ import static org.hamcrest.CoreMatchers.nullValue;
 
 /**
  * @author Oleg Kandaurov
- * @author Behrooz Shabani
- * @since 25.01.2020
+ * @since 15.07.2017
  */
 @Ignore
-public abstract class MssqlQueuePickTaskDaoTest extends BaseDaoTest {
+public abstract class QueuePickTaskDaoTest {
 
-    private final MssqlQueueDao queueDao = new MssqlQueueDao(jdbcTemplate, tableSchema);
+    protected final JdbcTemplate jdbcTemplate;
+    protected final TransactionTemplate transactionTemplate;
+
+    protected final String tableName;
+    protected final QueueTableSchema tableSchema;
+
+    private final QueueDao queueDao;
+    private final Function<PickTaskSettings, QueuePickTaskDao> pickTaskDaoFactory;
 
     /**
      * Из-за особенностей windows какая-то фигня со временем БД
      */
     private final static Duration WINDOWS_OS_DELAY = Duration.ofSeconds(2);
 
-    public MssqlQueuePickTaskDaoTest(TableSchemaType tableSchemaType) {
-        super(tableSchemaType);
+    public QueuePickTaskDaoTest(QueueDao queueDao, Function<PickTaskSettings, QueuePickTaskDao> pickTaskDaoFactory,
+                                String tableName, QueueTableSchema tableSchema,
+                                JdbcTemplate jdbcTemplate, TransactionTemplate transactionTemplate) {
+        this.tableName = tableName;
+        this.tableSchema = tableSchema;
+        this.transactionTemplate = transactionTemplate;
+        this.jdbcTemplate = jdbcTemplate;
+        this.queueDao = queueDao;
+        this.pickTaskDaoFactory = pickTaskDaoFactory;
     }
 
     @Test
@@ -49,8 +67,7 @@ public abstract class MssqlQueuePickTaskDaoTest extends BaseDaoTest {
         QueueLocation location = generateUniqueLocation();
         executeInTransaction(() ->
                 queueDao.enqueue(location, new EnqueueParams<String>().withExecutionDelay(Duration.ofHours(1))));
-        MssqlQueuePickTaskDao pickTaskDao = new MssqlQueuePickTaskDao(jdbcTemplate, tableSchema,
-                new PickTaskSettings(TaskRetryType.ARITHMETIC_BACKOFF, Duration.ofMinutes(1)));
+        QueuePickTaskDao pickTaskDao = pickTaskDaoFactory.apply(new PickTaskSettings(TaskRetryType.ARITHMETIC_BACKOFF, Duration.ofMinutes(1)));
         TaskRecord taskRecord = pickTaskDao.pickTask(location);
         Assert.assertThat(taskRecord, is(nullValue()));
     }
@@ -64,8 +81,7 @@ public abstract class MssqlQueuePickTaskDaoTest extends BaseDaoTest {
                 EnqueueParams.create(payload)));
 
         TaskRecord taskRecord = null;
-        MssqlQueuePickTaskDao pickTaskDao = new MssqlQueuePickTaskDao(jdbcTemplate,
-                tableSchema, new PickTaskSettings(TaskRetryType.ARITHMETIC_BACKOFF, Duration.ofMinutes(1)));
+        QueuePickTaskDao pickTaskDao = pickTaskDaoFactory.apply(new PickTaskSettings(TaskRetryType.ARITHMETIC_BACKOFF, Duration.ofMinutes(1)));
         while (taskRecord == null) {
             taskRecord = executeInTransaction(() -> pickTaskDao.pickTask(location));
             try {
@@ -93,8 +109,7 @@ public abstract class MssqlQueuePickTaskDaoTest extends BaseDaoTest {
         ZonedDateTime afterPickingTask;
         TaskRecord taskRecord;
         PickTaskSettings pickTaskSettings = new PickTaskSettings(TaskRetryType.LINEAR_BACKOFF, Duration.ofMinutes(3));
-        MssqlQueuePickTaskDao pickTaskDao = new MssqlQueuePickTaskDao(jdbcTemplate,
-                tableSchema, pickTaskSettings);
+        QueuePickTaskDao pickTaskDao = pickTaskDaoFactory.apply(pickTaskSettings);
 
         Long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, new EnqueueParams<>()));
 
@@ -117,8 +132,7 @@ public abstract class MssqlQueuePickTaskDaoTest extends BaseDaoTest {
         TaskRecord taskRecord;
 
         PickTaskSettings pickTaskSettings = new PickTaskSettings(TaskRetryType.ARITHMETIC_BACKOFF, Duration.ofMinutes(1));
-        MssqlQueuePickTaskDao pickTaskDao = new MssqlQueuePickTaskDao(jdbcTemplate,
-                tableSchema, pickTaskSettings);
+        QueuePickTaskDao pickTaskDao = pickTaskDaoFactory.apply(pickTaskSettings);
 
         Long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, new EnqueueParams<>()));
 
@@ -142,8 +156,7 @@ public abstract class MssqlQueuePickTaskDaoTest extends BaseDaoTest {
         TaskRecord taskRecord;
 
         PickTaskSettings pickTaskSettings = new PickTaskSettings(TaskRetryType.GEOMETRIC_BACKOFF, Duration.ofMinutes(1));
-        MssqlQueuePickTaskDao pickTaskDao = new MssqlQueuePickTaskDao(jdbcTemplate,
-                tableSchema, pickTaskSettings);
+        QueuePickTaskDao pickTaskDao = pickTaskDaoFactory.apply(pickTaskSettings);
 
         Long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, new EnqueueParams<>()));
 
@@ -161,7 +174,7 @@ public abstract class MssqlQueuePickTaskDaoTest extends BaseDaoTest {
     private TaskRecord resetProcessTimeAndPick(QueueLocation location, QueuePickTaskDao pickTaskDao, Long enqueueId) {
         executeInTransaction(() -> {
             jdbcTemplate.update("update " + tableName +
-                    " set " + tableSchema.getNextProcessAtField() + "= SYSDATETIMEOFFSET() where id=" + enqueueId);
+                    " set " + tableSchema.getNextProcessAtField() + "= " + currentTimeSql() + " where " + tableSchema.getIdField() + "=" + enqueueId);
         });
 
         TaskRecord taskRecord = null;
@@ -176,4 +189,25 @@ public abstract class MssqlQueuePickTaskDaoTest extends BaseDaoTest {
         }
         return taskRecord;
     }
+
+    protected abstract String currentTimeSql();
+
+    protected QueueLocation generateUniqueLocation() {
+        return QueueLocation.builder().withTableName(tableName)
+                .withQueueId(new QueueId("test-queue-" + UUID.randomUUID())).build();
+    }
+
+    protected void executeInTransaction(Runnable runnable) {
+        transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus status) {
+                runnable.run();
+            }
+        });
+    }
+
+    protected <T> T executeInTransaction(Supplier<T> supplier) {
+        return transactionTemplate.execute(status -> supplier.get());
+    }
+
 }

@@ -48,9 +48,9 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 
 ## Database support
 
-As of now the library supports PostgreSQL and MSSQL as backing database, however library architecture
+As of now the library supports PostgreSQL, MSSQL and Oracle as backing database, however library architecture
 makes it easy to add other relational databases which has support for transactions and "for update skip locked" feature,  
-for example MySql, Oracle, H2.  
+for example MySql, H2.  
 Feel free to add support for other databases via pull request.
 
 ## Dependencies
@@ -73,7 +73,7 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 <dependency>
   <groupId>com.yandex.money.tech</groupId>
   <artifactId>db-queue</artifactId>
-  <version>8.3.0</version>
+  <version>8.4.0</version>
 </dependency>
 ```
 
@@ -149,6 +149,29 @@ CREATE TABLE queue_tasks (
 );
 CREATE INDEX queue_tasks_name_time_desc_idx
   ON queue_tasks (queue_name, next_process_at, id DESC);
+```
+
+### Oracle
+
+Create table (with index) where tasks will be stored.
+```sql
+CREATE TABLE queue_tasks (
+  id                NUMBER(38) NOT NULL PRIMARY KEY,
+  queue_name        VARCHAR2(128) NOT NULL,
+  payload           CLOB,
+  created_at        TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  next_process_at   TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  attempt           NUMBER(38)                  DEFAULT 0,
+  reenqueue_attempt NUMBER(38)                  DEFAULT 0,
+  total_attempt     NUMBER(38)                  DEFAULT 0
+);
+CREATE INDEX queue_tasks_name_time_desc_idx
+  ON queue_tasks (queue_name, next_process_at, id DESC);
+```
+Create sequence and specify its name through `QueueLocation.Builder.withIdSequence(String)` 
+or `id-sequence` in file config.
+```sql
+CREATE SEQUENCE tasks_seq;
 ```
 
 ### Code

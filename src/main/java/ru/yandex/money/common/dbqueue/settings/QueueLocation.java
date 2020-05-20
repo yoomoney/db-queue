@@ -1,7 +1,9 @@
 package ru.yandex.money.common.dbqueue.settings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -21,10 +23,14 @@ public final class QueueLocation {
     private final String tableName;
     @Nonnull
     private final QueueId queueId;
+    @Nullable
+    private final String idSequence;
 
-    private QueueLocation(@Nonnull QueueId queueId, @Nonnull String tableName) {
+    private QueueLocation(@Nonnull QueueId queueId, @Nonnull String tableName,
+                          @Nullable String idSequence) {
         this.queueId = Objects.requireNonNull(queueId);
         this.tableName = DISALLOWED_CHARS.matcher(Objects.requireNonNull(tableName)).replaceAll("");
+        this.idSequence = idSequence != null ? DISALLOWED_CHARS.matcher(idSequence).replaceAll("") : null;
     }
 
     /**
@@ -47,11 +53,23 @@ public final class QueueLocation {
         return queueId;
     }
 
+    /**
+     * Get id sequence name.
+     *
+     * Use for databases which doesn't have automatically incremented primary keys, for example Oracle 11g
+     *
+     * @return database sequence name for generating primary key of tasks table.
+     */
+    public Optional<String> getIdSequence() {
+        return Optional.ofNullable(idSequence);
+    }
+
     @Override
     public String toString() {
         return '{' +
                 "id=" + queueId +
                 ",table=" + tableName +
+                (idSequence != null ? ",idSequence=" + idSequence : "") +
                 '}';
     }
 
@@ -65,12 +83,13 @@ public final class QueueLocation {
         }
         QueueLocation that = (QueueLocation) obj;
         return Objects.equals(tableName, that.tableName) &&
-                Objects.equals(queueId, that.queueId);
+                Objects.equals(queueId, that.queueId) &&
+                Objects.equals(idSequence, that.idSequence);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableName, queueId);
+        return Objects.hash(tableName, queueId, idSequence);
     }
 
     /**
@@ -88,6 +107,8 @@ public final class QueueLocation {
     public static class Builder {
         private String tableName;
         private QueueId queueId;
+        @Nullable
+        private String idSequence;
 
         private Builder() {
         }
@@ -115,12 +136,23 @@ public final class QueueLocation {
         }
 
         /**
+         * Set id sequence name.
+         *
+         * @param idSequence database sequence name for generating primary key of tasks table.
+         * @return Reference to the same builder.
+         */
+        public Builder withIdSequence(@Nullable String idSequence) {
+            this.idSequence = idSequence;
+            return this;
+        }
+
+        /**
          * Build queue location object.
          *
          * @return Queue location  object.
          */
         public QueueLocation build() {
-            return new QueueLocation(queueId, tableName);
+            return new QueueLocation(queueId, tableName, idSequence);
         }
     }
 }

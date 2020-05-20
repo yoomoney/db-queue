@@ -18,12 +18,13 @@ import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Реализация класса взаимодействия с MsSQL для выборки задач
+ * Database access object to manage tasks in the queue for Microsoft SQL server database type.
  *
  * @author Oleg Kandaurov
  * @author Behrooz Shabani
@@ -31,43 +32,18 @@ import static java.util.Objects.requireNonNull;
  */
 public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
 
+    private final Map<QueueLocation, String> pickTaskSqlCache = new ConcurrentHashMap<>();
+
     private final NamedParameterJdbcTemplate jdbcTemplate;
-    private final String pickTaskSql;
     private final QueueTableSchema queueTableSchema;
     private final PickTaskSettings pickTaskSettings;
-    private final String nextProcessTimeSql;
 
     public MssqlQueuePickTaskDao(@Nonnull JdbcOperations jdbcTemplate,
-                                    @Nonnull QueueTableSchema queueTableSchema,
-                                    @Nonnull PickTaskSettings pickTaskSettings) {
+                                 @Nonnull QueueTableSchema queueTableSchema,
+                                 @Nonnull PickTaskSettings pickTaskSettings) {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(requireNonNull(jdbcTemplate));
         this.queueTableSchema = requireNonNull(queueTableSchema);
         this.pickTaskSettings = requireNonNull(pickTaskSettings);
-        this.nextProcessTimeSql = getNextProcessTimeSql(pickTaskSettings.getRetryType(), queueTableSchema);
-        pickTaskSql = "WITH cte AS (" +
-                "SELECT id " +
-                "FROM %s with (readpast, updlock) " +
-                "WHERE " + queueTableSchema.getQueueNameField() + " = :queueName " +
-                "  AND " + queueTableSchema.getNextProcessAtField() + " <= SYSDATETIMEOFFSET() " +
-                " ORDER BY " + queueTableSchema.getNextProcessAtField() + " ASC " +
-                "offset 0 rows fetch next 1 rows only " +
-                ") " +
-                "UPDATE %s " +
-                "SET " +
-                "  " + queueTableSchema.getNextProcessAtField() + " = %s, " +
-                "  " + queueTableSchema.getAttemptField() + " = " + queueTableSchema.getAttemptField() + " + 1, " +
-                "  " + queueTableSchema.getTotalAttemptField() + " = " + queueTableSchema.getTotalAttemptField() + " + 1 " +
-                "OUTPUT inserted.id, " +
-                "inserted." + queueTableSchema.getPayloadField() + ", " +
-                "inserted." + queueTableSchema.getAttemptField() + ", " +
-                "inserted." + queueTableSchema.getReenqueueAttemptField() + ", " +
-                "inserted." + queueTableSchema.getTotalAttemptField() + ", " +
-                "inserted." + queueTableSchema.getCreatedAtField() + ", " +
-                "inserted." + queueTableSchema.getNextProcessAtField() +
-                (queueTableSchema.getExtFields().isEmpty() ? "" : queueTableSchema.getExtFields().stream()
-                        .map(field -> "inserted." + field).collect(Collectors.joining(", ", ", ", ""))) + " " +
-                "FROM cte " +
-                "WHERE %s.id = cte.id";
     }
 
     @Override
@@ -78,10 +54,7 @@ public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
                 .addValue("queueName", location.getQueueId().asString())
                 .addValue("retryInterval", pickTaskSettings.getRetryInterval().getSeconds());
 
-        return jdbcTemplate.execute(String.format(
-                pickTaskSql,
-                location.getTableName(), location.getTableName(),
-                nextProcessTimeSql, location.getTableName()),
+        return jdbcTemplate.execute(pickTaskSqlCache.computeIfAbsent(location, this::createPickTaskSql),
                 placeholders,
                 (PreparedStatement ps) -> {
                     try (ResultSet rs = ps.executeQuery()) {
@@ -99,7 +72,7 @@ public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
                             }
                         });
                         return TaskRecord.builder()
-                                .withId(rs.getLong("id"))
+                                .withId(rs.getLong(queueTableSchema.getIdField()))
                                 .withCreatedAt(getZonedDateTime(rs, queueTableSchema.getCreatedAtField()))
                                 .withNextProcessAt(getZonedDateTime(rs, queueTableSchema.getNextProcessAtField()))
                                 .withPayload(rs.getString(queueTableSchema.getPayloadField()))
@@ -109,6 +82,34 @@ public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
                                 .withExtData(additionalData).build();
                     }
                 });
+    }
+
+    private String createPickTaskSql(@Nonnull QueueLocation location) {
+        return "WITH cte AS (" +
+                "SELECT " + queueTableSchema.getIdField() + " " +
+                "FROM " + location.getTableName() + " with (readpast, updlock) " +
+                "WHERE " + queueTableSchema.getQueueNameField() + " = :queueName " +
+                "  AND " + queueTableSchema.getNextProcessAtField() + " <= SYSDATETIMEOFFSET() " +
+                " ORDER BY " + queueTableSchema.getNextProcessAtField() + " ASC " +
+                "offset 0 rows fetch next 1 rows only " +
+                ") " +
+                "UPDATE " + location.getTableName() + " " +
+                "SET " +
+                "  " + queueTableSchema.getNextProcessAtField() + " = " +
+                getNextProcessTimeSql(pickTaskSettings.getRetryType(), queueTableSchema) + ", " +
+                "  " + queueTableSchema.getAttemptField() + " = " + queueTableSchema.getAttemptField() + " + 1, " +
+                "  " + queueTableSchema.getTotalAttemptField() + " = " + queueTableSchema.getTotalAttemptField() + " + 1 " +
+                "OUTPUT inserted." + queueTableSchema.getIdField() + ", " +
+                "inserted." + queueTableSchema.getPayloadField() + ", " +
+                "inserted." + queueTableSchema.getAttemptField() + ", " +
+                "inserted." + queueTableSchema.getReenqueueAttemptField() + ", " +
+                "inserted." + queueTableSchema.getTotalAttemptField() + ", " +
+                "inserted." + queueTableSchema.getCreatedAtField() + ", " +
+                "inserted." + queueTableSchema.getNextProcessAtField() +
+                (queueTableSchema.getExtFields().isEmpty() ? "" : queueTableSchema.getExtFields().stream()
+                        .map(field -> "inserted." + field).collect(Collectors.joining(", ", ", ", ""))) + " " +
+                "FROM cte " +
+                "WHERE " + location.getTableName() + "." + queueTableSchema.getIdField() + " = cte." + queueTableSchema.getIdField();
     }
 
     private ZonedDateTime getZonedDateTime(ResultSet rs, String time) throws SQLException {

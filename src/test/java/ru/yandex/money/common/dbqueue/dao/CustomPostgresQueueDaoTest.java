@@ -1,22 +1,22 @@
 package ru.yandex.money.common.dbqueue.dao;
 
 import org.junit.BeforeClass;
-
-import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
+import ru.yandex.money.common.dbqueue.utils.PostgresDatabaseInitializer;
 
 /**
  * @author Oleg Kandaurov
  * @since 12.10.2019
  */
-public class CustomPostgresQueueDaoTest extends PostgresQueueDaoTest {
+public class CustomPostgresQueueDaoTest extends QueueDaoTest {
 
     @BeforeClass
     public static void beforeClass() {
-        QueueDatabaseInitializer.databaseType = QueueDatabaseInitializer.DatabaseType.PG;
-        BaseDaoTest.beforeClass();
+        PostgresDatabaseInitializer.initialize();
     }
 
     public CustomPostgresQueueDaoTest() {
-        super(TableSchemaType.PG_CUSTOM);
+        super(new PostgresQueueDao(PostgresDatabaseInitializer.getJdbcTemplate(), PostgresDatabaseInitializer.CUSTOM_SCHEMA),
+                PostgresDatabaseInitializer.CUSTOM_TABLE_NAME, PostgresDatabaseInitializer.CUSTOM_SCHEMA,
+                PostgresDatabaseInitializer.getJdbcTemplate(), PostgresDatabaseInitializer.getTransactionTemplate());
     }
 }

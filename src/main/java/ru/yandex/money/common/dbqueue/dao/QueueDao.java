@@ -65,12 +65,13 @@ public interface QueueDao {
             requireNonNull(databaseDialect);
             requireNonNull(jdbcTemplate);
             requireNonNull(queueTableSchema);
-            //noinspection SwitchStatementWithTooFewBranches
             switch (databaseDialect) {
                 case POSTGRESQL:
                     return new PostgresQueueDao(jdbcTemplate, queueTableSchema);
                 case MSSQL:
                     return new MssqlQueueDao(jdbcTemplate, queueTableSchema);
+                case ORACLE_11G:
+                    return new Oracle11QueueDao(jdbcTemplate, queueTableSchema);
                 default:
                     throw new IllegalArgumentException("unsupported database kind: " + databaseDialect);
             }

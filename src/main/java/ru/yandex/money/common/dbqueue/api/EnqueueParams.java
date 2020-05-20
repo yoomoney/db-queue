@@ -23,7 +23,7 @@ public final class EnqueueParams<T> {
     @Nonnull
     private Duration executionDelay = Duration.ZERO;
     @Nonnull
-    private Map<String, String> extData = new LinkedHashMap<>();
+    private final Map<String, String> extData = new LinkedHashMap<>();
 
     /**
      * Create new task parameters with payload

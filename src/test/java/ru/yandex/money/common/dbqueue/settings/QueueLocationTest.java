@@ -18,9 +18,16 @@ public class QueueLocationTest {
     }
 
     @Test
-    public void should_filter_special_chars() {
+    public void should_filter_special_chars_in_table_name() {
         Assert.assertThat(QueueLocation.builder().withQueueId(new QueueId("1"))
-                .withTableName(" l !@#$%^&*()._+-=1\n;'][{}").build().getTableName(), equalTo("l._1"));
+                .withTableName(" t !@#$%^&*()._+-=1\n;'][{}").build().getTableName(), equalTo("t._1"));
+    }
+
+    @Test
+    public void should_filter_special_chars_in_sequence_name() {
+        Assert.assertThat(QueueLocation.builder().withQueueId(new QueueId("1"))
+                .withTableName("1")
+                .withIdSequence(" s !@#$%^&*()._+-=1\n;'][{}").build().getIdSequence().get(), equalTo("s._1"));
     }
 
 }

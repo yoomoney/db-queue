@@ -1,23 +1,23 @@
 package ru.yandex.money.common.dbqueue.dao;
 
 import org.junit.BeforeClass;
-
-import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
+import ru.yandex.money.common.dbqueue.utils.MssqlDatabaseInitializer;
 
 /**
  * @author Oleg Kandaurov
  * @author Behrooz Shabani
  * @since 25.01.2020
  */
-public class CustomMssqlQueueDaoTest extends MssqlQueueDaoTest {
+public class CustomMssqlQueueDaoTest extends QueueDaoTest {
 
     @BeforeClass
     public static void beforeClass() {
-        QueueDatabaseInitializer.databaseType = QueueDatabaseInitializer.DatabaseType.MS;
-        BaseDaoTest.beforeClass();
+        MssqlDatabaseInitializer.initialize();
     }
 
     public CustomMssqlQueueDaoTest() {
-        super(TableSchemaType.MS_CUSTOM);
+        super(new MssqlQueueDao(MssqlDatabaseInitializer.getJdbcTemplate(), MssqlDatabaseInitializer.CUSTOM_SCHEMA),
+                MssqlDatabaseInitializer.CUSTOM_TABLE_NAME, MssqlDatabaseInitializer.CUSTOM_SCHEMA,
+                MssqlDatabaseInitializer.getJdbcTemplate(), MssqlDatabaseInitializer.getTransactionTemplate());
     }
 }

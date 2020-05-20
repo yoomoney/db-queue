@@ -24,6 +24,8 @@ public class QueueTableSchema {
     private static final Pattern DISALLOWED_CHARS = Pattern.compile("[^a-zA-Z0-9_]*");
 
     @Nonnull
+    private final String idField;
+    @Nonnull
     private final String queueNameField;
     @Nonnull
     private final String payloadField;
@@ -40,7 +42,8 @@ public class QueueTableSchema {
     @Nonnull
     private final List<String> extFields;
 
-    private QueueTableSchema(@Nonnull String queueNameField,
+    private QueueTableSchema(@Nonnull String idField,
+                             @Nonnull String queueNameField,
                              @Nonnull String payloadField,
                              @Nonnull String attemptField,
                              @Nonnull String reenqueueAttemptField,
@@ -48,6 +51,7 @@ public class QueueTableSchema {
                              @Nonnull String createdAtField,
                              @Nonnull String nextProcessAtField,
                              @Nonnull List<String> extFields) {
+        this.idField = removeSpecialChars(requireNonNull(idField));
         this.queueNameField = removeSpecialChars(requireNonNull(queueNameField));
         this.payloadField = removeSpecialChars(requireNonNull(payloadField));
         this.attemptField = removeSpecialChars(requireNonNull(attemptField));
@@ -145,6 +149,16 @@ public class QueueTableSchema {
     }
 
     /**
+     * Field with a column name for the id.
+     *
+     * @return Column name.
+     */
+    @Nonnull
+    public String getIdField() {
+        return idField;
+    }
+
+    /**
      * Additional list of column names ({@code TEXT} type),
      * which are mapping onto {@link TaskRecord#getExtData()}.
      *
@@ -163,6 +177,7 @@ public class QueueTableSchema {
      * Builder for {@link QueueTableSchema} class.
      */
     public static class Builder {
+        private String idField = "id";
         private String queueNameField = "queue_name";
         private String payloadField = "payload";
         private String attemptField = "attempt";
@@ -173,6 +188,11 @@ public class QueueTableSchema {
         private List<String> extFields = new ArrayList<>();
 
         private Builder() {
+        }
+
+        public Builder withIdField(String idField) {
+            this.idField = idField;
+            return this;
         }
 
         public Builder withQueueNameField(String queueNameField) {
@@ -216,7 +236,7 @@ public class QueueTableSchema {
         }
 
         public QueueTableSchema build() {
-            return new QueueTableSchema(queueNameField, payloadField, attemptField, reenqueueAttemptField,
+            return new QueueTableSchema(idField, queueNameField, payloadField, attemptField, reenqueueAttemptField,
                     totalAttemptField, createdAtField, nextProcessAtField, extFields);
         }
     }
