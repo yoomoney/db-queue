@@ -1,5 +1,10 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=MINOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+* Oracle support
+* Customization of id field in `QueueTableSchema`
+* Seconds granularity in task processing time
+* Id generation in `QueueDao` via separate sequences which can be specified in `QueueLocation.Builder.withIdSequence(String)` 
+  or `id-sequence` in file config.
 ### NEXT_VERSION_DESCRIPTION_END
 ## [8.3.3]() (30-04-2020)
 
@@ -7,7 +12,7 @@
 
 ## [8.3.2]() (27-02-2020)
 
-* Don't add bibucket pull request link into changelog.md on release
+* Don't add bitbucket pull request link into changelog.md on release
 
 ## [8.3.1]() (07-02-2020)
 

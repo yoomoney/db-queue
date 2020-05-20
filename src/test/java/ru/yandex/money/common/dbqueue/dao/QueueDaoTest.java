@@ -3,12 +3,20 @@ package ru.yandex.money.common.dbqueue.dao;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 import ru.yandex.money.common.dbqueue.api.EnqueueParams;
+import ru.yandex.money.common.dbqueue.config.QueueTableSchema;
+import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
@@ -19,13 +27,23 @@ import static org.hamcrest.CoreMatchers.not;
  * @since 25.01.2020
  */
 @Ignore
-public abstract class MssqlQueueDaoTest extends BaseDaoTest {
+public abstract class QueueDaoTest {
 
-    private final MssqlQueueDao queueDao;
+    protected final JdbcTemplate jdbcTemplate;
+    protected final TransactionTemplate transactionTemplate;
 
-    public MssqlQueueDaoTest(TableSchemaType tableSchemaType) {
-        super(tableSchemaType);
-        queueDao = new MssqlQueueDao(jdbcTemplate, tableSchema);
+    protected final String tableName;
+    protected final QueueTableSchema tableSchema;
+
+    public QueueDao queueDao;
+
+    public QueueDaoTest(QueueDao queueDao, String tableName, QueueTableSchema tableSchema,
+                        JdbcTemplate jdbcTemplate, TransactionTemplate transactionTemplate) {
+        this.queueDao = queueDao;
+        this.tableName = tableName;
+        this.tableSchema = tableSchema;
+        this.transactionTemplate = transactionTemplate;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Test
@@ -43,7 +61,7 @@ public abstract class MssqlQueueDaoTest extends BaseDaoTest {
         ZonedDateTime beforeExecution = ZonedDateTime.now();
         long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, EnqueueParams.create(payload)
                 .withExecutionDelay(executionDelay)));
-        jdbcTemplate.query("select * from " + tableName + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + tableName + " where " + tableSchema.getIdField() + "=" + enqueueId, rs -> {
             ZonedDateTime afterExecution = ZonedDateTime.now();
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getString(tableSchema.getPayloadField()), equalTo(payload));
@@ -78,7 +96,7 @@ public abstract class MssqlQueueDaoTest extends BaseDaoTest {
 
         Boolean deleteResult = executeInTransaction(() -> queueDao.deleteTask(location, enqueueId));
         Assert.assertThat(deleteResult, equalTo(true));
-        jdbcTemplate.query("select * from " + tableName + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + tableName + " where " + tableSchema.getIdField() + "=" + enqueueId, rs -> {
             Assert.assertThat(rs.next(), equalTo(false));
             return new Object();
         });
@@ -94,7 +112,7 @@ public abstract class MssqlQueueDaoTest extends BaseDaoTest {
         Duration executionDelay = Duration.ofHours(1L);
         Boolean reenqueueResult = executeInTransaction(() -> queueDao.reenqueue(location, enqueueId, executionDelay));
         Assert.assertThat(reenqueueResult, equalTo(true));
-        jdbcTemplate.query("select * from " + tableName + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + tableName + " where " + tableSchema.getIdField() + "=" + enqueueId, rs -> {
             ZonedDateTime afterExecution = ZonedDateTime.now();
             Assert.assertThat(rs.next(), equalTo(true));
             ZonedDateTime nextProcessAt = ZonedDateTime.ofInstant(rs.getTimestamp(tableSchema.getNextProcessAtField()).toInstant(),
@@ -112,10 +130,10 @@ public abstract class MssqlQueueDaoTest extends BaseDaoTest {
         Long enqueueId = executeInTransaction(() ->
                 queueDao.enqueue(location, new EnqueueParams<>()));
         executeInTransaction(() -> {
-            jdbcTemplate.update("update " + tableName + " set " + tableSchema.getAttemptField() + "=10 where id=" + enqueueId);
+            jdbcTemplate.update("update " + tableName + " set " + tableSchema.getAttemptField() + "=10 where " + tableSchema.getIdField() + "=" + enqueueId);
         });
 
-        jdbcTemplate.query("select * from " + tableName + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + tableName + " where " + tableSchema.getIdField() + "=" + enqueueId, rs -> {
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getLong(tableSchema.getAttemptField()), equalTo(10L));
             return new Object();
@@ -125,7 +143,7 @@ public abstract class MssqlQueueDaoTest extends BaseDaoTest {
                 queueDao.reenqueue(location, enqueueId, Duration.ofHours(1L)));
 
         Assert.assertThat(reenqueueResult, equalTo(true));
-        jdbcTemplate.query("select * from " + tableName + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + tableName + " where " + tableSchema.getIdField() + "=" + enqueueId, rs -> {
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getLong(tableSchema.getAttemptField()), equalTo(0L));
             return new Object();
@@ -138,7 +156,7 @@ public abstract class MssqlQueueDaoTest extends BaseDaoTest {
 
         Long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, new EnqueueParams<>()));
 
-        jdbcTemplate.query("select * from " + tableName + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + tableName + " where " + tableSchema.getIdField() + "=" + enqueueId, rs -> {
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getLong(tableSchema.getReenqueueAttemptField()), equalTo(0L));
             return new Object();
@@ -147,7 +165,7 @@ public abstract class MssqlQueueDaoTest extends BaseDaoTest {
         Boolean reenqueueResult = executeInTransaction(() -> queueDao.reenqueue(location, enqueueId, Duration.ofHours(1L)));
 
         Assert.assertThat(reenqueueResult, equalTo(true));
-        jdbcTemplate.query("select * from " + tableName + " where id=" + enqueueId, rs -> {
+        jdbcTemplate.query("select * from " + tableName + " where " + tableSchema.getIdField() + "=" + enqueueId, rs -> {
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getLong(tableSchema.getReenqueueAttemptField()), equalTo(1L));
             return new Object();
@@ -162,5 +180,23 @@ public abstract class MssqlQueueDaoTest extends BaseDaoTest {
         Assert.assertThat(reenqueueResult, equalTo(false));
     }
 
+    protected QueueLocation generateUniqueLocation() {
+        return QueueLocation.builder().withTableName(tableName)
+                .withQueueId(new QueueId("test-queue-" + UUID.randomUUID())).build();
+    }
+
+
+    protected void executeInTransaction(Runnable runnable) {
+        transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus status) {
+                runnable.run();
+            }
+        });
+    }
+
+    protected <T> T executeInTransaction(Supplier<T> supplier) {
+        return transactionTemplate.execute(status -> supplier.get());
+    }
 
 }

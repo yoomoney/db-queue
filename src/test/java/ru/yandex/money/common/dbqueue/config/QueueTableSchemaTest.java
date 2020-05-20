@@ -17,6 +17,7 @@ public class QueueTableSchemaTest {
     @Test
     public void should_filter_special_chars() {
         QueueTableSchema schema = QueueTableSchema.builder()
+                .withIdField("qid !@#$%^&*()_+-=1\n;'][{}")
                 .withQueueNameField("qn !@#$%^&*()_+-=1\n;'][{}")
                 .withPayloadField("pl !@#$%^&*()_+-=1\n;'][{}")
                 .withCreatedAtField("ct !@#$%^&*()_+-=1\n;'][{}")
@@ -26,6 +27,7 @@ public class QueueTableSchemaTest {
                 .withTotalAttemptField("tat !@#$%^&*()_+-=1\n;'][{}")
                 .withExtFields(Collections.singletonList("tr !@#$%^&*()_+-=1\n;'][{}"))
                 .build();
+        assertThat(schema.getIdField(), equalTo("qid_1"));
         assertThat(schema.getQueueNameField(), equalTo("qn_1"));
         assertThat(schema.getPayloadField(), equalTo("pl_1"));
         assertThat(schema.getCreatedAtField(), equalTo("ct_1"));

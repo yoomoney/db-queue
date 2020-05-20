@@ -50,12 +50,13 @@ public interface QueuePickTaskDao {
             requireNonNull(queueTableSchema);
             requireNonNull(jdbcTemplate);
             requireNonNull(pickTaskSettings);
-            //noinspection SwitchStatementWithTooFewBranches
             switch (databaseDialect) {
                 case POSTGRESQL:
                     return new PostgresQueuePickTaskDao(jdbcTemplate, queueTableSchema, pickTaskSettings);
                 case MSSQL:
                     return new MssqlQueuePickTaskDao(jdbcTemplate, queueTableSchema, pickTaskSettings);
+                case ORACLE_11G:
+                    return new Oracle11QueuePickTaskDao(jdbcTemplate, queueTableSchema, pickTaskSettings);
                 default:
                     throw new IllegalArgumentException("unsupported database kind: " + databaseDialect);
             }

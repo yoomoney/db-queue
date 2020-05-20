@@ -18,7 +18,7 @@ import ru.yandex.money.common.dbqueue.settings.QueueConfig;
 import ru.yandex.money.common.dbqueue.settings.QueueId;
 import ru.yandex.money.common.dbqueue.settings.QueueLocation;
 import ru.yandex.money.common.dbqueue.settings.QueueSettings;
-import ru.yandex.money.common.dbqueue.utils.QueueDatabaseInitializer;
+import ru.yandex.money.common.dbqueue.utils.PostgresDatabaseInitializer;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
@@ -38,14 +38,14 @@ public class ExampleConfiguration {
     @Test
     public void example_config() throws InterruptedException {
         AtomicBoolean isTaskConsumed = new AtomicBoolean(false);
-        QueueDatabaseInitializer.databaseType = QueueDatabaseInitializer.DatabaseType.PG;
-        QueueDatabaseInitializer.createDefaultTable("example_task_table");
+        PostgresDatabaseInitializer.initialize();
+        PostgresDatabaseInitializer.createDefaultTable("example_task_table");
 
         QueueShard shard = new QueueShard(DatabaseDialect.POSTGRESQL,
                 QueueTableSchema.builder().build(),
                 new QueueShardId("main"),
-                QueueDatabaseInitializer.getJdbcTemplate(),
-                QueueDatabaseInitializer.getTransactionTemplate());
+                PostgresDatabaseInitializer.getJdbcTemplate(),
+                PostgresDatabaseInitializer.getTransactionTemplate());
 
         QueueConfig config = new QueueConfig(QueueLocation.builder().withTableName("example_task_table")
                 .withQueueId(new QueueId("example_queue")).build(),

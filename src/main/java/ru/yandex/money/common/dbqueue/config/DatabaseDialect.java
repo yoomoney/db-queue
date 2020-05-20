@@ -14,5 +14,9 @@ public enum DatabaseDialect {
     /**
      * Microsoft SQL Server
      */
-    MSSQL
+    MSSQL,
+    /**
+     * Oracle 11g
+     */
+    ORACLE_11G
 }

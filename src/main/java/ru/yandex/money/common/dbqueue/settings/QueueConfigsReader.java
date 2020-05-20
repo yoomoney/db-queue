@@ -223,6 +223,10 @@ public class QueueConfigsReader {
      */
     public static final String SETTING_TABLE = "table";
     /**
+     * Representation of {@link QueueLocation#getIdSequence()}
+     */
+    public static final String SETTING_ID_SEQUENCE = "id-sequence";
+    /**
      * Representation of {@link QueueSettings#getAdditionalSettings()}
      */
     public static final String SETTING_ADDITIONAL = "additional-settings";
@@ -310,12 +314,16 @@ public class QueueConfigsReader {
 
     @Nonnull
     private QueueLocation buildQueueLocation(String queueId, Map<String, String> settings) {
-        return Objects.requireNonNull(settings.entrySet().stream()
+        QueueLocation.Builder builder = QueueLocation.builder().withQueueId(new QueueId(queueId));
+        settings.entrySet().stream()
                 .filter(property -> SETTING_TABLE.equals(property.getKey()))
                 .findFirst()
-                .map(property -> QueueLocation.builder().withTableName(property.getValue())
-                        .withQueueId(new QueueId(queueId)).build())
-                .orElse(null));
+                .ifPresent(property -> builder.withTableName(property.getValue()).build());
+        settings.entrySet().stream()
+                .filter(property -> SETTING_ID_SEQUENCE.equals(property.getKey()))
+                .findFirst()
+                .ifPresent(property -> builder.withIdSequence(property.getValue()).build());
+        return builder.build();
     }
 
     private QueueSettings.Builder buildQueueSettings(Map<String, String> settings) {
@@ -324,6 +332,7 @@ public class QueueConfigsReader {
                 .filter(property -> !property.getKey().startsWith(SETTING_ADDITIONAL + "."))
                 .filter(property -> !property.getKey().startsWith(REENQUEUE_RETRY_PREFIX))
                 .filter(property -> !SETTING_TABLE.equals(property.getKey()))
+                .filter(property -> !SETTING_ID_SEQUENCE.equals(property.getKey()))
                 .forEach(property -> tryFillSetting(builder, property.getKey(), property.getValue()));
         return builder;
     }

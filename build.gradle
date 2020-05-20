@@ -20,6 +20,8 @@ dependencyManagement {
 tasks.withType(Test) {
     systemProperty "testcontainers.ryuk.container.image", "docker.nexus.yamoney.ru/testcontainers/ryuk:0.2.3"
     systemProperty "testcontainers.mssql.container.image", "docker.nexus.yamoney.ru/mssql/server:2019-CU1-ubuntu-16.04"
+    systemProperty "testcontainers.postgresql.container.image", "docker.nexus.yamoney.ru/postgres:9.5"
+    systemProperty "testcontainers.oracle.container.image", "docker.nexus.yamoney.ru/wnameless/oracle-xe-11g-r2"
 }
 
 releaseSettings {
