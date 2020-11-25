@@ -81,7 +81,7 @@ public class QueueLoop {
                     default:
                         throw new IllegalStateException("unknown task loop result" + queueProcessingStatus);
                 }
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 threadLifecycleListener.crashed(shardId, queueConsumer.getQueueConfig().getLocation(), e);
                 loopPolicy.doWait(queueConsumer.getQueueConfig().getSettings().getFatalCrashTimeout(),
                         LoopPolicy.WaitInterrupt.DENY);
