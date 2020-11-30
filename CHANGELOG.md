@@ -43,7 +43,7 @@ This makes the task selection query run faster increase up to 5 times.
 
 ## [8.0.1]() (08-11-2019)
 
-* [PR#2](https://github.com/yandex-money-tech/db-queue/pull/2) Allow dots as part of a table name. Thanks to [@everplays](https://github.com/everplays).
+* [PR#2](https://github.com/yoomoney-tech/db-queue/pull/2) Allow dots as part of a table name. Thanks to [@everplays](https://github.com/everplays).
 
 ## [8.0.0]() (28-10-2019)
 

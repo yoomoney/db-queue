@@ -1,11 +1,11 @@
 package example;
 
-import ru.yandex.money.common.dbqueue.api.EnqueueParams;
-import ru.yandex.money.common.dbqueue.api.QueueProducer;
-import ru.yandex.money.common.dbqueue.api.TaskPayloadTransformer;
-import ru.yandex.money.common.dbqueue.api.impl.NoopPayloadTransformer;
-import ru.yandex.money.common.dbqueue.config.QueueShard;
-import ru.yandex.money.common.dbqueue.settings.QueueConfig;
+import ru.yoomoney.tech.dbqueue.api.EnqueueParams;
+import ru.yoomoney.tech.dbqueue.api.QueueProducer;
+import ru.yoomoney.tech.dbqueue.api.TaskPayloadTransformer;
+import ru.yoomoney.tech.dbqueue.api.impl.NoopPayloadTransformer;
+import ru.yoomoney.tech.dbqueue.config.QueueShard;
+import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 
 import javax.annotation.Nonnull;
 

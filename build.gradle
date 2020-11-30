@@ -1,33 +1,155 @@
 buildscript {
-    apply from: 'project.gradle', to: buildscript
-}
-apply plugin: 'yamoney-library-project-plugin'
-/////////////////////////////////////////////
-
-groupIdSuffix = "common"
-artifactID = "yamoney-db-queue"
-
-apply from: 'dependencies.gradle'
-
-dependencies {
-    testCompile 'com.oracle.jdbc:ojdbc7:12.1.0.2'
-}
-
-dependencyManagement {
-    dependencies {
-        dependency 'net.java.dev.jna:jna-platform:5.5.0' // required by org.testcontainers:testcontainers
-        dependency 'net.java.dev.jna:jna:5.5.0' // required by org.testcontainers:testcontainers
-        dependency 'com.microsoft.sqlserver:mssql-jdbc:8.2.0.jre8'
+    repositories {
+        jcenter()
     }
 }
 
-tasks.withType(Test) {
-    systemProperty "testcontainers.ryuk.container.image", "docker.nexus.yamoney.ru/testcontainers/ryuk:0.2.3"
-    systemProperty "testcontainers.mssql.container.image", "docker.nexus.yamoney.ru/mssql/server:2019-CU1-ubuntu-16.04"
-    systemProperty "testcontainers.postgresql.container.image", "docker.nexus.yamoney.ru/postgres:9.5"
-    systemProperty "testcontainers.oracle.container.image", "docker-ym.nexus.yamoney.ru/yamoney/oracle-xe-11g-test:1.0.0"
+plugins {
+    id "com.jfrog.bintray" version "1.8.4"
 }
 
-releaseSettings {
-    addPullRequestLinkToChangelog = false
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+wrapper {
+    distributionType = Wrapper.DistributionType.ALL
+    jarFile = "${project.projectDir}/gradle/wrapper/gradle-wrapper.jar"
+    scriptFile = "${project.projectDir}/gradlew"
+    gradleVersion = '6.0.1'
+}
+
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'java'
+apply from: 'dependencies.gradle'
+
+dependencies {
+    testCompile 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
+}
+
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+sourceCompatibility = '8'
+targetCompatibility = '8'
+
+compileJava {
+    options.compilerArgs.addAll(['--release', '8'])
+}
+
+jar {
+    manifest {
+        attributes(
+                'Implementation-Version': "$project.version",
+                'Implementation-Title': "$project.name",
+                'Built-By': java.lang.System.getProperty('user.name'),
+                'Built-Date': new Date().format('yyyy-MM-dd'),
+                'Copyright': '2020 NBCO YooMoney LLC',
+                'License': 'MIT'
+        )
+    }
+
+    from(projectDir.absolutePath) {
+        include "CHANGELOG.md", "README.md"
+        into "META-INF"
+    }
+}
+
+apply plugin: 'idea'
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+test {
+    systemProperty "file.encoding", "UTF-8"
+    testLogging {
+        events "skipped", "failed"
+        exceptionFormat "full"
+        showExceptions true
+        showCauses true
+        showStackTraces true
+    }
+}
+
+apply plugin: "jacoco"
+jacoco {
+    toolVersion = '0.8.3'
+}
+jacocoTestReport {
+    reports {
+        html.enabled = true
+        xml.enabled = true
+    }
+}
+check.dependsOn jacocoTestReport
+
+javadoc {
+    exclude "**/internal/**"
+    options {
+        docEncoding = 'UTF-8'
+        charSet = 'UTF-8'
+        encoding = 'UTF-8'
+        failOnError = true
+    }
+}
+
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar, javadocJar
+}
+
+publishing {
+    publications {
+        MyPublication(MavenPublication) {
+            from components.java
+            groupId 'ru.yoomoney.tech'
+            artifactId 'db-queue'
+            version project.version
+            artifact sourcesJar
+            artifact javadocJar
+        }
+    }
+}
+
+bintrayUpload.onlyIf { !project.version.endsWith("-SNAPSHOT") }
+
+bintray {
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_API_KEY')
+    publications = ['MyPublication']
+
+    dryRun = false
+    publish = true
+    pkg {
+        name = 'db-queue'
+        repo = 'maven'
+        userOrg = 'yoomoney-tech'
+        desc = ' Worker-queue implementation on top of Java and database'
+        websiteUrl = 'https://github.com/yoomoney-tech/db-queue'
+        issueTrackerUrl = 'https://github.com/yoomoney-tech/db-queue/issues'
+        vcsUrl = 'https://github.com/yoomoney-tech/db-queue.git'
+        licenses = ['MIT']
+        labels = ['postgresql', 'mssql', 'oracle', 'queue', 'java', 'database']
+        publicDownloadNumbers = true
+        githubRepo = 'yoomoney-tech/db-queue'
+        githubReleaseNotesFile = 'CHANGELOG.md'
+        version {
+            name = project.version
+            released = new Date()
+            vcsTag = project.version
+        }
+    }
 }

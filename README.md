@@ -1,8 +1,8 @@
-[![Build Status](https://travis-ci.org/yandex-money-tech/db-queue.svg?branch=master)](https://travis-ci.org/yandex-money-tech/db-queue)
-[![Codecov](https://codecov.io/gh/yandex-money-tech/db-queue/branch/master/graph/badge.svg)](https://codecov.io/gh/yandex-money-tech/db-queue)
+[![Build Status](https://travis-ci.org/yoomoney-tech/db-queue.svg?branch=master)](https://travis-ci.org/yoomoney-tech/db-queue)
+[![Codecov](https://codecov.io/gh/yoomoney-tech/db-queue/branch/master/graph/badge.svg)](https://codecov.io/gh/yoomoney-tech/db-queue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Javadoc](https://img.shields.io/badge/javadoc-latest-blue.svg)](https://yandex-money-tech.github.io/db-queue/)
-[![Download](https://api.bintray.com/packages/yandex-money-tech/maven/db-queue/images/download.svg)](https://bintray.com/yandex-money-tech/maven/db-queue/_latestVersion)
+[![Javadoc](https://img.shields.io/badge/javadoc-latest-blue.svg)](https://yoomoney-tech.github.io/db-queue/)
+[![Download](https://api.bintray.com/packages/yoomoney-tech/maven/db-queue/images/download.svg)](https://bintray.com/yoomoney-tech/maven/db-queue/_latestVersion)
 # Database Queue
 
 Library provides worker-queue implementation on top of Java and database.
@@ -22,13 +22,13 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 ## How it works?
 
 1. You have a task that you want to process later. 
-2. You tell [QueueProducer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueProducer.html) to schedule the task. 
-3. [QueueProducer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueProducer.html) optionally chooses a database shard.
-4. [QueueProducer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueProducer.html) converts the task payload to string representation through [TaskPayloadTransformer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/TaskPayloadTransformer.html). 
-5. [QueueProducer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueProducer.html) inserts the task in the database through [QueueDao](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/dao/QueueDao.html).
+2. You tell [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) to schedule the task. 
+3. [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) optionally chooses a database shard.
+4. [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) converts the task payload to string representation through [TaskPayloadTransformer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.html). 
+5. [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) inserts the task in the database through [QueueDao](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/dao/QueueDao.html).
 6. ... the task has been selected from database at specified time according to queue settings ... 
-7. The task payload is converted to typed representation through [TaskPayloadTransformer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/TaskPayloadTransformer.html).
-8. The task is passed to the [QueueConsumer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueConsumer.html) instance in order to be processed. 
+7. The task payload is converted to typed representation through [TaskPayloadTransformer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.html).
+8. The task is passed to the [QueueConsumer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueConsumer.html) instance in order to be processed. 
 9. You process the task and return processing result. 
 10. ... the task is updated according to processing result and queue settings ...
 
@@ -36,15 +36,15 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 
 * Persistent working-queue
 * Support for PostgreSQL, MSSQL.
-* Storing queue tasks in a separate tables or in the same table ([QueueLocation](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/settings/QueueLocation.html)).
-* Storing queue tasks in a separate databases for horizontal scaling ([QueueShard](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/config/QueueShard.html)).
+* Storing queue tasks in a separate tables or in the same table ([QueueLocation](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/QueueLocation.html)).
+* Storing queue tasks in a separate databases for horizontal scaling ([QueueShard](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/config/QueueShard.html)).
 * Delayed task execution.
 * At-least-once task processing semantic.
-* Several retry strategies in case of a task processing error ([TaskRetryType](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/settings/TaskRetryType.html)).
-* Task event listeners ([TaskLifecycleListener](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/TaskLifecycleListener.html), [ThreadLifecycleListener](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/ThreadLifecycleListener.html)).
-* Strong-typed api for task processing and enqueuing ([TaskPayloadTransformer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/TaskPayloadTransformer.html)).
-* Several task processing modes ([ProcessingMode](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/settings/ProcessingMode.html)).
-* And many other features, look at [Settings package](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/settings/package-frame.html). 
+* Several retry strategies in case of a task processing error ([TaskRetryType](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/TaskRetryType.html)).
+* Task event listeners ([TaskLifecycleListener](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/TaskLifecycleListener.html), [ThreadLifecycleListener](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/ThreadLifecycleListener.html)).
+* Strong-typed api for task processing and enqueuing ([TaskPayloadTransformer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.html)).
+* Several task processing modes ([ProcessingMode](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/ProcessingMode.html)).
+* And many other features, look at [Settings package](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/package-frame.html). 
 
 ## Database support
 
@@ -71,7 +71,7 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 
 ```
 <dependency>
-  <groupId>com.yandex.money.tech</groupId>
+  <groupId>ru.yoomoney.tech</groupId>
   <artifactId>db-queue</artifactId>
   <version>8.4.0</version>
 </dependency>
@@ -176,13 +176,13 @@ CREATE SEQUENCE tasks_seq;
 
 ### Code
 
-Example configuration is shown in [example.ExampleConfiguration](https://github.com/yandex-money-tech/db-queue/blob/master/src/test/java/example/ExampleConfiguration.java).
+Example configuration is shown in [example.ExampleConfiguration](https://github.com/yoomoney-tech/db-queue/blob/master/src/test/java/example/ExampleConfiguration.java).
 
 The main steps are:
-* Specify a queue configuration through [QueueConfig](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/settings/QueueConfig.html) instance (or use [QueueConfigsReader](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/settings/QueueConfigsReader.html)).
-* Implement [QueueProducer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueProducer.html) interface.
-* Implement [QueueConsumer](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/QueueConsumer.html) interface.
-* Create [QueueService](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/init/QueueService.html) and start it.
+* Specify a queue configuration through [QueueConfig](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/QueueConfig.html) instance (or use [QueueConfigsReader](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/QueueConfigsReader.html)).
+* Implement [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) interface.
+* Implement [QueueConsumer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueConsumer.html) interface.
+* Create [QueueService](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/init/QueueService.html) and start it.
 * Register `QueueConsumer` in `QueueService`
 * Start queues through `QueueService`
 
@@ -194,20 +194,20 @@ Internal classes. **Not for public use**.
 
 *Backward compatibility for classes in that package may be broken in any release*
 
-* [api](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/api/package-frame.html)
+* [api](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/package-frame.html)
 
 You should provide implementation for interfaces in that package.
 The package contains classes which are involved in processing or enqueueing tasks.
 
-* [settings](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/settings/package-frame.html)
+* [settings](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/package-frame.html)
 
 Queue settings.
 
-* [dao](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/dao/package-frame.html)
+* [dao](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/dao/package-frame.html)
 
 Additional classes for managing storage.
 
-* [config](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/config/package-frame.html)
+* [config](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/config/package-frame.html)
 
 Registration and configuration.
 
@@ -224,16 +224,4 @@ There is no support for blue-green deployment because a task is not bound to a h
 * Hard to write tests.
 
 Task processing is asynchronous. Therefore, it is hard to write tests because you always must think about that fact
-and write code according to it. To ease development of tests you can use `wakeup` method of [QueueService](https://yandex-money-tech.github.io/db-queue/ru/yandex/money/common/dbqueue/init/QueueService.html)
-
-# How To Build
-
-You can look at Travis (`.travis.yml`) or AppVeyor (`appveyor.yml`) configuration. 
-We have two gradle build files. There are `build.gradle`, `gradlew`, `gradle/wrapper` for Yandex.Money infrastructure and
-`build-public.gradle`, `gradlew-public`, `gradle-public/wrapper` for configuration outside of private network.
-
-# How To Import Project in IDE
-
-Unfortunately, there is a bug in IntelliJ IDEA (https://github.com/f0y/idea-two-gradle-builds) so you have to replace 
-`gradle-public/wrapper/gradle-wrapper.properties` with `gradle/wrapper/gradle-wrapper.properties` and 
-`build-public.gradle` with `build.gradle` before importing. 
+and write code according to it. To ease development of tests you can use `wakeup` method of [QueueService](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/init/QueueService.html)
