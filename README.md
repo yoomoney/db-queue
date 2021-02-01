@@ -23,12 +23,12 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 
 1. You have a task that you want to process later. 
 2. You tell [QueueProducer](src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) to schedule the task. 
-3. [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) optionally chooses a database shard.
-4. [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) converts the task payload to string representation through [TaskPayloadTransformer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.html). 
-5. [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) inserts the task in the database through [QueueDao](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/dao/QueueDao.html).
+3. [QueueProducer](src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) optionally chooses a database shard.
+4. [QueueProducer](src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) converts the task payload to string representation through [TaskPayloadTransformer](src/main/java/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.java). 
+5. [QueueProducer](src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) inserts the task in the database through [QueueDao](src/main/java/ru/yoomoney/tech/dbqueue/dao/QueueDao.java).
 6. ... the task has been selected from database at specified time according to queue settings ... 
-7. The task payload is converted to typed representation through [TaskPayloadTransformer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.html).
-8. The task is passed to the [QueueConsumer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueConsumer.html) instance in order to be processed. 
+7. The task payload is converted to typed representation through [TaskPayloadTransformer](src/main/java/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.java).
+8. The task is passed to the [QueueConsumer](src/main/java/ru/yoomoney/tech/dbqueue/api/QueueConsumer.java) instance in order to be processed. 
 9. You process the task and return processing result. 
 10. ... the task is updated according to processing result and queue settings ...
 
@@ -36,15 +36,15 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 
 * Persistent working-queue
 * Support for PostgreSQL, MSSQL.
-* Storing queue tasks in a separate tables or in the same table ([QueueLocation](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/QueueLocation.html)).
-* Storing queue tasks in a separate databases for horizontal scaling ([QueueShard](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/config/QueueShard.html)).
+* Storing queue tasks in a separate tables or in the same table ([QueueLocation](src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueLocation.java)).
+* Storing queue tasks in a separate databases for horizontal scaling ([QueueShard](src/main/java/ru/yoomoney/tech/dbqueue/config/QueueShard.java)).
 * Delayed task execution.
 * At-least-once task processing semantic.
-* Several retry strategies in case of a task processing error ([TaskRetryType](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/TaskRetryType.html)).
-* Task event listeners ([TaskLifecycleListener](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/TaskLifecycleListener.html), [ThreadLifecycleListener](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/ThreadLifecycleListener.html)).
-* Strong-typed api for task processing and enqueuing ([TaskPayloadTransformer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.html)).
-* Several task processing modes ([ProcessingMode](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/ProcessingMode.html)).
-* And many other features, look at [Settings package](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/package-frame.html). 
+* Several retry strategies in case of a task processing error ([TaskRetryType](src/main/java/ru/yoomoney/tech/dbqueue/settings/TaskRetryType.java)).
+* Task event listeners ([TaskLifecycleListener](src/main/java/ru/yoomoney/tech/dbqueue/config/TaskLifecycleListener.java), [ThreadLifecycleListener](src/main/java/ru/yoomoney/tech/dbqueue/config/ThreadLifecycleListener.java)).
+* Strong-typed api for task processing and enqueuing ([TaskPayloadTransformer](src/main/java/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.java)).
+* Several task processing modes ([ProcessingMode](src/main/java/ru/yoomoney/tech/dbqueue/settings/ProcessingMode.java)).
+* And many other features, look at [Settings package](src/main/java/ru/yoomoney/tech/dbqueue/settings). 
 
 ## Database support
 
@@ -57,7 +57,7 @@ Feel free to add support for other databases via pull request.
 
 Library contains minimal set of dependencies.
 It requires Spring Framework (spring-jdbc and spring-tx) for interacting with database. 
-Other features of Spring ecosystem are not used. 
+Other features of Spring ecosystem are not in use. 
 
 # Usage
 
@@ -73,7 +73,7 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 <dependency>
   <groupId>ru.yoomoney.tech</groupId>
   <artifactId>db-queue</artifactId>
-  <version>8.4.0</version>
+  <version>10.0.0</version>
 </dependency>
 ```
 
@@ -98,8 +98,7 @@ CREATE INDEX queue_tasks_name_time_desc_idx
 ```
 
 You should always analyze your database workload before applying 
-these recommendations. Settings heavily depends on a hardware 
-and a load you have.
+these recommendations. Settings heavily depends on a hardware, and a load you have.
 
 * Fill Factor 
 
@@ -176,13 +175,13 @@ CREATE SEQUENCE tasks_seq;
 
 ### Code
 
-Example configuration is shown in [example.ExampleConfiguration](https://github.com/yoomoney-tech/db-queue/blob/master/src/test/java/example/ExampleConfiguration.java).
+Example configuration is shown in [example.ExampleConfiguration](src/test/java/example/ExampleConfiguration.java).
 
 The main steps are:
-* Specify a queue configuration through [QueueConfig](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/QueueConfig.html) instance (or use [QueueConfigsReader](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/QueueConfigsReader.html)).
-* Implement [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) interface.
-* Implement [QueueConsumer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueConsumer.html) interface.
-* Create [QueueService](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/init/QueueService.html) and start it.
+* Specify a queue configuration through [QueueConfig](src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfig.java) instance (or use [QueueConfigsReader](src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfigsReader.java)).
+* Implement [QueueProducer](src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) interface.
+* Implement [QueueConsumer](src/main/java/ru/yoomoney/tech/dbqueue/api/QueueConsumer.java) interface.
+* Create [QueueService](src/main/java/ru/yoomoney/tech/dbqueue/config/QueueService.java).
 * Register `QueueConsumer` in `QueueService`
 * Start queues through `QueueService`
 
@@ -192,22 +191,22 @@ The main steps are:
 
 Internal classes. **Not for public use**.
 
-*Backward compatibility for classes in that package may be broken in any release*
+*Backward compatibility for classes in that package maybe broken in any release*
 
-* [api](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/package-frame.html)
+* [api](src/main/java/ru/yoomoney/tech/dbqueue/api)
 
 You should provide implementation for interfaces in that package.
 The package contains classes which are involved in processing or enqueueing tasks.
 
-* [settings](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/settings/package-frame.html)
+* [settings](src/main/java/ru/yoomoney/tech/dbqueue/settings)
 
 Queue settings.
 
-* [dao](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/dao/package-frame.html)
+* [dao](src/main/java/ru/yoomoney/tech/dbqueue/dao)
 
 Additional classes for managing storage.
 
-* [config](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/config/package-frame.html)
+* [config](src/main/java/ru/yoomoney/tech/dbqueue/config)
 
 Registration and configuration.
 
@@ -224,4 +223,4 @@ There is no support for blue-green deployment because a task is not bound to a h
 * Hard to write tests.
 
 Task processing is asynchronous. Therefore, it is hard to write tests because you always must think about that fact
-and write code according to it. To ease development of tests you can use `wakeup` method of [QueueService](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/init/QueueService.html)
+and write code according to it. To ease development of tests you can use `wakeup` method of [QueueService](src/main/java/ru/yoomoney/tech/dbqueue/init/QueueService.java)

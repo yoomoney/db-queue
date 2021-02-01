@@ -1,8 +1,12 @@
 ### NEXT_VERSION_TYPE=MAJOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+* Fix links to java classes in README.md
+### NEXT_VERSION_DESCRIPTION_END
+## [10.0.0]() (01-02-2021)
+
 * Upgrade to Spring Boot 2.4.1 
 * Release via `ru.yoomoney.gradle.plugins.artifact-release-plugin`
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [9.0.0]() (30-11-2020)
 
 * Rebranding Yandex.Money to YooMoney
