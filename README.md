@@ -22,7 +22,7 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 ## How it works?
 
 1. You have a task that you want to process later. 
-2. You tell [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) to schedule the task. 
+2. You tell [QueueProducer](src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) to schedule the task. 
 3. [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) optionally chooses a database shard.
 4. [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) converts the task payload to string representation through [TaskPayloadTransformer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.html). 
 5. [QueueProducer](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/api/QueueProducer.html) inserts the task in the database through [QueueDao](https://yoomoney-tech.github.io/db-queue/ru/yoomoney/tech/dbqueue/dao/QueueDao.html).
