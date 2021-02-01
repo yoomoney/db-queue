@@ -103,7 +103,6 @@ jacocoTestReport {
 check.dependsOn jacocoTestReport
 
 javadoc {
-    exclude "**/internal/**"
     options {
         docEncoding = 'UTF-8'
         charSet = 'UTF-8'

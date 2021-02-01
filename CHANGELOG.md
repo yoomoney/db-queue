@@ -1,7 +1,11 @@
-### NEXT_VERSION_TYPE=MAJOR
+### NEXT_VERSION_TYPE=PATCH
 ### NEXT_VERSION_DESCRIPTION_BEGIN
-* Fix links to java classes in README.md
+* Adjust version
 ### NEXT_VERSION_DESCRIPTION_END
+## [10.0.1]() (01-02-2021)
+
+* Fix links to java classes in README.md
+
 ## [10.0.0]() (01-02-2021)
 
 * Upgrade to Spring Boot 2.4.1 
