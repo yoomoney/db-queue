@@ -1,11 +1,27 @@
 buildscript {
     repositories {
         jcenter()
+        dependencies {
+            classpath 'ru.yoomoney.gradle.plugins:artifact-release-plugin:3.5.1'
+        }
     }
 }
 
 plugins {
     id "com.jfrog.bintray" version "1.8.4"
+    id "ru.yoomoney.gradle.plugins.artifact-release-plugin" version "3.5.1"
+}
+
+releaseSettings {
+    releaseTasks = ["build", "bintrayUpload"]
+    pathToGitPrivateSshKey = System.getenv("GIT_PRIVATE_SSH_KEY_PATH")
+    passphraseToGitPrivateSshKey = System.getenv("GIT_KEY_PASSPHRASE")
+    gitUsername = "yoomoney-robot"
+    gitEmail = "SvcReleaserBackend@yoomoney.ru"
+    changelogRequired = true
+    addPullRequestLinkToChangelog = true
+    pullRequestInfoProvider = "GitHub"
+    githubAccessToken = System.getenv("GITHUB_TOKEN")
 }
 
 repositories {
@@ -45,7 +61,7 @@ jar {
                 'Implementation-Title': "$project.name",
                 'Built-By': java.lang.System.getProperty('user.name'),
                 'Built-Date': new Date().format('yyyy-MM-dd'),
-                'Copyright': '2020 NBCO YooMoney LLC',
+                'Copyright': '2021 NBCO YooMoney LLC',
                 'License': 'MIT'
         )
     }
@@ -123,8 +139,6 @@ publishing {
         }
     }
 }
-
-bintrayUpload.onlyIf { !project.version.endsWith("-SNAPSHOT") }
 
 bintray {
     user = System.getenv('BINTRAY_USER')

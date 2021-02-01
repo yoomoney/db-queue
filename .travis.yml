@@ -12,15 +12,30 @@ install:
  - true
 
 before_script:
-- git config --global user.email "SvcReleaserBackend@yoomoney.ru"
-- git config --global user.name "YoomoneyRobot"
+  - git config --global user.email "SvcReleaserBackend@yoomoney.ru"
+  - git config --global user.name "YoomoneyRobot"
+  - git checkout -f $TRAVIS_BRANCH
+    # Decrypt the git_key.enc key into git_key
+    - |
+    if [ $TRAVIS_BRANCH == "master" ] && [ $TRAVIS_PULL_REQUEST == "false" ]; then
+        openssl aes-256-cbc -k $GIT_PRIVATE_KEY_PASS -in git_key.enc -out git_key -d
+    fi
+      - export GIT_PRIVATE_SSH_KEY_PATH=$TRAVIS_BUILD_DIR/git_key
 
-script:
-- ./gradlew -b build.gradle clean build bintrayUpload --info
+jobs:
+  include:
+    - stage: build
+      script:
+        - ./gradlew -b build.gradle clean build test --info
+    - stage: release
+      if: branch = master
+      script:
+        - |
+          ./gradlew -b build.gradle preRelease --info
+          ./gradlew -b build.gradle release --info
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
-  - ./publish_doc.sh
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
