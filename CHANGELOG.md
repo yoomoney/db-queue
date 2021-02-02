@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=PATCH
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [11.0.1]() (02-02-2021)
+
 * Adjust version
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [11.0.0]() (01-02-2021)
 
 * Fix links to java classes in README.md
