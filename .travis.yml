@@ -5,6 +5,9 @@ jdk:
 env:
   - TERM=dumb
 
+git:
+  clone: false
+
 #Below skips the installation step completely (https://docs.travis-ci.com/user/customizing-the-build/#Skipping-the-Installation-Step)
 #We need it because otherwise Travis CI injects an awkward './gradlew assemble' step into the CI workflow
 #We want to control and decide what Gradle tasks are executed
@@ -14,11 +17,17 @@ install:
 before_script:
   - git config --global user.email "SvcReleaserBackend@yoomoney.ru"
   - git config --global user.name "yoomoney-robot"
+  - echo $GIT_CHECKOUT_KEY | openssl base64 -A -d >> ~/.ssh/git_key_checkout
+  - chmod 400 ~/.ssh/git_key_checkout
+  - eval `ssh-agent -s`
+  - ssh-add ~/.ssh/git_key_checkout
+  - git clone --depth=50 --branch=$TRAVIS_BRANCH git@github.com:$TRAVIS_REPO_SLUG.git $TRAVIS_REPO_SLUG
+  - cd $TRAVIS_REPO_SLUG
   - git checkout -f $TRAVIS_BRANCH
-  # Decrypt the git_key.enc key into git_key
+
   - |
     if [ $TRAVIS_BRANCH == "master" ] && [ $TRAVIS_PULL_REQUEST == "false" ]; then
-        openssl aes-256-cbc -k $GIT_PRIVATE_KEY_PASS -in git_key.enc -out git_key -d
+        echo $GIT_KEY | openssl base64 -A -d >> $TRAVIS_BUILD_DIR/git_key
     fi
   - export GIT_PRIVATE_SSH_KEY_PATH=$TRAVIS_BUILD_DIR/git_key
 

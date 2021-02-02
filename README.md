@@ -73,7 +73,7 @@ Library is available on [Bintray's JCenter repository](http://jcenter.bintray.co
 <dependency>
   <groupId>ru.yoomoney.tech</groupId>
   <artifactId>db-queue</artifactId>
-  <version>10.0.0</version>
+  <version>11.0.0</version>
 </dependency>
 ```
 

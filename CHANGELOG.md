@@ -2,20 +2,15 @@
 ### NEXT_VERSION_DESCRIPTION_BEGIN
 * Adjust version
 ### NEXT_VERSION_DESCRIPTION_END
-## [10.0.1]() (01-02-2021)
+## [11.0.0]() (01-02-2021)
 
 * Fix links to java classes in README.md
-
-## [10.0.0]() (01-02-2021)
-
 * Upgrade to Spring Boot 2.4.1 
 * Release via `ru.yoomoney.gradle.plugins.artifact-release-plugin`
-
-## [9.0.0]() (30-11-2020)
-
 * Rebranding Yandex.Money to YooMoney
 * Changed package names to `ru.yoomoney.tech.dbqueue` instead 
 of `ru.yandex.money.common.dbqueue`
+
 ## [8.4.0]() (20-05-2020)
 
 * Oracle support
