@@ -2,14 +2,14 @@ buildscript {
     repositories {
         jcenter()
         dependencies {
-            classpath 'ru.yoomoney.gradle.plugins:artifact-release-plugin:3.5.1'
+            classpath 'ru.yoomoney.gradle.plugins:artifact-release-plugin:3.8.1'
         }
     }
 }
 
 plugins {
     id "com.jfrog.bintray" version "1.8.4"
-    id "ru.yoomoney.gradle.plugins.artifact-release-plugin" version "3.5.1"
+    id "ru.yoomoney.gradle.plugins.artifact-release-plugin" version "3.8.1"
 }
 
 releaseSettings {
@@ -33,17 +33,13 @@ wrapper {
     distributionType = Wrapper.DistributionType.ALL
     jarFile = "${project.projectDir}/gradle/wrapper/gradle-wrapper.jar"
     scriptFile = "${project.projectDir}/gradlew"
-    gradleVersion = '6.0.1'
+    gradleVersion = '6.4.1'
 }
 
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'java'
 apply from: 'dependencies.gradle'
-
-dependencies {
-    testCompile 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
-}
 
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'

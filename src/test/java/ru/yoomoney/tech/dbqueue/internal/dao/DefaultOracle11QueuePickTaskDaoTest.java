@@ -1,6 +1,7 @@
 package ru.yoomoney.tech.dbqueue.internal.dao;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import ru.yoomoney.tech.dbqueue.dao.Oracle11QueueDao;
 import ru.yoomoney.tech.dbqueue.internal.pick.Oracle11QueuePickTaskDao;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
@@ -14,6 +15,7 @@ import java.util.UUID;
  * @author Oleg Kandaurov
  * @since 12.10.2019
  */
+@Ignore("https://github.com/yoomoney-tech/db-queue/issues/10")
 public class DefaultOracle11QueuePickTaskDaoTest extends QueuePickTaskDaoTest {
 
     @BeforeClass

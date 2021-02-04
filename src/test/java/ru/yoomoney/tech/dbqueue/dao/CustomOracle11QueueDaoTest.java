@@ -1,6 +1,7 @@
 package ru.yoomoney.tech.dbqueue.dao;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
 import ru.yoomoney.tech.dbqueue.utils.OracleDatabaseInitializer;
@@ -11,6 +12,7 @@ import java.util.UUID;
  * @author Oleg Kandaurov
  * @since 12.10.2019
  */
+@Ignore("https://github.com/yoomoney-tech/db-queue/issues/10")
 public class CustomOracle11QueueDaoTest extends QueueDaoTest {
 
     @BeforeClass

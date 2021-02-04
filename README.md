@@ -5,7 +5,17 @@
 [![Download](https://api.bintray.com/packages/yoomoney-tech/maven/db-queue/images/download.svg)](https://bintray.com/yoomoney-tech/maven/db-queue/_latestVersion)
 # Database Queue
 
-Library provides worker-queue implementation on top of Java and database.
+Library provides worker-queue implementation on top of Java and database.  
+Project uses [Semantic Versioning](http://semver.org/).  
+Library is available on [Bintray's JCenter repository](http://jcenter.bintray.com) 
+
+```
+<dependency>
+  <groupId>ru.yoomoney.tech</groupId>
+  <artifactId>db-queue</artifactId>
+  <version>11.0.0</version>
+</dependency>
+```
 
 ## Why?
 
@@ -35,7 +45,7 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 ## Features
 
 * Persistent working-queue
-* Support for PostgreSQL, MSSQL.
+* Support for PostgreSQL, MSSQL, Oracle.
 * Storing queue tasks in a separate tables or in the same table ([QueueLocation](src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueLocation.java)).
 * Storing queue tasks in a separate databases for horizontal scaling ([QueueShard](src/main/java/ru/yoomoney/tech/dbqueue/config/QueueShard.java)).
 * Delayed task execution.
@@ -60,22 +70,6 @@ It requires Spring Framework (spring-jdbc and spring-tx) for interacting with da
 Other features of Spring ecosystem are not in use. 
 
 # Usage
-
-## Versioning Rules
-
-Project uses [Semantic Versioning](http://semver.org/).
-
-## Dependency management
-
-Library is available on [Bintray's JCenter repository](http://jcenter.bintray.com) 
-
-```
-<dependency>
-  <groupId>ru.yoomoney.tech</groupId>
-  <artifactId>db-queue</artifactId>
-  <version>11.0.0</version>
-</dependency>
-```
 
 ## Configuration
 

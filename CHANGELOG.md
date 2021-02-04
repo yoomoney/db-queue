@@ -1,5 +1,7 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=PATCH
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+* Update artifact-release-plugin
+* Disable Oracle tests https://github.com/yoomoney-tech/db-queue/issues/10 
 ### NEXT_VERSION_DESCRIPTION_END
 ## [11.0.1]() (02-02-2021)
 
