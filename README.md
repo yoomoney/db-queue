@@ -2,18 +2,24 @@
 [![Codecov](https://codecov.io/gh/yoomoney-tech/db-queue/branch/master/graph/badge.svg)](https://codecov.io/gh/yoomoney-tech/db-queue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Javadoc](https://img.shields.io/badge/javadoc-latest-blue.svg)](https://yoomoney-tech.github.io/db-queue/)
-[![Download](https://api.bintray.com/packages/yoomoney-tech/maven/db-queue/images/download.svg)](https://bintray.com/yoomoney-tech/maven/db-queue/_latestVersion)
+[![Download](https://img.shields.io/badge/Download-11.0.3-green)](https://search.maven.org/artifact/ru.yoomoney.tech/db-queue)
 # Database Queue
 
 Library provides worker-queue implementation on top of Java and database.  
 Project uses [Semantic Versioning](http://semver.org/).  
-Library is available on [Bintray's JCenter repository](http://jcenter.bintray.com) 
+Library is available on [Maven Central](https://search.maven.org/) 
 
+**Gradle**
+```
+implementation 'ru.yoomoney.tech:db-queue:11.0.3'
+```
+
+**Maven**
 ```
 <dependency>
   <groupId>ru.yoomoney.tech</groupId>
   <artifactId>db-queue</artifactId>
-  <version>11.0.0</version>
+  <version>11.0.3</version>
 </dependency>
 ```
 
