@@ -1,0 +1,8 @@
+repositories {
+    mavenCentral()
+    maven { url 'https://plugins.gradle.org/m2/' }
+
+    dependencies {
+        classpath 'ru.yoomoney.gradle.plugins:library-project-plugin:7.0.0'
+    }
+}
