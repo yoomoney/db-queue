@@ -1,9 +1,7 @@
-### NEXT_VERSION_TYPE=PATCH
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [11.0.3]() (22-04-2021)
 
 * Added library-project-plugin.
 
-### NEXT_VERSION_DESCRIPTION_END
 ## [11.0.2]() (04-02-2021)
 
 * Update artifact-release-plugin
