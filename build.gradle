@@ -32,7 +32,7 @@ subprojects {
 
     javaArtifactPublishSettings {
         artifactId = "${project.name}"
-        groupId = rootJavaArtifactPublishExtension.groupId
+        groupId = 'ru.yoomoney.tech'
 
         nexusUser = rootJavaArtifactPublishExtension.nexusUser
         nexusPassword = rootJavaArtifactPublishExtension.nexusPassword
