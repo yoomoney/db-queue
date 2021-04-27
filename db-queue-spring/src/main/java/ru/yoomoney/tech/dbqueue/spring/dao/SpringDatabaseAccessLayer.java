@@ -22,10 +22,15 @@ import static java.util.Objects.requireNonNull;
  */
 public class SpringDatabaseAccessLayer implements DatabaseAccessLayer {
 
+    @Nonnull
     private final JdbcOperations jdbcOperations;
+    @Nonnull
     private final TransactionOperations transactionOperations;
+    @Nonnull
     private final DatabaseDialect databaseDialect;
+    @Nonnull
     private final QueueTableSchema queueTableSchema;
+    @Nonnull
     private final QueueDao queueDao;
 
 
@@ -49,6 +54,7 @@ public class SpringDatabaseAccessLayer implements DatabaseAccessLayer {
     }
 
     @Override
+    @Nonnull
     public QueueDao getQueueDao() {
         return queueDao;
     }
@@ -72,6 +78,7 @@ public class SpringDatabaseAccessLayer implements DatabaseAccessLayer {
     }
 
     @Override
+    @Nonnull
     public QueuePickTaskDao createQueuePickTaskDao(@Nonnull PickTaskSettings pickTaskSettings) {
         requireNonNull(databaseDialect);
         requireNonNull(queueTableSchema);
@@ -101,12 +108,14 @@ public class SpringDatabaseAccessLayer implements DatabaseAccessLayer {
     }
 
     @Override
-    public <T> T transact(Supplier<T> supplier) {
+    public <T> T transact(@Nonnull Supplier<T> supplier) {
+        requireNonNull(supplier);
         return transactionOperations.execute((status) -> supplier.get());
     }
 
     @Override
-    public void transact(Runnable runnable) {
+    public void transact(@Nonnull Runnable runnable) {
+        requireNonNull(runnable);
         transact(() -> {
             runnable.run();
             return null;
@@ -119,6 +128,7 @@ public class SpringDatabaseAccessLayer implements DatabaseAccessLayer {
      *
      * @return Reference to Spring JDBC template.
      */
+    @Nonnull
     public JdbcOperations getJdbcOperations() {
         return jdbcOperations;
     }
@@ -128,6 +138,7 @@ public class SpringDatabaseAccessLayer implements DatabaseAccessLayer {
      *
      * @return Reference to Spring transaction template.
      */
+    @Nonnull
     public TransactionOperations getTransactionOperations() {
         return transactionOperations;
     }

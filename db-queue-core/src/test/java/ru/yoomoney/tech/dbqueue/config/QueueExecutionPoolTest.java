@@ -9,6 +9,7 @@ import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
 import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
 import ru.yoomoney.tech.dbqueue.stub.NoopQueueConsumer;
 import ru.yoomoney.tech.dbqueue.stub.StringQueueConsumer;
+import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;

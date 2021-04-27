@@ -10,36 +10,49 @@ import ru.yoomoney.tech.dbqueue.dao.QueuePickTaskDao;
 import javax.annotation.Nonnull;
 import java.util.function.Supplier;
 
+import static org.mockito.Mockito.mock;
+
 public class StubDatabaseAccessLayer implements DatabaseAccessLayer {
-    @Override
-    public QueueDao getQueueDao() {
-        return null;
+
+    private final QueueDao queueDao;
+
+    public StubDatabaseAccessLayer() {
+        this.queueDao = mock(QueueDao.class);
+    }
+
+    public StubDatabaseAccessLayer(QueueDao queueDao) {
+        this.queueDao = queueDao;
     }
 
     @Override
-    public QueuePickTaskDao createQueuePickTaskDao(@Nonnull PickTaskSettings pickTaskSettings) {
-        return null;
+    public @Nonnull QueueDao getQueueDao() {
+        return queueDao;
     }
 
     @Override
-    public <T> T transact(Supplier<T> supplier) {
-        return null;
+    public @Nonnull QueuePickTaskDao createQueuePickTaskDao(@Nonnull PickTaskSettings pickTaskSettings) {
+        return mock(QueuePickTaskDao.class);
     }
 
     @Override
-    public void transact(Runnable runnable) {
+    public <T> T transact(@Nonnull Supplier<T> supplier) {
+        return supplier.get();
+    }
 
+    @Override
+    public void transact(@Nonnull Runnable runnable) {
+        runnable.run();
     }
 
     @Nonnull
     @Override
     public DatabaseDialect getDatabaseDialect() {
-        return null;
+        return DatabaseDialect.POSTGRESQL;
     }
 
     @Nonnull
     @Override
     public QueueTableSchema getQueueTableSchema() {
-        return null;
+        return QueueTableSchema.builder().build();
     }
 }

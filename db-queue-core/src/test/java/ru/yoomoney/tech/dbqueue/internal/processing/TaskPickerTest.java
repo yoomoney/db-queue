@@ -5,7 +5,7 @@ import ru.yoomoney.tech.dbqueue.api.QueueConsumer;
 import ru.yoomoney.tech.dbqueue.api.TaskRecord;
 import ru.yoomoney.tech.dbqueue.config.QueueShard;
 import ru.yoomoney.tech.dbqueue.config.QueueShardId;
-import ru.yoomoney.tech.dbqueue.config.StubDatabaseAccessLayer;
+import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
 import ru.yoomoney.tech.dbqueue.config.TaskLifecycleListener;
 import ru.yoomoney.tech.dbqueue.dao.QueuePickTaskDao;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;

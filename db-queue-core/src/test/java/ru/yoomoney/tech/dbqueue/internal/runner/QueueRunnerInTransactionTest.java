@@ -4,7 +4,7 @@ import org.junit.Test;
 import ru.yoomoney.tech.dbqueue.api.QueueConsumer;
 import ru.yoomoney.tech.dbqueue.api.TaskRecord;
 import ru.yoomoney.tech.dbqueue.config.QueueShard;
-import ru.yoomoney.tech.dbqueue.config.StubDatabaseAccessLayer;
+import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
 import ru.yoomoney.tech.dbqueue.internal.processing.QueueProcessingStatus;
 import ru.yoomoney.tech.dbqueue.internal.processing.TaskPicker;
 import ru.yoomoney.tech.dbqueue.internal.processing.TaskProcessor;

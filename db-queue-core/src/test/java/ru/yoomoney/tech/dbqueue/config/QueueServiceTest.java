@@ -7,6 +7,7 @@ import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
 import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
+import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
 
 import java.time.Duration;
 import java.util.ArrayList;

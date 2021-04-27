@@ -9,7 +9,8 @@ The library is divided into two modules:
 Now it is possible to provide various database access implementations on top of `db-queue-core` module.
 You can implement a custom `DatabaseAccessLayer` to achieve this.
 A default implementation for Spring is called `SpringDatabaseAccessLayer` and is located in the `db-queue-spring` module.
-`db-queue` artifact still provides the same functionality as it includes `db-queue-core` and `db-queue-spring` modules.
+`ru.yoomoney.tech:db-queue` artifact still provides the same functionality as it includes 
+`ru.yoomoney.tech:db-queue-core` and `ru.yoomoney.tech:db-queue-spring` artifacts.
 
 There are several **breaking changes** in this release.
 To migrate to a new version you must do the following changes:

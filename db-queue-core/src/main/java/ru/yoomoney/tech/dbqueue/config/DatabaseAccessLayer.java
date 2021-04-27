@@ -20,6 +20,7 @@ public interface DatabaseAccessLayer {
      *
      * @return database-specific DAO instance.
      */
+    @Nonnull
     QueueDao getQueueDao();
 
     /**
@@ -28,23 +29,24 @@ public interface DatabaseAccessLayer {
      * @param pickTaskSettings settings for picking up tasks
      * @return database-specific DAO instance.
      */
+    @Nonnull
     QueuePickTaskDao createQueuePickTaskDao(@Nonnull PickTaskSettings pickTaskSettings);
 
     /**
      * Perform an operation in transaction
      *
-     * @param supplier operation
      * @param <T>      result type
+     * @param supplier operation
      * @return result of operation
      */
-    <T> T transact(Supplier<T> supplier);
+    <T> T transact(@Nonnull Supplier<T> supplier);
 
     /**
      * Perform an operation in transaction
      *
      * @param runnable operation
      */
-    void transact(Runnable runnable);
+    void transact(@Nonnull Runnable runnable);
 
     /**
      * Get database type for that database.
