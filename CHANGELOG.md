@@ -1,5 +1,4 @@
-### NEXT_VERSION_TYPE=MAJOR
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [12.0.0]() (28-04-2021)
 
 The library is divided into two modules:
 
@@ -9,7 +8,7 @@ The library is divided into two modules:
 Now it is possible to provide various database access implementations on top of `db-queue-core` module.
 You can implement a custom `DatabaseAccessLayer` to achieve this.
 A default implementation for Spring is called `SpringDatabaseAccessLayer` and is located in the `db-queue-spring` module.
-`ru.yoomoney.tech:db-queue` artifact still provides the same functionality as it includes 
+`ru.yoomoney.tech:db-queue` artifact still provides the same functionality as it includes
 `ru.yoomoney.tech:db-queue-core` and `ru.yoomoney.tech:db-queue-spring` artifacts.
 
 There are several **breaking changes** in this release.
@@ -19,7 +18,6 @@ To migrate to a new version you must do the following changes:
 * Parametrize `QueueShard` over `SpringDatabaseAccessLayer` class
 * Construct `SpringDatabaseAccessLayer` and pass it to `QueueShard` constructor
 
-### NEXT_VERSION_DESCRIPTION_END
 ## [11.0.3]() (22-04-2021)
 
 * Added library-project-plugin.
