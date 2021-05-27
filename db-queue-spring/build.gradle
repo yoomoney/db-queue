@@ -25,7 +25,8 @@ dependencies {
             'org.mockito:mockito-core:3.6.28',
             'nl.jqno.equalsverifier:equalsverifier:3.3',
             'com.github.marschall:memoryfilesystem:1.0.0',
-            'com.oracle.ojdbc:ojdbc8:19.3.0.0'
+            'com.oracle.ojdbc:ojdbc8:19.3.0.0',
+            'com.h2database:h2:1.4.200'
 
 
     testCompileOnly 'com.google.code.findbugs:jsr305:3.0.1',

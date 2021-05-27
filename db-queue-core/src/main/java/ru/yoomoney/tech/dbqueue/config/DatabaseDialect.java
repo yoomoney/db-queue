@@ -24,5 +24,10 @@ public enum DatabaseDialect {
      * so you must specify sequence name in
      * {@link QueueLocation.Builder#withIdSequence(String)}
      */
-    ORACLE_11G
+    ORACLE_11G,
+
+    /**
+     * H2 in-memory database
+     */
+    H2
 }
