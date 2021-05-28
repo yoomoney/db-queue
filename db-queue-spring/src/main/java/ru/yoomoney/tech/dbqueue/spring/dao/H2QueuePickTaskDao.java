@@ -22,8 +22,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.requireNonNull;
-
 public class H2QueuePickTaskDao implements QueuePickTaskDao {
     private final JdbcOperations jdbcTemplate;
     private final QueueTableSchema queueTableSchema;
@@ -33,23 +31,25 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
                               @Nonnull final QueueTableSchema queueTableSchema,
                               @Nonnull final PickTaskSettings pickTaskSettings) {
 
-        this.jdbcTemplate = Objects.requireNonNull(jdbcOperations);
-        this.queueTableSchema = Objects.requireNonNull(queueTableSchema);
-        this.pickTaskSettings = Objects.requireNonNull(pickTaskSettings);
+        this.jdbcTemplate = Objects.requireNonNull(jdbcOperations, "jdbc template can't be null");
+        this.queueTableSchema = Objects.requireNonNull(queueTableSchema, "table schema can't be null");
+        this.pickTaskSettings = Objects.requireNonNull(pickTaskSettings, "settings can't be null");
 
-        jdbcTemplate.update(String.format("CREATE ALIAS IF NOT EXISTS PICK_TASK FOR \"%s.pickTask\"", PickerProcedure.class.getName()));
+        this.jdbcTemplate.update(
+                String.format(
+                        "CREATE ALIAS IF NOT EXISTS PICK_TASK FOR \"%s.pickTask\"",
+                        PickerProcedure.class.getName()));
     }
 
     @Nullable
     @Override
     public TaskRecord pickTask(@Nonnull final QueueLocation location) {
-        requireNonNull(location);
+        Objects.requireNonNull(location, "location can't be null");
 
         return jdbcTemplate.query(
                 PickerProcedure.createPickQuery(location, pickTaskSettings, queueTableSchema),
                 (ResultSet rs) -> {
                     if (!rs.next() && rs.getRow() != 1) {
-                        //noinspection ReturnOfNull
                         return null;
                     }
 
@@ -87,7 +87,7 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
                                          final long retryInterval) throws SQLException {
 
             PickQuery pickQuery = pickTaskSqlCache.get(queueName);
-            Objects.requireNonNull(pickQuery, "pick query can't be null");
+            Objects.requireNonNull(pickQuery, "A pick query can't be null");
 
             PreparedStatement chooseStatement = connection.prepareStatement(pickQuery.selectSql);
             chooseStatement.setString(1, queueName);
@@ -101,7 +101,7 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
             updateStatement.setLong(2, taskId);
             int updatedRowCount = updateStatement.executeUpdate();
             if (updatedRowCount != 1)
-                throw new IllegalStateException("Something wrong went here! Only row must be updated, not more!");
+                throw new IllegalStateException("Something wrong went here. Only row must be updated, not more!");
 
             final PreparedStatement selectStatement = connection.prepareStatement(pickQuery.returnSql);
             selectStatement.setLong(1, taskId);
@@ -170,7 +170,6 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
                                 queueTableSchema
                                         .getExtFields()
                                         .stream()
-                                        .map(field -> "q." + field)
                                         .collect(Collectors.joining(", ", ", ", "")),
                         location.getTableName(),
                         queueTableSchema.getIdField()
@@ -179,7 +178,7 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
                 return new PickQuery(selectSql, updateSql, returnSql);
             });
 
-            return "call PICK_TASK(?,?)";
+            return "call PICK_TASK(?, ?)";
         }
 
         private static class PickQuery {
@@ -205,14 +204,14 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
 
     @Nonnull
     private static String getNextProcessTimeSql(@Nonnull TaskRetryType taskRetryType, QueueTableSchema queueTableSchema) {
-        Objects.requireNonNull(taskRetryType);
+        Objects.requireNonNull(taskRetryType, "retry type can't be null");
         switch (taskRetryType) {
             case GEOMETRIC_BACKOFF:
-                return String.format("timestampadd(second, power(2, %s) * ? , now())", queueTableSchema.getAttemptField());
+                return String.format("TIMESTAMPADD(SECOND, POWER(2, %s) * ? , NOW())", queueTableSchema.getAttemptField());
             case ARITHMETIC_BACKOFF:
-                return String.format("timestampadd(second, (1 + %s * 2) * ?, now())", queueTableSchema.getAttemptField());
+                return String.format("TIMESTAMPADD(SECOND, (1 + %s * 2) * ?, NOW())", queueTableSchema.getAttemptField());
             case LINEAR_BACKOFF:
-                return "timestampadd(second, ?, now())";
+                return "TIMESTAMPADD(SECOND, ?, NOW())";
             default:
                 throw new IllegalStateException("unknown retry type: " + taskRetryType);
         }

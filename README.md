@@ -51,7 +51,7 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 ## Features
 
 * Persistent working-queue
-* Support for PostgreSQL, MSSQL, Oracle.
+* Support for PostgreSQL, MSSQL, Oracle, H2.
 * Storing queue tasks in a separate tables or in the same table ([QueueLocation](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueLocation.java)).
 * Storing queue tasks in a separate databases for horizontal scaling ([QueueShard](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/QueueShard.java)).
 * Delayed task execution.

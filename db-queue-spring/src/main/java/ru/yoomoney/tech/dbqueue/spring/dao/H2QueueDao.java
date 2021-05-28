@@ -29,15 +29,15 @@ public class H2QueueDao implements QueueDao {
 
     public H2QueueDao(@Nonnull final JdbcOperations jdbcOperations,
                       @Nonnull final QueueTableSchema queueTableSchema) {
-        this.jdbcTemplate = new NamedParameterJdbcTemplate(requireNonNull(jdbcOperations));
-        this.queueTableSchema = Objects.requireNonNull(queueTableSchema);
+        this.jdbcTemplate = new NamedParameterJdbcTemplate(requireNonNull(jdbcOperations, "jdbc template can't be null"));
+        this.queueTableSchema = Objects.requireNonNull(queueTableSchema, "table schema can't be null");
     }
 
     @Override
     public long enqueue(@Nonnull final QueueLocation location,
                         @Nonnull final EnqueueParams<String> enqueueParams) {
-        requireNonNull(location);
-        requireNonNull(enqueueParams);
+        requireNonNull(location, "location can't be null");
+        requireNonNull(enqueueParams, "params can't be null");
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("queueName", location.getQueueId().asString())
@@ -61,7 +61,7 @@ public class H2QueueDao implements QueueDao {
 
     @Override
     public boolean deleteTask(@Nonnull final QueueLocation location, final long taskId) {
-        requireNonNull(location);
+        requireNonNull(location, "location can't be null");
 
         int updatedRows = jdbcTemplate.update(
                 deleteSqlCache.computeIfAbsent(location, this::createDeleteSql),
@@ -75,9 +75,9 @@ public class H2QueueDao implements QueueDao {
     public boolean reenqueue(@Nonnull final QueueLocation location,
                              final long taskId,
                              @Nonnull final Duration executionDelay) {
+        requireNonNull(location, "location can't be null");
+        requireNonNull(executionDelay, "delay can't be null");
 
-        requireNonNull(location);
-        requireNonNull(executionDelay);
         int updatedRows = jdbcTemplate.update(
                 reenqueueSqlCache.computeIfAbsent(location, this::createReenqueueSql),
                 new MapSqlParameterSource()
@@ -90,21 +90,21 @@ public class H2QueueDao implements QueueDao {
     private String createEnqueueSql(@Nonnull QueueLocation location) {
         return String.format("" +
                         "INSERT INTO %s (" +
-                        "%s " +
-                        "%s, " +
-                        "%s, " +
-                        "%s, " +
-                        "%s, " +
-                        "%s " +
-                        "%s" +
+                        "   %s " +
+                        "   %s, " +
+                        "   %s, " +
+                        "   %s, " +
+                        "   %s, " +
+                        "   %s " +
+                        "   %s" +
                         ") VALUES (" +
-                        "%s " +
-                        ":queueName, " +
-                        ":payload, " +
-                        "timestampadd(second, :executionDelay , now()), " +
-                        "0, " +
-                        "0 " +
-                        "%s " +
+                        "   %s " +
+                        "   :queueName, " +
+                        "   :payload, " +
+                        "   TIMESTAMPADD(SECOND, :executionDelay , NOW()), " +
+                        "   0, " +
+                        "   0 " +
+                        "   %s " +
                         ")",
                 location.getTableName(),
                 location.getIdSequence()
@@ -124,7 +124,7 @@ public class H2QueueDao implements QueueDao {
                                 .collect(Collectors.joining(", ", ", ", "")),
 
                 location.getIdSequence()
-                        .map(seq -> String.format(" nextval('%s'), ", seq))
+                        .map(seq -> String.format(" NEXTVAL('%s'), ", seq))
                         .orElse(""),
 
                 queueTableSchema.getExtFields().isEmpty()
@@ -148,7 +148,7 @@ public class H2QueueDao implements QueueDao {
         return String.format("" +
                         "UPDATE %s " +
                         "SET " +
-                        "   %s = timestampadd(second, :executionDelay , now()), " +
+                        "   %s = TIMESTAMPADD(SECOND, :executionDelay , NOW()), " +
                         "   %s = 0, " +
                         "   %s = %s + 1 " +
                         "WHERE %s = :id AND %s = :queueName",
