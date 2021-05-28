@@ -101,7 +101,7 @@ public class H2QueueDao implements QueueDao {
                         "%s " +
                         ":queueName, " +
                         ":payload, " +
-                        "timestampadd(second, 1 * :executionDelay , now()), " +
+                        "timestampadd(second, :executionDelay , now()), " +
                         "0, " +
                         "0 " +
                         "%s " +
@@ -148,7 +148,7 @@ public class H2QueueDao implements QueueDao {
         return String.format("" +
                         "UPDATE %s " +
                         "SET " +
-                        "   %s = timestampadd(second, 1 * :executionDelay , now()), " +
+                        "   %s = timestampadd(second, :executionDelay , now()), " +
                         "   %s = 0, " +
                         "   %s = %s + 1 " +
                         "WHERE %s = :id AND %s = :queueName",

@@ -30,39 +30,48 @@ public class H2DatabaseInitializer {
 
     private static final String H2_CUSTOM_TABLE_DDL = "" +
             "CREATE TABLE %s (\n" +
-            "  qid      BIGSERIAL PRIMARY KEY,\n" +
-            "  qn    TEXT NOT NULL,\n" +
-            "  pl    TEXT,\n" +
+            "  qid   BIGSERIAL PRIMARY KEY,\n" +
+            "  qn    VARCHAR(100) NOT NULL,\n" +
+            "  pl    VARCHAR(100),\n" +
             "  ct    TIMESTAMP WITH TIME ZONE DEFAULT now(),\n" +
             "  pt    TIMESTAMP WITH TIME ZONE DEFAULT now(),\n" +
             "  at    INTEGER                  DEFAULT 0,\n" +
             "  rat   INTEGER                  DEFAULT 0,\n" +
             "  tat   INTEGER                  DEFAULT 0,\n" +
             "  trace TEXT \n" +
-            ");";
+            "); \n" +
+            "CREATE INDEX %s_name_time_desc_idx\n" +
+            "  ON %s (qn, pt, qid DESC);\n" +
+            "\n";
 
     private static final String H2_DEFAULT_TABLE_DDL = "" +
             "CREATE TABLE %s (\n" +
             "  id                BIGSERIAL PRIMARY KEY,\n" +
-            "  queue_name        TEXT NOT NULL,\n" +
-            "  payload           TEXT,\n" +
+            "  queue_name        VARCHAR(100) NOT NULL,\n" +
+            "  payload           VARCHAR(100),\n" +
             "  created_at        TIMESTAMP WITH TIME ZONE DEFAULT now(),\n" +
             "  next_process_at   TIMESTAMP WITH TIME ZONE DEFAULT now(),\n" +
             "  attempt           INTEGER                  DEFAULT 0,\n" +
             "  reenqueue_attempt INTEGER                  DEFAULT 0,\n" +
             "  total_attempt     INTEGER                  DEFAULT 0\n" +
-            ");";
+            ");\n" +
+            "CREATE INDEX %s_name_time_desc_idx\n" +
+            "  ON %s (queue_name, next_process_at, id DESC);\n" +
+            "\n";
 
     private static final String H2_DEFAULT_WO_INC_TABLE_DDL = "CREATE TABLE %s (\n" +
             "  id                BIGINT PRIMARY KEY,\n" +
-            "  queue_name        TEXT NOT NULL,\n" +
-            "  payload           TEXT,\n" +
+            "  queue_name        VARCHAR(100) NOT NULL,\n" +
+            "  payload           VARCHAR(100),\n" +
             "  created_at        TIMESTAMP WITH TIME ZONE DEFAULT now(),\n" +
             "  next_process_at   TIMESTAMP WITH TIME ZONE DEFAULT now(),\n" +
             "  attempt           INTEGER                  DEFAULT 0,\n" +
             "  reenqueue_attempt INTEGER                  DEFAULT 0,\n" +
             "  total_attempt     INTEGER                  DEFAULT 0\n" +
-            ");";
+            ");\n" +
+            "CREATE INDEX %s_name_time_desc_idx\n" +
+            "  ON %s (queue_name, next_process_at, id DESC);\n" +
+            "\n";
 
     private static JdbcTemplate h2JdbcTemplate;
     private static TransactionTemplate h2TransactionTemplate;
