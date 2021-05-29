@@ -10,16 +10,13 @@ import ru.yoomoney.tech.dbqueue.settings.TaskRetryType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class H2QueuePickTaskDao implements QueuePickTaskDao {
@@ -49,9 +46,8 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
         return jdbcTemplate.query(
                 PickerProcedure.createPickQuery(location, pickTaskSettings, queueTableSchema),
                 (ResultSet rs) -> {
-                    if (!rs.next() && rs.getRow() != 1) {
+                    if (!(rs.next() && rs.getMetaData().getColumnCount() > 1))
                         return null;
-                    }
 
                     Map<String, String> additionalData = queueTableSchema
                             .getExtFields()
@@ -81,36 +77,71 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
 
     public static class PickerProcedure {
         private static final Map<String, PickQuery> pickTaskSqlCache = new ConcurrentHashMap<>();
+        private static final RowIdLocker rowIdLocker = new RowIdLocker();
 
         public static ResultSet pickTask(final Connection connection,
                                          final String queueName,
                                          final long retryInterval) throws SQLException {
-
-            PickQuery pickQuery = pickTaskSqlCache.get(queueName);
+            final PickQuery pickQuery = pickTaskSqlCache.get(queueName);
             Objects.requireNonNull(pickQuery, "A pick query can't be null");
 
-            PreparedStatement chooseStatement = connection.prepareStatement(pickQuery.selectSql);
-            chooseStatement.setString(1, queueName);
-            ResultSet chooseResultSet = chooseStatement.executeQuery();
-            if (!chooseResultSet.next())
-                return chooseResultSet;
+            final Savepoint savepoint = connection.setSavepoint("start-picking-task-point");
 
-            final long taskId = chooseResultSet.getLong(1);
-            PreparedStatement updateStatement = connection.prepareStatement(pickQuery.updateSql);
-            updateStatement.setLong(1, retryInterval);
-            updateStatement.setLong(2, taskId);
-            int updatedRowCount = updateStatement.executeUpdate();
-            if (updatedRowCount != 1)
-                throw new IllegalStateException("Something wrong went here. Only row must be updated, not more!");
+            final Long taskId = rowIdLocker.lock(queueName, rowIds -> {
+                try {
 
-            final PreparedStatement selectStatement = connection.prepareStatement(pickQuery.returnSql);
-            selectStatement.setLong(1, taskId);
-            return selectStatement.executeQuery();
+                    final String sql;
+                    if (rowIds.isEmpty())
+                        sql = String.format(pickQuery.selectSql, " (1 = 1) ");
+                    else
+                        sql = String.format(
+                                pickQuery.selectSql,
+                                " _ROWID_ IN " + rowIds
+                                        .stream()
+                                        .map(Object::toString)
+                                        .collect(Collectors.joining(",", "(", ")")));
+
+                    PreparedStatement chooseStatement = connection.prepareStatement(sql);
+                    chooseStatement.setString(1, queueName);
+                    ResultSet chooseResultSet = chooseStatement.executeQuery();
+                    if (!chooseResultSet.next())
+                        return null;
+
+                    return chooseResultSet.getLong(1);
+                } catch (Exception e) {
+                    throw new IllegalStateException("can't select pick task", e);
+                }
+            });
+
+            if (taskId == null)
+                return null;
+
+            try {
+                PreparedStatement updateStatement = connection.prepareStatement(pickQuery.updateSql);
+                updateStatement.setLong(1, retryInterval);
+                updateStatement.setLong(2, taskId);
+                int updatedRowCount = updateStatement.executeUpdate();
+                if (updatedRowCount != 1)
+                    throw new IllegalStateException("Something wrong went here. Only row must be updated, not more!");
+
+                final PreparedStatement selectStatement = connection.prepareStatement(pickQuery.returnSql);
+                selectStatement.setLong(1, taskId);
+                final ResultSet resultSet = selectStatement.executeQuery();
+
+                connection.commit();
+
+                return resultSet;
+            } catch (SQLException e) {
+                connection.rollback(savepoint);
+                throw new RuntimeException("can't update task", e);
+            } finally {
+                rowIdLocker.unlock(queueName, taskId);
+            }
         }
 
-        private static String createPickQuery(QueueLocation location,
-                                              PickTaskSettings pickTaskSettings,
-                                              QueueTableSchema queueTableSchema) {
+        private static String createPickQuery(final QueueLocation location,
+                                              final PickTaskSettings pickTaskSettings,
+                                              final QueueTableSchema queueTableSchema) {
 
             pickTaskSqlCache.computeIfAbsent(location.getQueueId().asString(), ignoredKey -> {
 
@@ -119,9 +150,10 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
                                 "FROM %s " +
                                 "WHERE %s = ? " +
                                 "  AND %s <= now() " +
+                                "  AND %%s " +
                                 "ORDER BY %s ASC " +
                                 "LIMIT 1 " +
-                                "FOR UPDATE",
+                                "FOR UPDATE ",
                         queueTableSchema.getIdField(),
                         location.getTableName(),
                         queueTableSchema.getQueueNameField(),
@@ -194,16 +226,48 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
                 this.returnSql = returnSql;
             }
         }
+
+        private static class RowIdLocker {
+            private final Map<String, Set<Long>> lockedRowIds = new ConcurrentHashMap<>();
+
+            public Long lock(final String queueName,
+                             final Function<Set<Long>, Long> taskIdExtractor) {
+
+                final AtomicReference<Long> atomicReference = new AtomicReference<>();
+                lockedRowIds
+                        .compute(queueName, (key, rowIds) -> {
+                            Set<Long> idSet = rowIds == null ? new HashSet<>() : rowIds;
+
+                            Long taskId = taskIdExtractor.apply(idSet);
+                            if (taskId == null)
+                                return idSet;
+                            else
+                                atomicReference.set(taskId);
+
+                            idSet.add(taskId);
+                            return idSet;
+                        });
+
+                return atomicReference.get();
+            }
+
+            public void unlock(final String queueName, final Long taskId) {
+                lockedRowIds
+                        .computeIfPresent(queueName, (key, rowIds) -> {
+                            rowIds.remove(taskId);
+                            return rowIds;
+                        });
+            }
+        }
     }
 
 
-    private static ZonedDateTime getZonedDateTime(ResultSet rs, String time) throws SQLException {
+    private static ZonedDateTime getZonedDateTime(final ResultSet rs, final String time) throws SQLException {
         return ZonedDateTime.ofInstant(rs.getTimestamp(time).toInstant(), ZoneId.systemDefault());
     }
 
-
-    @Nonnull
-    private static String getNextProcessTimeSql(@Nonnull TaskRetryType taskRetryType, QueueTableSchema queueTableSchema) {
+    private static String getNextProcessTimeSql(final @Nonnull TaskRetryType taskRetryType,
+                                                final QueueTableSchema queueTableSchema) {
         Objects.requireNonNull(taskRetryType, "retry type can't be null");
         switch (taskRetryType) {
             case GEOMETRIC_BACKOFF:

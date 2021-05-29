@@ -87,7 +87,7 @@ public class H2QueueDao implements QueueDao {
         return updatedRows != 0;
     }
 
-    private String createEnqueueSql(@Nonnull QueueLocation location) {
+    private String createEnqueueSql(final @Nonnull QueueLocation location) {
         return String.format("" +
                         "INSERT INTO %s (" +
                         "   %s " +
@@ -144,7 +144,7 @@ public class H2QueueDao implements QueueDao {
                 queueTableSchema.getIdField());
     }
 
-    private String createReenqueueSql(QueueLocation location) {
+    private String createReenqueueSql(final QueueLocation location) {
         return String.format("" +
                         "UPDATE %s " +
                         "SET " +
