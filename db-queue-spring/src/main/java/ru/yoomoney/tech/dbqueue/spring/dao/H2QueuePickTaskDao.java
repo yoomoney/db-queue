@@ -1,6 +1,7 @@
 package ru.yoomoney.tech.dbqueue.spring.dao;
 
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.transaction.support.TransactionOperations;
 import ru.yoomoney.tech.dbqueue.api.TaskRecord;
 import ru.yoomoney.tech.dbqueue.config.QueueTableSchema;
 import ru.yoomoney.tech.dbqueue.dao.PickTaskSettings;
@@ -26,16 +27,20 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
 
     public H2QueuePickTaskDao(@Nonnull final JdbcOperations jdbcOperations,
                               @Nonnull final QueueTableSchema queueTableSchema,
-                              @Nonnull final PickTaskSettings pickTaskSettings) {
+                              @Nonnull final PickTaskSettings pickTaskSettings,
+                              @Nonnull final TransactionOperations transactionTemplate) {
 
         this.jdbcTemplate = Objects.requireNonNull(jdbcOperations, "jdbc template can't be null");
         this.queueTableSchema = Objects.requireNonNull(queueTableSchema, "table schema can't be null");
         this.pickTaskSettings = Objects.requireNonNull(pickTaskSettings, "settings can't be null");
+        Objects.requireNonNull(transactionTemplate, "transaction template must be not null");
 
-        this.jdbcTemplate.update(
-                String.format(
-                        "CREATE ALIAS IF NOT EXISTS PICK_TASK FOR \"%s.pickTask\"",
-                        PickerProcedure.class.getName()));
+        transactionTemplate.executeWithoutResult(transactionStatus -> {
+            jdbcTemplate.update(
+                    String.format(
+                            "CREATE ALIAS IF NOT EXISTS PICK_TASK FOR \"%s.pickTask\"",
+                            PickerProcedure.class.getName()));
+        });
     }
 
     @Nullable
