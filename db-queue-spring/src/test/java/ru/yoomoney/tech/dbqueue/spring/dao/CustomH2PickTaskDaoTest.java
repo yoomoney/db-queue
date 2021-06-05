@@ -37,8 +37,7 @@ public class CustomH2PickTaskDaoTest extends QueuePickTaskDaoTest {
                         new H2QueuePickTaskDao(
                                 H2DatabaseInitializer.getJdbcTemplate(),
                                 H2DatabaseInitializer.CUSTOM_SCHEMA,
-                                pickTaskSettings,
-                                H2DatabaseInitializer.getTransactionTemplate()),
+                                pickTaskSettings),
                 H2DatabaseInitializer.CUSTOM_TABLE_NAME,
                 H2DatabaseInitializer.CUSTOM_SCHEMA,
                 H2DatabaseInitializer.getJdbcTemplate(),
@@ -67,20 +66,23 @@ public class CustomH2PickTaskDaoTest extends QueuePickTaskDaoTest {
                 new PickTaskSettings(
                         TaskRetryType.ARITHMETIC_BACKOFF,
                         Duration.ofMinutes(1)));
+
         final List<TaskRecord> records = IntStream
                 .range(0, taskCount)
                 .parallel()
                 .mapToObj(e -> {
                     TaskRecord taskRecord;
-                    do {
+                    while (!Thread.currentThread().isInterrupted()) {
                         taskRecord = executeInTransaction(() -> pickTaskDao.pickTask(location));
+                        if (taskRecord != null)
+                            return taskRecord;
                         try {
                             Thread.sleep(20);
                         } catch (InterruptedException ex) {
                             throw new RuntimeException(ex);
                         }
-                    } while (taskRecord == null);
-                    return taskRecord;
+                    }
+                    throw new RuntimeException("the thread has been interrupted");
                 })
                 .collect(Collectors.toList());
 

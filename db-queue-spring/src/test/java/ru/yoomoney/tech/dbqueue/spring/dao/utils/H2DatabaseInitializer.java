@@ -88,7 +88,7 @@ public class H2DatabaseInitializer {
         h2TransactionTemplate.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
         h2TransactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
 
-        h2JdbcTemplate.execute("DROP ALL OBJECTS DELETE FILES");
+        executeDdl("DROP ALL OBJECTS DELETE FILES");
         executeDdl("CREATE SEQUENCE tasks_seq START 1");
         createTable(H2_DEFAULT_WO_INC_TABLE_DDL, DEFAULT_TABLE_NAME_WO_INC);
         createTable(H2_DEFAULT_TABLE_DDL, DEFAULT_TABLE_NAME);
