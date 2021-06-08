@@ -59,7 +59,11 @@ public class H2QueueDao implements QueueDao {
                 enqueueSqlCache.computeIfAbsent(location, this::createEnqueueSql),
                 params, keyHolder, new String[] {queueTableSchema.getIdField()});
 
-        return requireNonNull(keyHolder.getKeyAs(Long.class));
+        Long id = keyHolder.getKeyAs(Long.class);
+        if (id == null) {
+            throw new IllegalArgumentException("id can't be null");
+        }
+        return id;
     }
 
     @Override
