@@ -19,6 +19,9 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Database access object to manage tasks in the queue for H2 database type.
+ */
 public class H2QueueDao implements QueueDao {
     private final Map<QueueLocation, String> enqueueSqlCache = new ConcurrentHashMap<>();
     private final Map<QueueLocation, String> deleteSqlCache = new ConcurrentHashMap<>();

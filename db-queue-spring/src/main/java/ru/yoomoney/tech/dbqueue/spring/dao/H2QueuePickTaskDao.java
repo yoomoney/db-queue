@@ -17,12 +17,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Database access object to manage tasks in the queue for H2 database type.
+ */
 public class H2QueuePickTaskDao implements QueuePickTaskDao {
     private final RowIdLocker rowIdLocker = new RowIdLocker();
 
@@ -58,8 +66,9 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
                                     Long.class);
                     return DataAccessUtils.singleResult(ids);
                 });
-        if (taskId == null)
+        if (taskId == null) {
             return null;
+        }
 
         try {
             int updatedRowCount = jdbcTemplate.update(
@@ -68,16 +77,18 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
                             .addValue("retryInterval", retryInterval)
                             .addValue("taskId", taskId));
 
-            if (updatedRowCount != 1)
+            if (updatedRowCount != 1) {
                 throw new IllegalStateException("Something wrong went here. Only row must be updated, not more!");
+            }
 
 
             return jdbcTemplate.query(
                     getReturnSql(location, queueTableSchema),
                     new MapSqlParameterSource("taskId", taskId),
                     (ResultSet rs) -> {
-                        if (!rs.next())
+                        if (!rs.next()) {
                             return null;
+                        }
 
                         Map<String, String> additionalData = queueTableSchema
                                 .getExtFields()
@@ -190,10 +201,11 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
                         Set<Long> idSet = rowIds == null ? new HashSet<>() : rowIds;
 
                         Long taskId = taskIdExtractor.apply(idSet);
-                        if (taskId == null)
+                        if (taskId == null) {
                             return idSet;
-                        else
+                        } else {
                             atomicReference.set(taskId);
+                        }
 
                         idSet.add(taskId);
                         return idSet;
