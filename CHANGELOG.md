@@ -1,3 +1,6 @@
+### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_DESCRIPTION_BEGIN
+### NEXT_VERSION_DESCRIPTION_END
 ## [12.1.0]() (09-06-2021)
 
 * Add support of h2 database. Thanks to [@izebit](https://github.com/izebit).
