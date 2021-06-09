@@ -229,7 +229,7 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
 
     private static String getNextProcessTimeSql(final @Nonnull TaskRetryType taskRetryType,
                                                 final QueueTableSchema queueTableSchema) {
-        Objects.requireNonNull(taskRetryType, "retry type can't be null");
+        Objects.requireNonNull(taskRetryType, "retry type must be not null");
         switch (taskRetryType) {
             case GEOMETRIC_BACKOFF:
                 return String.format("TIMESTAMPADD(SECOND, POWER(2, %s) * :retryInterval , NOW())", queueTableSchema.getAttemptField());
