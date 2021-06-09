@@ -72,6 +72,8 @@ public class SpringDatabaseAccessLayer implements DatabaseAccessLayer {
                 return new MssqlQueueDao(jdbcOperations, queueTableSchema);
             case ORACLE_11G:
                 return new Oracle11QueueDao(jdbcOperations, queueTableSchema);
+            case H2:
+                return new H2QueueDao(jdbcOperations, queueTableSchema);
             default:
                 throw new IllegalArgumentException("unsupported database kind: " + databaseDialect);
         }
@@ -90,6 +92,8 @@ public class SpringDatabaseAccessLayer implements DatabaseAccessLayer {
                 return new MssqlQueuePickTaskDao(jdbcOperations, queueTableSchema, pickTaskSettings);
             case ORACLE_11G:
                 return new Oracle11QueuePickTaskDao(jdbcOperations, queueTableSchema, pickTaskSettings);
+            case H2:
+                return new H2QueuePickTaskDao(jdbcOperations, queueTableSchema, pickTaskSettings);
             default:
                 throw new IllegalArgumentException("unsupported database kind: " + databaseDialect);
         }

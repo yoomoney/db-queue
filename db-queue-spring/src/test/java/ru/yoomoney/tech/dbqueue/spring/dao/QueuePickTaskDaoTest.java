@@ -25,10 +25,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
 
 /**
  * @author Oleg Kandaurov
@@ -43,11 +40,11 @@ public abstract class QueuePickTaskDaoTest {
     protected final String tableName;
     protected final QueueTableSchema tableSchema;
 
-    private final QueueDao queueDao;
-    private final Function<PickTaskSettings, QueuePickTaskDao> pickTaskDaoFactory;
+    protected final QueueDao queueDao;
+    protected final Function<PickTaskSettings, QueuePickTaskDao> pickTaskDaoFactory;
 
     /**
-     * Из-за особенностей windows какая-то фигня со временем БД
+     * Some glitches with Windows
      */
     private final static Duration WINDOWS_OS_DELAY = Duration.ofSeconds(2);
 

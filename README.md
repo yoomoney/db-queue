@@ -51,7 +51,7 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 ## Features
 
 * Persistent working-queue
-* Support for PostgreSQL, MSSQL, Oracle.
+* Support for PostgreSQL, MSSQL, Oracle, H2.
 * Storing queue tasks in a separate tables or in the same table ([QueueLocation](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueLocation.java)).
 * Storing queue tasks in a separate databases for horizontal scaling ([QueueShard](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/QueueShard.java)).
 * Delayed task execution.
@@ -66,7 +66,7 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 
 As of now the library supports PostgreSQL, MSSQL and Oracle as backing database, however library architecture
 makes it easy to add other relational databases which has support for transactions and "for update skip locked" feature,  
-for example MySql, H2.  
+for example MySql.  
 Feel free to add support for other databases via pull request.
 
 ## Dependencies
@@ -173,6 +173,24 @@ Create sequence and specify its name through `QueueLocation.Builder.withIdSequen
 or `id-sequence` in file config.
 ```sql
 CREATE SEQUENCE tasks_seq;
+```
+
+### H2 database
+
+A table that is needed for a work 
+```sql
+CREATE TABLE queue_tasks (
+  id                BIGSERIAL PRIMARY KEY,
+  queue_name        VARCHAR(100) NOT NULL,
+  payload           VARCHAR(100),
+  created_at        TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  next_process_at   TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  attempt           INTEGER                  DEFAULT 0,
+  reenqueue_attempt INTEGER                  DEFAULT 0,
+  total_attempt     INTEGER                  DEFAULT 0
+);
+CREATE INDEX queue_tasks_name_time_desc_idx
+  ON queue_tasks (queue_name, next_process_at, id DESC);
 ```
 
 ### Code
