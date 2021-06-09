@@ -51,7 +51,7 @@ public class CustomH2PickTaskDaoTest extends QueuePickTaskDaoTest {
 
 
     @Test
-    public void pick_task_concurrently() throws Exception {
+    public void pick_task_concurrently() {
         final QueueLocation location = generateUniqueLocation();
         final String payload = "{}";
         final ZonedDateTime beforeEnqueue = ZonedDateTime.now();
@@ -59,13 +59,17 @@ public class CustomH2PickTaskDaoTest extends QueuePickTaskDaoTest {
         final int taskCount = 20;
         final Set<Long> taskIds = IntStream
                 .range(0, taskCount)
-                .mapToObj(ignored -> executeInTransaction(() -> queueDao.enqueue(location, EnqueueParams.create(payload))))
+                .mapToObj(ignored ->
+                        executeInTransaction(
+                                () -> queueDao.enqueue(
+                                        location,
+                                        EnqueueParams.create(payload).withExecutionDelay(Duration.ofSeconds(1)))))
                 .collect(Collectors.toSet());
 
         final QueuePickTaskDao pickTaskDao = pickTaskDaoFactory.apply(
                 new PickTaskSettings(
-                        TaskRetryType.ARITHMETIC_BACKOFF,
-                        Duration.ofMinutes(1)));
+                        TaskRetryType.GEOMETRIC_BACKOFF,
+                        Duration.ofMinutes(10)));
 
         final List<TaskRecord> records = IntStream
                 .range(0, taskCount)
