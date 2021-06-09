@@ -30,15 +30,15 @@ public class H2QueueDao implements QueueDao {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final QueueTableSchema queueTableSchema;
 
-    public H2QueueDao(@Nonnull final JdbcOperations jdbcOperations,
-                      @Nonnull final QueueTableSchema queueTableSchema) {
+    public H2QueueDao(@Nonnull JdbcOperations jdbcOperations,
+                      @Nonnull QueueTableSchema queueTableSchema) {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(requireNonNull(jdbcOperations, "jdbc template can't be null"));
         this.queueTableSchema = Objects.requireNonNull(queueTableSchema, "table schema can't be null");
     }
 
     @Override
-    public long enqueue(@Nonnull final QueueLocation location,
-                        @Nonnull final EnqueueParams<String> enqueueParams) {
+    public long enqueue(@Nonnull QueueLocation location,
+                        @Nonnull EnqueueParams<String> enqueueParams) {
         requireNonNull(location, "location can't be null");
         requireNonNull(enqueueParams, "params can't be null");
 
@@ -57,7 +57,7 @@ public class H2QueueDao implements QueueDao {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(
                 enqueueSqlCache.computeIfAbsent(location, this::createEnqueueSql),
-                params, keyHolder, new String[] {queueTableSchema.getIdField()});
+                params, keyHolder, new String[]{queueTableSchema.getIdField()});
 
         Long id = keyHolder.getKeyAs(Long.class);
         if (id == null) {
@@ -67,7 +67,7 @@ public class H2QueueDao implements QueueDao {
     }
 
     @Override
-    public boolean deleteTask(@Nonnull final QueueLocation location, final long taskId) {
+    public boolean deleteTask(@Nonnull QueueLocation location, long taskId) {
         requireNonNull(location, "location can't be null");
 
         int updatedRows = jdbcTemplate.update(
@@ -79,9 +79,9 @@ public class H2QueueDao implements QueueDao {
     }
 
     @Override
-    public boolean reenqueue(@Nonnull final QueueLocation location,
-                             final long taskId,
-                             @Nonnull final Duration executionDelay) {
+    public boolean reenqueue(@Nonnull QueueLocation location,
+                             long taskId,
+                             @Nonnull Duration executionDelay) {
         requireNonNull(location, "location can't be null");
         requireNonNull(executionDelay, "delay can't be null");
 
@@ -94,7 +94,7 @@ public class H2QueueDao implements QueueDao {
         return updatedRows != 0;
     }
 
-    private String createEnqueueSql(final @Nonnull QueueLocation location) {
+    private String createEnqueueSql(@Nonnull QueueLocation location) {
         return String.format("" +
                         "INSERT INTO %s (" +
                         "   %s " +
@@ -151,7 +151,7 @@ public class H2QueueDao implements QueueDao {
                 queueTableSchema.getIdField());
     }
 
-    private String createReenqueueSql(final QueueLocation location) {
+    private String createReenqueueSql(QueueLocation location) {
         return String.format("" +
                         "UPDATE %s " +
                         "SET " +

@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=PATCH
+### NEXT_VERSION_TYPE=MINOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
 
-* add support of h2 database
+* Add support of h2 database. Thanks to [@izebit](https://github.com/izebit).
 
 ### NEXT_VERSION_DESCRIPTION_END
 ## [12.0.0]() (28-04-2021)

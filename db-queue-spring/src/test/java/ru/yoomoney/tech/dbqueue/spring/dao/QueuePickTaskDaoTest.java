@@ -44,7 +44,7 @@ public abstract class QueuePickTaskDaoTest {
     protected final Function<PickTaskSettings, QueuePickTaskDao> pickTaskDaoFactory;
 
     /**
-     * Из-за особенностей windows какая-то фигня со временем БД
+     * Some glitches with Windows
      */
     private final static Duration WINDOWS_OS_DELAY = Duration.ofSeconds(2);
 

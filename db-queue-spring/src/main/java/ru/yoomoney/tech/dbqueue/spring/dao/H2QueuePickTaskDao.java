@@ -17,12 +17,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -38,9 +38,9 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
     private final QueueTableSchema queueTableSchema;
     private final PickTaskSettings pickTaskSettings;
 
-    public H2QueuePickTaskDao(@Nonnull final JdbcOperations jdbcOperations,
-                              @Nonnull final QueueTableSchema queueTableSchema,
-                              @Nonnull final PickTaskSettings pickTaskSettings) {
+    public H2QueuePickTaskDao(@Nonnull JdbcOperations jdbcOperations,
+                              @Nonnull QueueTableSchema queueTableSchema,
+                              @Nonnull PickTaskSettings pickTaskSettings) {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(Objects.requireNonNull(jdbcOperations, "jdbc template can't be null"));
         this.queueTableSchema = Objects.requireNonNull(queueTableSchema, "table schema can't be null");
         this.pickTaskSettings = Objects.requireNonNull(pickTaskSettings, "settings can't be null");
@@ -48,13 +48,13 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
 
     @Nullable
     @Override
-    public TaskRecord pickTask(@Nonnull final QueueLocation location) {
+    public TaskRecord pickTask(@Nonnull QueueLocation location) {
         Objects.requireNonNull(location, "location can't be null");
 
-        final long retryInterval = pickTaskSettings.getRetryInterval().getSeconds();
-        final String queueId = location.getQueueId().asString();
+        long retryInterval = pickTaskSettings.getRetryInterval().getSeconds();
+        String queueId = location.getQueueId().asString();
 
-        final Long taskId = rowIdLocker.lock(
+        Long taskId = rowIdLocker.lock(
                 queueId,
                 rowIds -> {
                     List<Long> ids = jdbcTemplate
@@ -119,8 +119,8 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
         }
     }
 
-    private static String getSelectSql(final QueueLocation location,
-                                       final QueueTableSchema queueTableSchema) {
+    private static String getSelectSql(QueueLocation location,
+                                       QueueTableSchema queueTableSchema) {
         return String.format("" +
                         "SELECT %s " +
                         "FROM %s " +
@@ -137,9 +137,9 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
         );
     }
 
-    private static String getUpdateSql(final QueueLocation location,
-                                       final PickTaskSettings pickTaskSettings,
-                                       final QueueTableSchema queueTableSchema) {
+    private static String getUpdateSql(QueueLocation location,
+                                       PickTaskSettings pickTaskSettings,
+                                       QueueTableSchema queueTableSchema) {
         return String.format("" +
                         "UPDATE %s " +
                         "SET " +
@@ -157,8 +157,8 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
                 queueTableSchema.getIdField());
     }
 
-    private static String getReturnSql(final QueueLocation location,
-                                       final QueueTableSchema queueTableSchema) {
+    private static String getReturnSql(QueueLocation location,
+                                       QueueTableSchema queueTableSchema) {
         return String.format("" +
                         "SELECT  " +
                         "   %s, " +
@@ -192,12 +192,11 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
     private static class RowIdLocker {
         private final Map<String, Set<Long>> lockedRowIds = new ConcurrentHashMap<>();
 
-        public Long lock(final String queueName,
-                         final Function<Set<Long>, Long> taskIdExtractor) {
+        public Long lock(String queueName,
+                         Function<Set<Long>, Long> taskIdExtractor) {
 
-            final AtomicReference<Long> atomicReference = new AtomicReference<>();
-            lockedRowIds
-                    .compute(queueName, (key, rowIds) -> {
+            AtomicReference<Long> atomicReference = new AtomicReference<>();
+            lockedRowIds.compute(queueName, (key, rowIds) -> {
                         Set<Long> idSet = rowIds == null ? new HashSet<>() : rowIds;
 
                         Long taskId = taskIdExtractor.apply(idSet);
@@ -214,22 +213,22 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
             return atomicReference.get();
         }
 
-        public void unlock(final String queueName, final Long taskId) {
-            lockedRowIds
-                    .computeIfPresent(queueName, (key, rowIds) -> {
-                        rowIds.remove(taskId);
-                        return rowIds;
-                    });
+        public void unlock(String queueName, Long taskId) {
+            lockedRowIds.computeIfPresent(queueName, (key, rowIds) -> {
+                rowIds.remove(taskId);
+                return rowIds;
+            });
         }
     }
 
-    private static ZonedDateTime getZonedDateTime(final ResultSet rs, final String time) throws SQLException {
+    private static ZonedDateTime getZonedDateTime(ResultSet rs, String time) throws SQLException {
         return ZonedDateTime.ofInstant(rs.getTimestamp(time).toInstant(), ZoneId.systemDefault());
     }
 
-    private static String getNextProcessTimeSql(final @Nonnull TaskRetryType taskRetryType,
-                                                final QueueTableSchema queueTableSchema) {
+    private static String getNextProcessTimeSql(@Nonnull TaskRetryType taskRetryType,
+                                                @Nonnull QueueTableSchema queueTableSchema) {
         Objects.requireNonNull(taskRetryType, "retry type must be not null");
+        Objects.requireNonNull(queueTableSchema, "queue table schema must be not null");
         switch (taskRetryType) {
             case GEOMETRIC_BACKOFF:
                 return String.format("TIMESTAMPADD(SECOND, POWER(2, %s) * :retryInterval , NOW())", queueTableSchema.getAttemptField());
