@@ -1,0 +1,20 @@
+buildscript {
+    apply from: "$rootProject.projectDir/project.gradle", to: buildscript
+}
+
+dependencies {
+
+    compile project(':db-queue-core'),
+            'io.zipkin.brave:brave:5.10.2'
+
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.1',
+            'com.google.code.findbugs:annotations:3.0.1'
+
+    testCompile 'junit:junit:4.12',
+            'org.mockito:mockito-core:3.6.28',
+            'org.apache.logging.log4j:log4j-core:2.13.3',
+            'org.apache.logging.log4j:log4j-slf4j-impl:2.13.3'
+
+    testCompileOnly 'com.google.code.findbugs:jsr305:3.0.1',
+            'com.google.code.findbugs:annotations:3.0.1'
+}

@@ -19,7 +19,7 @@ public enum DatabaseDialect {
     MSSQL,
     /**
      * Oracle 11g
-     *
+     * <p>
      * This version doesn't have automatically incremented primary keys,
      * so you must specify sequence name in
      * {@link QueueLocation.Builder#withIdSequence(String)}

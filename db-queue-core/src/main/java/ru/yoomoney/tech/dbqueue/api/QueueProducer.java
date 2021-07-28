@@ -5,19 +5,19 @@ import javax.annotation.Nonnull;
 /**
  * Task producer for the queue, which adds a new task into the queue.
  *
- * @param <T> The type of the payload in the task
+ * @param <PayloadT> The type of the payload in the task
  * @author Oleg Kandaurov
  * @since 10.07.2017
  */
-public interface QueueProducer<T> {
+public interface QueueProducer<PayloadT> {
 
     /**
      * Add a new task into the queue
      *
      * @param enqueueParams Parameters with typed payload to enqueue the task
-     * @return Unique (sequence id) identifier of added task
+     * @return Enqueue result
      */
-    long enqueue(@Nonnull EnqueueParams<T> enqueueParams);
+    EnqueueResult enqueue(@Nonnull EnqueueParams<PayloadT> enqueueParams);
 
     /**
      * Get task payload transformer, which transform the task's payload into the {@linkplain String}
@@ -25,6 +25,6 @@ public interface QueueProducer<T> {
      * @return Task payload transformer
      */
     @Nonnull
-    TaskPayloadTransformer<T> getPayloadTransformer();
+    TaskPayloadTransformer<PayloadT> getPayloadTransformer();
 
 }

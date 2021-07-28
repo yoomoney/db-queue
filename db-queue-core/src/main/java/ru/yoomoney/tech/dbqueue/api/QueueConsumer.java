@@ -1,7 +1,7 @@
 package ru.yoomoney.tech.dbqueue.api;
 
-import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.ProcessingMode;
+import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
@@ -10,11 +10,11 @@ import java.util.concurrent.Executor;
 /**
  * Task processor for the queue
  *
- * @param <T> The type of the payload in the task
+ * @param <PayloadT> The type of the payload in the task
  * @author Oleg Kandaurov
  * @since 09.07.2017
  */
-public interface QueueConsumer<T> {
+public interface QueueConsumer<PayloadT> {
 
     /**
      * Process the task from the queue
@@ -23,7 +23,7 @@ public interface QueueConsumer<T> {
      * @return A result of task processing
      */
     @Nonnull
-    TaskExecutionResult execute(@Nonnull Task<T> task);
+    TaskExecutionResult execute(@Nonnull Task<PayloadT> task);
 
     /**
      * Get queue configuration
@@ -39,7 +39,7 @@ public interface QueueConsumer<T> {
      * @return Task payload transformer
      */
     @Nonnull
-    TaskPayloadTransformer<T> getPayloadTransformer();
+    TaskPayloadTransformer<PayloadT> getPayloadTransformer();
 
     /**
      * Task executor for {@link ProcessingMode#USE_EXTERNAL_EXECUTOR} mode.

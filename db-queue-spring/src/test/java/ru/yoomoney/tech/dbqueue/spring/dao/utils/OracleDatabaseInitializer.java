@@ -114,9 +114,9 @@ public class OracleDatabaseInitializer {
 
     private static void addUserAndSchema(OracleContainer dbContainer, String userName) {
         Arrays.asList("CREATE USER " + userName + " IDENTIFIED BY " + userName + "",
-                "ALTER USER " + userName + " QUOTA unlimited ON SYSTEM",
-                "GRANT CREATE SESSION, CONNECT, RESOURCE, DBA TO " + userName,
-                "GRANT ALL PRIVILEGES TO " + userName)
+                        "ALTER USER " + userName + " QUOTA unlimited ON SYSTEM",
+                        "GRANT CREATE SESSION, CONNECT, RESOURCE, DBA TO " + userName,
+                        "GRANT ALL PRIVILEGES TO " + userName)
                 .forEach(s -> {
                     try (Connection connection = dbContainer.createConnection("")) {
                         try (PreparedStatement statement = connection.prepareStatement(s)) {

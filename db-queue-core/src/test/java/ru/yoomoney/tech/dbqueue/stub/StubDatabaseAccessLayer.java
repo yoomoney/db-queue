@@ -25,12 +25,14 @@ public class StubDatabaseAccessLayer implements DatabaseAccessLayer {
     }
 
     @Override
-    public @Nonnull QueueDao getQueueDao() {
+    @Nonnull
+    public QueueDao getQueueDao() {
         return queueDao;
     }
 
     @Override
-    public @Nonnull QueuePickTaskDao createQueuePickTaskDao(@Nonnull PickTaskSettings pickTaskSettings) {
+    @Nonnull
+    public QueuePickTaskDao createQueuePickTaskDao(@Nonnull PickTaskSettings pickTaskSettings) {
         return mock(QueuePickTaskDao.class);
     }
 

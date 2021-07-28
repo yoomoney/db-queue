@@ -55,7 +55,7 @@ public final class QueueLocation {
 
     /**
      * Get id sequence name.
-     *
+     * <p>
      * Use for databases which doesn't have automatically incremented primary keys, for example Oracle 11g
      *
      * @return database sequence name for generating primary key of tasks table.

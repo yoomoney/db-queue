@@ -65,11 +65,11 @@ public class QueueService {
     /**
      * Register new task processor of given payload type.
      *
-     * @param consumer Task processor.
-     * @param <T>      Type of the processor (type of the payload in the task).
+     * @param consumer   Task processor.
+     * @param <PayloadT> Type of the processor (type of the payload in the task).
      * @return Attribute of successful task processor registration.
      */
-    public <T> boolean registerQueue(@Nonnull QueueConsumer<T> consumer) {
+    public <PayloadT> boolean registerQueue(@Nonnull QueueConsumer<PayloadT> consumer) {
         requireNonNull(consumer);
         QueueId queueId = consumer.getQueueConfig().getLocation().getQueueId();
         if (registeredQueues.containsKey(queueId)) {

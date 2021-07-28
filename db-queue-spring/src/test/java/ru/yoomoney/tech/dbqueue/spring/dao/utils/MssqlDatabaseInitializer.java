@@ -92,7 +92,7 @@ public class MssqlDatabaseInitializer {
         SQLServerDataSource dataSource;
 
         String ryukImage = Optional.ofNullable(System.getProperty("testcontainers.ryuk.container.image"))
-                                .orElse("quay.io/testcontainers/ryuk:0.2.3");
+                .orElse("quay.io/testcontainers/ryuk:0.2.3");
         TestcontainersConfiguration.getInstance()
                 .updateGlobalConfig("ryuk.container.image", ryukImage);
 
