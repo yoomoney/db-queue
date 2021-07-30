@@ -4,10 +4,10 @@ import org.junit.Test;
 import ru.yoomoney.tech.dbqueue.api.TaskExecutionResult;
 import ru.yoomoney.tech.dbqueue.api.TaskRecord;
 import ru.yoomoney.tech.dbqueue.config.QueueShard;
-import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
 import ru.yoomoney.tech.dbqueue.dao.QueueDao;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
+import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
 
 import java.time.Duration;
 

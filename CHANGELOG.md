@@ -1,5 +1,33 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=MAJOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+
+**breaking changes**:
+
+* `QueueProducer#enqueue` returns `EnqueueResult` object which contains shard identifier along with sequence id.
+
+**new features**:
+
+* Added module `db-queue-brave`. It provides tracing support via [Brave](https://github.com/openzipkin/brave)
+You can check example in [ExampleTracingConfiguration](db-queue-test/src/test/java/ru/yoomoney/tech/dbqueue/test/ExampleTracingConfiguration.java).
+
+* Sharding is supported in producer API. 
+[ExampleBasicConfiguration](db-queue-test/src/test/java/ru/yoomoney/tech/dbqueue/test/ExampleBasicConfiguration.java)
+is updated according to API changes. 
+Introduced several new classes:
+  * [ShardingQueueProducer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/impl/ShardingQueueProducer.java) - 
+  default implementation for producer with sharding support.
+  * [QueueShardRouter](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueShardRouter.java) - 
+  interface which determine where to dispatch queue task. It used by `ShardingQueueProducer`.
+  * [SingleQueueShardRouter](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/impl/SingleQueueShardRouter.java) -
+  default implementation of `QueueShardRouter` for configurations with single database.
+  
+* Added extended logging support for producer and consumer. 
+You can check example in [ExampleBasicConfiguration](db-queue-test/src/test/java/ru/yoomoney/tech/dbqueue/test/ExampleBasicConfiguration.java)
+Introduced several new classes:
+  * [LoggingTaskLifecycleListener](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/impl/LoggingTaskLifecycleListener.java)
+  * [LoggingThreadLifecycleListener](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/impl/LoggingThreadLifecycleListener.java)
+  * [MonitoringQueueProducer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/impl/MonitoringQueueProducer.java)
+
 ### NEXT_VERSION_DESCRIPTION_END
 ## [12.1.0]() (09-06-2021)
 

@@ -35,11 +35,11 @@ public interface DatabaseAccessLayer {
     /**
      * Perform an operation in transaction
      *
-     * @param <T>      result type
-     * @param supplier operation
+     * @param <ResultT> result type
+     * @param supplier  operation
      * @return result of operation
      */
-    <T> T transact(@Nonnull Supplier<T> supplier);
+    <ResultT> ResultT transact(@Nonnull Supplier<ResultT> supplier);
 
     /**
      * Perform an operation in transaction

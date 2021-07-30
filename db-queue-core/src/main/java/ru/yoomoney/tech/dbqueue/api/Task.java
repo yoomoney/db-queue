@@ -15,16 +15,16 @@ import static java.util.Objects.requireNonNull;
 /**
  * Typed task wrapper with parameters, which is supplied to the {@linkplain QueueConsumer} task processor
  *
- * @param <T> The type of the payload in the task
+ * @param <PayloadT> The type of the payload in the task
  * @author Oleg Kandaurov
  * @since 10.07.2017
  */
-public final class Task<T> {
+public final class Task<PayloadT> {
 
     @Nonnull
     private final QueueShardId shardId;
     @Nullable
-    private final T payload;
+    private final PayloadT payload;
     private final long attemptsCount;
     private final long reenqueueAttemptsCount;
     private final long totalAttemptsCount;
@@ -45,7 +45,7 @@ public final class Task<T> {
      * @param createdAt              Date and time when the task was added into the queue.
      * @param extData                Map of external user-defined parameters, key is the column name in the tasks table.
      */
-    private Task(@Nonnull QueueShardId shardId, @Nullable T payload,
+    private Task(@Nonnull QueueShardId shardId, @Nullable PayloadT payload,
                  long attemptsCount, long reenqueueAttemptsCount, long totalAttemptsCount,
                  @Nonnull ZonedDateTime createdAt, @Nonnull Map<String, String> extData) {
         this.shardId = requireNonNull(shardId, "shardId");
@@ -63,7 +63,7 @@ public final class Task<T> {
      * @return Typed task payload.
      */
     @Nonnull
-    public Optional<T> getPayload() {
+    public Optional<PayloadT> getPayload() {
         return Optional.ofNullable(payload);
     }
 
@@ -73,7 +73,7 @@ public final class Task<T> {
      * @return Typed task payload.
      */
     @Nonnull
-    public T getPayloadOrThrow() {
+    public PayloadT getPayloadOrThrow() {
         if (payload == null) {
             throw new IllegalArgumentException("payload is absent");
         }
@@ -178,25 +178,25 @@ public final class Task<T> {
     /**
      * Creates a builder for {@link Task} objects.
      *
-     * @param shardId An id of shard.
-     * @param <T>     A type of task payload.
+     * @param shardId    An id of shard.
+     * @param <PayloadBuilderT> A type of task payload.
      * @return A new instance of the {@link Builder} builder.
      */
-    public static <T> Builder<T> builder(@Nonnull QueueShardId shardId) {
+    public static <PayloadBuilderT> Builder<PayloadBuilderT> builder(@Nonnull QueueShardId shardId) {
         return new Builder<>(shardId);
     }
 
     /**
      * Builder for the {@link Task} wrapper.
      *
-     * @param <T> The type of the payload in the task.
+     * @param <PayloadBuilderT> The type of the payload in the task.
      */
-    public static class Builder<T> {
+    public static class Builder<PayloadBuilderT> {
         @Nonnull
         private final QueueShardId shardId;
         @Nonnull
         private ZonedDateTime createdAt = ZonedDateTime.now();
-        private T payload;
+        private PayloadBuilderT payload;
         private long attemptsCount;
         private long reenqueueAttemptsCount;
         private long totalAttemptsCount;
@@ -207,37 +207,37 @@ public final class Task<T> {
             this.shardId = requireNonNull(shardId, "shardId");
         }
 
-        public Builder<T> withCreatedAt(@Nonnull ZonedDateTime createdAt) {
+        public Builder<PayloadBuilderT> withCreatedAt(@Nonnull ZonedDateTime createdAt) {
             this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
             return this;
         }
 
-        public Builder<T> withPayload(T payload) {
+        public Builder<PayloadBuilderT> withPayload(PayloadBuilderT payload) {
             this.payload = payload;
             return this;
         }
 
-        public Builder<T> withAttemptsCount(long attemptsCount) {
+        public Builder<PayloadBuilderT> withAttemptsCount(long attemptsCount) {
             this.attemptsCount = attemptsCount;
             return this;
         }
 
-        public Builder<T> withReenqueueAttemptsCount(long reenqueueAttemptsCount) {
+        public Builder<PayloadBuilderT> withReenqueueAttemptsCount(long reenqueueAttemptsCount) {
             this.reenqueueAttemptsCount = reenqueueAttemptsCount;
             return this;
         }
 
-        public Builder<T> withTotalAttemptsCount(long totalAttemptsCount) {
+        public Builder<PayloadBuilderT> withTotalAttemptsCount(long totalAttemptsCount) {
             this.totalAttemptsCount = totalAttemptsCount;
             return this;
         }
 
-        public Builder<T> withExtData(@Nonnull Map<String, String> extData) {
+        public Builder<PayloadBuilderT> withExtData(@Nonnull Map<String, String> extData) {
             this.extData = requireNonNull(extData);
             return this;
         }
 
-        public Task<T> build() {
+        public Task<PayloadBuilderT> build() {
             return new Task<>(shardId, payload, attemptsCount, reenqueueAttemptsCount,
                     totalAttemptsCount, createdAt, extData);
         }

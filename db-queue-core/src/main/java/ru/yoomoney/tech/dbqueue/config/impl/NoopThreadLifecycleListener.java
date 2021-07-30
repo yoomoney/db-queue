@@ -5,6 +5,7 @@ import ru.yoomoney.tech.dbqueue.config.ThreadLifecycleListener;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Empty listener for task processing thread in the queue.
@@ -16,6 +17,7 @@ public class NoopThreadLifecycleListener implements ThreadLifecycleListener {
 
     private static final NoopThreadLifecycleListener INSTANCE = new NoopThreadLifecycleListener();
 
+    @Nonnull
     public static NoopThreadLifecycleListener getInstance() {
         return INSTANCE;
     }
@@ -38,7 +40,7 @@ public class NoopThreadLifecycleListener implements ThreadLifecycleListener {
 
     @Override
     public void crashed(@Nonnull QueueShardId shardId, @Nonnull QueueLocation location,
-                        @Nonnull Throwable exc) {
+                        @Nullable Throwable exc) {
 
     }
 }

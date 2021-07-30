@@ -37,6 +37,7 @@ public interface LoopPolicy {
 
     /**
      * Получить признак, что исполнение кода приостановлено
+     *
      * @return true, если исполнение приостановлено
      */
     boolean isPaused();

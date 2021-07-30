@@ -32,7 +32,7 @@ public class ArchitectureTest {
     @Test
     public void test2() {
         ArchRule rule = classes().that().resideInAnyPackage(
-                fullNames("api"))
+                        fullNames("api"))
                 .should().accessClassesThat().resideInAnyPackage(fullNames("api..", "settings.."))
                 .orShould().accessClassesThat().resideInAnyPackage("java..")
                 .because("api must not depend on implementation details");
@@ -42,7 +42,7 @@ public class ArchitectureTest {
     @Test
     public void test3() {
         ArchRule rule = classes().that().resideInAnyPackage(
-                fullNames("settings"))
+                        fullNames("settings"))
                 .should().accessClassesThat().resideInAnyPackage(fullNames("settings"))
                 .orShould().accessClassesThat().resideInAnyPackage("java..")
                 .because("settings must not depend on implementation details");
@@ -52,12 +52,11 @@ public class ArchitectureTest {
     @Test
     public void test4() {
         ArchRule rule = noClasses().that().resideInAnyPackage(
-                fullNames("settings..", "api..", "dao..", "spring.."))
+                        fullNames("settings..", "api..", "dao..", "spring.."))
                 .should().accessClassesThat().resideInAnyPackage(fullNames("internal.."))
                 .because("public classes must not depend on internal details");
         rule.check(classes);
     }
-
 
 
     private static String[] fullNames(String... relativeName) {

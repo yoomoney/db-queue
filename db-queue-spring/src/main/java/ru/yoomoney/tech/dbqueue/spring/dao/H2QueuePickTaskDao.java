@@ -197,18 +197,18 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
 
             AtomicReference<Long> atomicReference = new AtomicReference<>();
             lockedRowIds.compute(queueName, (key, rowIds) -> {
-                        Set<Long> idSet = rowIds == null ? new HashSet<>() : rowIds;
+                Set<Long> idSet = rowIds == null ? new HashSet<>() : rowIds;
 
-                        Long taskId = taskIdExtractor.apply(idSet);
-                        if (taskId == null) {
-                            return idSet;
-                        } else {
-                            atomicReference.set(taskId);
-                        }
+                Long taskId = taskIdExtractor.apply(idSet);
+                if (taskId == null) {
+                    return idSet;
+                } else {
+                    atomicReference.set(taskId);
+                }
 
-                        idSet.add(taskId);
-                        return idSet;
-                    });
+                idSet.add(taskId);
+                return idSet;
+            });
 
             return atomicReference.get();
         }

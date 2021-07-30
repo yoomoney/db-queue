@@ -13,13 +13,13 @@ import static java.util.Objects.requireNonNull;
 /**
  * Parameters with typed payload to enqueue the task
  *
- * @param <T> A type of the payload in the task
+ * @param <PayloadT> A type of the payload in the task
  * @author Oleg Kandaurov
  * @since 12.07.2017
  */
-public final class EnqueueParams<T> {
+public final class EnqueueParams<PayloadT> {
     @Nullable
-    private T payload;
+    private PayloadT payload;
     @Nonnull
     private Duration executionDelay = Duration.ZERO;
     @Nonnull
@@ -28,13 +28,13 @@ public final class EnqueueParams<T> {
     /**
      * Create new task parameters with payload
      *
-     * @param payload task payload
-     * @param <R>     The type of the payload in the task
+     * @param payload    task payload
+     * @param <PayloadBuilderT> The type of the payload in the task
      * @return An object with task parameters and a payload
      */
-    public static <R> EnqueueParams<R> create(@Nonnull R payload) {
+    public static <PayloadBuilderT> EnqueueParams<PayloadBuilderT> create(@Nonnull PayloadBuilderT payload) {
         requireNonNull(payload);
-        return new EnqueueParams<R>().withPayload(payload);
+        return new EnqueueParams<PayloadBuilderT>().withPayload(payload);
     }
 
     /**
@@ -44,7 +44,7 @@ public final class EnqueueParams<T> {
      * @return A reference to the same object with added payload
      */
     @Nonnull
-    public EnqueueParams<T> withPayload(@Nullable T payload) {
+    public EnqueueParams<PayloadT> withPayload(@Nullable PayloadT payload) {
         this.payload = payload;
         return this;
     }
@@ -57,7 +57,7 @@ public final class EnqueueParams<T> {
      * @return A reference to the same object with execution delay set.
      */
     @Nonnull
-    public EnqueueParams<T> withExecutionDelay(@Nonnull Duration executionDelay) {
+    public EnqueueParams<PayloadT> withExecutionDelay(@Nonnull Duration executionDelay) {
         this.executionDelay = requireNonNull(executionDelay);
         return this;
     }
@@ -73,7 +73,7 @@ public final class EnqueueParams<T> {
      * @return A reference to the same object of the task parameters with external user parameter.
      */
     @Nonnull
-    public EnqueueParams<T> withExtData(@Nonnull String columnName, @Nullable String value) {
+    public EnqueueParams<PayloadT> withExtData(@Nonnull String columnName, @Nullable String value) {
         extData.put(requireNonNull(columnName), value);
         return this;
     }
@@ -90,7 +90,7 @@ public final class EnqueueParams<T> {
      * @return A reference to the same object of the task parameters with external user-defined parameters map.
      */
     @Nonnull
-    public EnqueueParams<T> withExtData(@Nonnull Map<String, String> extData) {
+    public EnqueueParams<PayloadT> withExtData(@Nonnull Map<String, String> extData) {
         requireNonNull(extData);
         this.extData.putAll(extData);
         return this;
@@ -102,7 +102,7 @@ public final class EnqueueParams<T> {
      * @return Typed task payload
      */
     @Nullable
-    public T getPayload() {
+    public PayloadT getPayload() {
         return payload;
     }
 

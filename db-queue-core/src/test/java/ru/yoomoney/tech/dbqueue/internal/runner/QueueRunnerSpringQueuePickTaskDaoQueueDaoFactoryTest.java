@@ -7,7 +7,6 @@ import ru.yoomoney.tech.dbqueue.api.Task;
 import ru.yoomoney.tech.dbqueue.api.TaskExecutionResult;
 import ru.yoomoney.tech.dbqueue.config.QueueShard;
 import ru.yoomoney.tech.dbqueue.config.QueueShardId;
-import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
 import ru.yoomoney.tech.dbqueue.config.TaskLifecycleListener;
 import ru.yoomoney.tech.dbqueue.settings.ProcessingMode;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
@@ -15,6 +14,7 @@ import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
 import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
 import ru.yoomoney.tech.dbqueue.stub.StringQueueConsumer;
+import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

@@ -1,5 +1,4 @@
 [![Build Status](https://travis-ci.com/yoomoney-tech/db-queue.svg?branch=master)](https://travis-ci.com/github/yoomoney-tech/db-queue/branches)
-[![Codecov](https://codecov.io/gh/yoomoney-tech/db-queue/branch/master/graph/badge.svg)](https://codecov.io/gh/yoomoney-tech/db-queue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Javadoc](https://img.shields.io/badge/javadoc-latest-blue.svg)](https://yoomoney-tech.github.io/db-queue/)
 [![Download](https://img.shields.io/badge/Download-latest)](https://search.maven.org/artifact/ru.yoomoney.tech/db-queue)
@@ -9,18 +8,8 @@ Library provides worker-queue implementation on top of Java and database.
 Project uses [Semantic Versioning](http://semver.org/).  
 Library is available on [Maven Central](https://search.maven.org/) 
 
-**Gradle**
 ```
-implementation 'ru.yoomoney.tech:db-queue:12.0.0'
-```
-
-**Maven**
-```
-<dependency>
-  <groupId>ru.yoomoney.tech</groupId>
-  <artifactId>db-queue</artifactId>
-  <version>12.0.0</version>
-</dependency>
+implementation 'ru.yoomoney.tech:db-queue:13.0.0'
 ```
 
 ## Why?
@@ -56,6 +45,7 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 * Storing queue tasks in a separate databases for horizontal scaling ([QueueShard](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/QueueShard.java)).
 * Delayed task execution.
 * At-least-once task processing semantic.
+* Tracing support via [Brave](https://github.com/openzipkin/brave)
 * Several retry strategies in case of a task processing error ([TaskRetryType](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/TaskRetryType.java)).
 * Task event listeners ([TaskLifecycleListener](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/TaskLifecycleListener.java), [ThreadLifecycleListener](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/ThreadLifecycleListener.java)).
 * Strong-typed api for task processing and enqueuing ([TaskPayloadTransformer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.java)).
@@ -64,18 +54,22 @@ However we cannot guarantee that it would be easy to auto scale or handle more t
 
 ## Database support
 
-As of now the library supports PostgreSQL, MSSQL and Oracle as backing database, however library architecture
+As of now the library supports PostgreSQL, MSSQL, Oracle and H2 as backing database, however library architecture
 makes it easy to add other relational databases which has support for transactions and "for update skip locked" feature,  
 for example MySql.  
 Feel free to add support for other databases via pull request.
 
-## Dependencies
+## Modularity
 
-Library contains minimal set of dependencies to easily integrate in any project:
+The library is divided into several modules.
+Each module contains minimal set of dependencies to easily integrate in any project.
 
-* `db-queue-core` module requires only`org.slf4j:slf4j-api` library
-* `db-queue-spring` module requires Spring Framework (spring-jdbc and spring-tx) for interacting with a database. 
-Other features of Spring ecosystem are not in use. 
+* `db-queue-core` module provides base logic and requires `org.slf4j:slf4j-api` library
+* `db-queue-spring` module provides access to database and requires Spring Framework: spring-jdbc and spring-tx.
+Other features of Spring ecosystem are not in use.
+* `db-queue-brave` module provides tracing support with help of [Brave](https://github.com/openzipkin/brave)
+* `db-queue-test` module provides integration testing across all modules. 
+It might help to figure out how to use the library in your code.
 
 # Usage
 
@@ -195,9 +189,10 @@ CREATE INDEX queue_tasks_name_time_desc_idx
 
 ### Code
 
-Example configuration is shown in [ExampleConfiguration](db-queue-spring//src/test/java/ru/yoomoney/tech/dbqueue/example/ExampleConfiguration.java).
+Simple configuration: [ExampleBasicConfiguration](db-queue-test/src/test/java/ru/yoomoney/tech/dbqueue/test/ExampleBasicConfiguration.java).
+Tracing configuration: [ExampleTracingConfiguration](db-queue-test/src/test/java/ru/yoomoney/tech/dbqueue/test/ExampleTracingConfiguration.java)
 
-The main steps are:
+The main steps to configure the library:
 * Specify a queue configuration through [QueueConfig](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfig.java) instance (or use [QueueConfigsReader](src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfigsReader.java)).
 * Implement [QueueProducer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) interface.
 * Implement [QueueConsumer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueConsumer.java) interface.
@@ -206,12 +201,6 @@ The main steps are:
 * Start queues through `QueueService`
 
 ## Project structure
-
-* internal
-
-Internal classes. **Not for public use**.
-
-*Backward compatibility for classes in that package maybe broken in any release*
 
 * [api](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api)
 
@@ -229,6 +218,12 @@ Additional classes for managing storage.
 * [config](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config)
 
 Registration and configuration.
+
+* internal
+
+Internal classes. **Not for public use**.
+
+*Backward compatibility for classes in that package maybe broken in any release*
 
 # Known Issues
 

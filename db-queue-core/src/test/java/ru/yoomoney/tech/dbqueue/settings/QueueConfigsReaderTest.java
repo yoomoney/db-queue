@@ -207,8 +207,8 @@ public class QueueConfigsReaderTest {
                 "q.testQueue3.retry-type=linear"
         ));
         assertThat(configs.stream().collect(Collectors.toMap(
-                config -> config.getLocation().getQueueId().asString(),
-                config -> config.getSettings().getRetryType())),
+                        config -> config.getLocation().getQueueId().asString(),
+                        config -> config.getSettings().getRetryType())),
                 equalTo(new LinkedHashMap<String, TaskRetryType>() {{
                     put("testQueue1", TaskRetryType.GEOMETRIC_BACKOFF);
                     put("testQueue2", TaskRetryType.ARITHMETIC_BACKOFF);
@@ -274,8 +274,8 @@ public class QueueConfigsReaderTest {
                 "q.testQueue7.reenqueue-retry-ratio=3"
         ));
         assertThat(configs.stream().collect(Collectors.toMap(
-                config -> config.getLocation().getQueueId().asString(),
-                config -> config.getSettings().getReenqueueRetrySettings())),
+                        config -> config.getLocation().getQueueId().asString(),
+                        config -> config.getSettings().getReenqueueRetrySettings())),
                 equalTo(new LinkedHashMap<String, ReenqueueRetrySettings>() {{
                     put("testQueue0", ReenqueueRetrySettings.builder(ReenqueueRetryType.MANUAL)
                             .build());
@@ -330,8 +330,8 @@ public class QueueConfigsReaderTest {
                 "q.testQueue3.processing-mode=use-external-executor"
         ));
         assertThat(configs.stream().collect(Collectors.toMap(
-                config -> config.getLocation().getQueueId().asString(),
-                config -> config.getSettings().getProcessingMode())),
+                        config -> config.getLocation().getQueueId().asString(),
+                        config -> config.getSettings().getProcessingMode())),
                 equalTo(new LinkedHashMap<String, ProcessingMode>() {{
                     put("testQueue1", ProcessingMode.SEPARATE_TRANSACTIONS);
                     put("testQueue2", ProcessingMode.WRAP_IN_TRANSACTION);
