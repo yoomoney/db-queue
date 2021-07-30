@@ -55,7 +55,7 @@ public class CompositeTaskLifecycleListenerTest {
         CompositeTaskLifecycleListener compositeListener = new CompositeTaskLifecycleListener(
                 Arrays.asList(firstListener, secondListener));
         compositeListener.executed(SHARD_ID, LOCATION, TASK_RECORD, TaskExecutionResult.finish(), 42L);
-        assertThat(events, equalTo(Arrays.asList("1:executed", "2:executed")));
+        assertThat(events, equalTo(Arrays.asList("2:executed", "1:executed")));
     }
 
     @Test
@@ -66,7 +66,7 @@ public class CompositeTaskLifecycleListenerTest {
         CompositeTaskLifecycleListener compositeListener = new CompositeTaskLifecycleListener(
                 Arrays.asList(firstListener, secondListener));
         compositeListener.finished(SHARD_ID, LOCATION, TASK_RECORD);
-        assertThat(events, equalTo(Arrays.asList("1:finished", "2:finished")));
+        assertThat(events, equalTo(Arrays.asList("2:finished", "1:finished")));
     }
 
     @Test
@@ -77,7 +77,7 @@ public class CompositeTaskLifecycleListenerTest {
         CompositeTaskLifecycleListener compositeListener = new CompositeTaskLifecycleListener(
                 Arrays.asList(firstListener, secondListener));
         compositeListener.crashed(SHARD_ID, LOCATION, TASK_RECORD, null);
-        assertThat(events, equalTo(Arrays.asList("1:crashed", "2:crashed")));
+        assertThat(events, equalTo(Arrays.asList("2:crashed", "1:crashed")));
     }
 
     public static class StubTaskLifecycleListener implements TaskLifecycleListener {

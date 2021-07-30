@@ -41,7 +41,7 @@ public class CompositeThreadLifecycleListenerTest {
         CompositeThreadLifecycleListener compositeListener = new CompositeThreadLifecycleListener(
                 Arrays.asList(firstListener, secondListener));
         compositeListener.executed(SHARD_ID, LOCATION, true, 42L);
-        assertThat(events, equalTo(Arrays.asList("1:executed", "2:executed")));
+        assertThat(events, equalTo(Arrays.asList("2:executed", "1:executed")));
     }
 
     @Test
@@ -52,7 +52,7 @@ public class CompositeThreadLifecycleListenerTest {
         CompositeThreadLifecycleListener compositeListener = new CompositeThreadLifecycleListener(
                 Arrays.asList(firstListener, secondListener));
         compositeListener.finished(SHARD_ID, LOCATION);
-        assertThat(events, equalTo(Arrays.asList("1:finished", "2:finished")));
+        assertThat(events, equalTo(Arrays.asList("2:finished", "1:finished")));
     }
 
     @Test
@@ -63,7 +63,7 @@ public class CompositeThreadLifecycleListenerTest {
         CompositeThreadLifecycleListener compositeListener = new CompositeThreadLifecycleListener(
                 Arrays.asList(firstListener, secondListener));
         compositeListener.crashed(SHARD_ID, LOCATION, null);
-        assertThat(events, equalTo(Arrays.asList("1:crashed", "2:crashed")));
+        assertThat(events, equalTo(Arrays.asList("2:crashed", "1:crashed")));
     }
 
     public static class StubThreadLifecycleListener implements ThreadLifecycleListener {

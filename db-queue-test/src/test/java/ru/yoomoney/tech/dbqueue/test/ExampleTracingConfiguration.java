@@ -81,10 +81,11 @@ public class ExampleTracingConfiguration {
         Tracing tracing = Tracing.newBuilder().currentTraceContext(ThreadLocalCurrentTraceContext.newBuilder()
                 .addScopeDecorator(ThreadContextScopeDecorator.create())
                 .build()).build();
+
         ShardingQueueProducer<String, SpringDatabaseAccessLayer> shardingQueueProducer = new ShardingQueueProducer<>(
                 config, NoopPayloadTransformer.getInstance(), new SingleQueueShardRouter<>(shard));
-        TracingQueueProducer<String> tracingQueueProducer = new TracingQueueProducer<>(shardingQueueProducer, queueId, tracing, "trace_info");
-        QueueProducer<String> producer = new MonitoringQueueProducer<>(tracingQueueProducer, queueId);
+        QueueProducer<String> monitoringQueueProducer = new MonitoringQueueProducer<>(shardingQueueProducer, queueId);
+        TracingQueueProducer<String> tracingQueueProducer = new TracingQueueProducer<>(monitoringQueueProducer, queueId, tracing, "trace_info");
         StringQueueConsumer consumer = new StringQueueConsumer(config, isTaskConsumed);
 
         QueueService queueService = new QueueService(singletonList(shard),
@@ -93,11 +94,12 @@ public class ExampleTracingConfiguration {
                 new CompositeTaskLifecycleListener(Arrays.asList(
                         new TracingTaskLifecycleListener(tracing, "trace_info"),
                         new LoggingTaskLifecycleListener())));
+
         queueService.registerQueue(consumer);
         queueService.start();
         Span span = tracing.tracer().newTrace();
         try (Tracer.SpanInScope spanInScope = tracing.tracer().withSpanInScope(span)) {
-            producer.enqueue(EnqueueParams.create("tracing task"));
+            tracingQueueProducer.enqueue(EnqueueParams.create("tracing task"));
         }
         sleep(1000);
         queueService.shutdown();

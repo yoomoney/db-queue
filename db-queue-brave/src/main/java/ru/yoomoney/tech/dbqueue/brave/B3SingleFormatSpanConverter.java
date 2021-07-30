@@ -24,12 +24,12 @@ import java.util.StringJoiner;
  * @author Oleg Kandaurov
  * @since 11.06.2021
  */
-public class B3SingleFormatSpanConverter {
+class B3SingleFormatSpanConverter {
 
     @Nonnull
     private final Tracing tracing;
 
-    public B3SingleFormatSpanConverter(@Nonnull Tracing tracing) {
+    B3SingleFormatSpanConverter(@Nonnull Tracing tracing) {
         this.tracing = Objects.requireNonNull(tracing);
     }
 
@@ -111,7 +111,7 @@ public class B3SingleFormatSpanConverter {
      * @return trace context
      */
     @Nonnull
-    public Optional<TraceContext> deserializeTraceContext(@Nullable String traceInfo) {
+    Optional<TraceContext> deserializeTraceContext(@Nullable String traceInfo) {
         TraceContext.Extractor<TraceInfo> extractor = tracing.propagation().extractor(TraceInfo::get);
         return TraceInfo.fromString(traceInfo).map(tr -> extractor.extract(tr).context());
     }
@@ -123,7 +123,7 @@ public class B3SingleFormatSpanConverter {
      * @return tracing data in key value format
      */
     @Nonnull
-    public String serializeTraceContext(@Nonnull TraceContext traceContext) {
+    String serializeTraceContext(@Nonnull TraceContext traceContext) {
         Objects.requireNonNull(traceContext);
         TraceContext.Injector<TraceInfo> injector = tracing.propagation().injector(TraceInfo::put);
         TraceInfo traceInfo = new TraceInfo();

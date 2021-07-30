@@ -49,6 +49,8 @@ public class B3SingleFormatSpanConverterTest {
         assertThat(context.isPresent(), equalTo(false));
         context = spanConverter.deserializeTraceContext("k");
         assertThat(context.isPresent(), equalTo(false));
+        context = spanConverter.deserializeTraceContext("!@#$%^&*()_+{}[]/?\\=!@#$%^&*()_+{}[]/?\\");
+        assertThat(context.isPresent(), equalTo(false));
     }
 
     @Test
