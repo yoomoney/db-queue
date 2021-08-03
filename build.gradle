@@ -39,16 +39,11 @@ subprojects {
         snapshotRepository = rootJavaArtifactPublishExtension.snapshotRepository
         releaseRepository = rootJavaArtifactPublishExtension.releaseRepository
         signing = rootJavaArtifactPublishExtension.signing
+        staging = rootJavaArtifactPublishExtension.staging
         publicationAdditionalInfo = rootJavaArtifactPublishExtension.publicationAdditionalInfo
     }
 
     rootProject.tasks.getByName('publish').dependsOn(tasks.getByName('publish'))
-
-    //отключаем таску публикации, предоставляемую java-artifact-publish-plugin, т.к. io.github.gradle-nexus:publish-plugin
-    //предоставляет свою
-    afterEvaluate {
-        project.getTasks().getByName("publishMainArtifactPublicationToMavenRepository").setEnabled(false);
-    }
 }
 
 
