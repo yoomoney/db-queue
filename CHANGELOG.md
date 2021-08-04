@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=PATCH
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [13.0.1]() (04-08-2021)
+
 * Fix library modules publishing
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [13.0.0]() (30-07-2021)
 
 **breaking changes**:
