@@ -12,7 +12,7 @@ import java.util.UUID;
  * @author Oleg Kandaurov
  * @since 15.05.2020
  */
-@Ignore("https://github.com/yoomoney-tech/db-queue/issues/10")
+@Ignore("https://github.com/yoomoney/db-queue/issues/10")
 public class DefaultOracle11QueueDaoTest extends QueueDaoTest {
 
     @BeforeClass

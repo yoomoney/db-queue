@@ -1,5 +1,6 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=MINOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+* The repository moved yoomoney-tech -> yoomoney
 ### NEXT_VERSION_DESCRIPTION_END
 ## [13.0.1]() (04-08-2021)
 
@@ -65,7 +66,7 @@ To migrate to a new version you must do the following changes:
 ## [11.0.2]() (04-02-2021)
 
 * Update artifact-release-plugin
-* Disable Oracle tests https://github.com/yoomoney-tech/db-queue/issues/10
+* Disable Oracle tests https://github.com/yoomoney/db-queue/issues/10
 
 ## [11.0.1]() (02-02-2021)
 
@@ -122,7 +123,7 @@ This makes the task selection query run faster increase up to 5 times.
 
 ## [8.0.1]() (08-11-2019)
 
-* [PR#2](https://github.com/yoomoney-tech/db-queue/pull/2) Allow dots as part of a table name. Thanks to [@everplays](https://github.com/everplays).
+* [PR#2](https://github.com/yoomoney/db-queue/pull/2) Allow dots as part of a table name. Thanks to [@everplays](https://github.com/everplays).
 
 ## [8.0.0]() (28-10-2019)
 

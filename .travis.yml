@@ -1,1 +1,1 @@
-import: yoomoney-gradle-plugins/travis-shared-configuration:build-and-publish-plugin.yml@master
+import: yoomoney/travis-shared-configuration:build-and-publish-plugin.yml@master
