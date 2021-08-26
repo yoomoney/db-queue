@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.com/yoomoney-tech/db-queue.svg?branch=master)](https://travis-ci.com/github/yoomoney-tech/db-queue/branches)
+[![Build Status](https://travis-ci.com/yoomoney/db-queue.svg?branch=master)](https://travis-ci.com/github/yoomoney/db-queue/branches)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Javadoc](https://img.shields.io/badge/javadoc-latest-blue.svg)](https://yoomoney-tech.github.io/db-queue/)
+[![Javadoc](https://img.shields.io/badge/javadoc-latest-blue.svg)](https://yoomoney.github.io/db-queue/)
 [![Download](https://img.shields.io/badge/Download-latest)](https://search.maven.org/artifact/ru.yoomoney.tech/db-queue)
 # Database Queue
 
