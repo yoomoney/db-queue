@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=MINOR
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [13.1.0]() (26-08-2021)
+
 * The repository moved yoomoney-tech -> yoomoney
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [13.0.1]() (04-08-2021)
 
 * Fix library modules publishing
