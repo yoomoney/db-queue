@@ -36,25 +36,6 @@ public class QueueServiceTest {
             new StubDatabaseAccessLayer());
 
     @Test
-    public void should_not_register_queue_when_thread_count_is_zero() throws Exception {
-
-        QueueConsumer<?> consumer = mock(QueueConsumer.class);
-        when(consumer.getQueueConfig()).thenReturn(new QueueConfig(
-                QueueLocation.builder().withTableName("testTable")
-                        .withQueueId(new QueueId("test")).build(),
-                QueueSettings.builder()
-                        .withNoTaskTimeout(Duration.ZERO)
-                        .withThreadCount(0)
-                        .withBetweenTaskTimeout(Duration.ZERO).build()));
-
-        TaskLifecycleListener taskListener = mock(TaskLifecycleListener.class);
-        ThreadLifecycleListener threadListener = mock(ThreadLifecycleListener.class);
-
-        QueueService queueService = new QueueService(Collections.singletonList(DEFAULT_SHARD), threadListener, taskListener);
-        Assert.assertFalse(queueService.registerQueue(consumer));
-    }
-
-    @Test
     public void should_not_do_any_operations_when_queue_is_not_registered() throws Exception {
         QueueConsumer<?> consumer = mock(QueueConsumer.class);
         QueueId queueId = new QueueId("test");
@@ -68,7 +49,6 @@ public class QueueServiceTest {
         QueueExecutionPool queueExecutionPool = mock(QueueExecutionPool.class);
         QueueService queueService = new QueueService(Collections.singletonList(DEFAULT_SHARD),
                 ((queueShard, queueConsumer) -> queueExecutionPool));
-        Assert.assertFalse(queueService.registerQueue(consumer));
         List<String> errorMessages = new ArrayList<>();
 
         queueService.start();

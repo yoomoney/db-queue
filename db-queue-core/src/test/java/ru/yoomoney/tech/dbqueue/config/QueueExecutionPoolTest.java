@@ -2,6 +2,8 @@ package ru.yoomoney.tech.dbqueue.config;
 
 import org.junit.Test;
 import ru.yoomoney.tech.dbqueue.internal.processing.QueueLoop;
+import ru.yoomoney.tech.dbqueue.internal.processing.QueueTaskPoller;
+import ru.yoomoney.tech.dbqueue.internal.processing.SyncQueueLoop;
 import ru.yoomoney.tech.dbqueue.internal.runner.QueueRunner;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
@@ -12,12 +14,17 @@ import ru.yoomoney.tech.dbqueue.stub.StringQueueConsumer;
 import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Oleg Kandaurov
@@ -39,10 +46,14 @@ public class QueueExecutionPoolTest {
                         .withBetweenTaskTimeout(Duration.ZERO).build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
+        QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
         QueueLoop queueLoop = mock(QueueLoop.class);
-        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueLoop, new DirectExecutor(), queueRunner);
+        ExecutorService executor = spy(new DirectExecutor());
+        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueTaskPoller, executor,
+                queueRunner, () -> queueLoop);
         pool.start();
-        verify(queueLoop, times(2)).start(DEFAULT_SHARD.getShardId(), consumer, queueRunner);
+        verify(queueTaskPoller, times(2)).start(queueLoop, DEFAULT_SHARD.getShardId(), consumer, queueRunner);
+        verify(executor, times(2)).submit(any(Runnable.class));
     }
 
     @Test
@@ -52,9 +63,10 @@ public class QueueExecutionPoolTest {
                 QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
-        QueueLoop queueLoop = mock(QueueLoop.class);
+        QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
         ExecutorService executor = mock(ExecutorService.class);
-        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueLoop, executor, queueRunner);
+        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueTaskPoller, executor, queueRunner,
+                SyncQueueLoop::new);
         pool.shutdown();
         verify(executor).shutdownNow();
     }
@@ -66,9 +78,13 @@ public class QueueExecutionPoolTest {
                 QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
+        QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
         QueueLoop queueLoop = mock(QueueLoop.class);
         ExecutorService executor = mock(ExecutorService.class);
-        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueLoop, executor, queueRunner);
+        when(executor.submit(any(Runnable.class))).thenReturn(mock(Future.class));
+        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueTaskPoller, executor, queueRunner,
+                () -> queueLoop);
+        pool.start();
         pool.pause();
         verify(queueLoop).pause();
     }
@@ -80,9 +96,13 @@ public class QueueExecutionPoolTest {
                 QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
-        QueueLoop queueLoop = mock(QueueLoop.class);
+        QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
         ExecutorService executor = mock(ExecutorService.class);
-        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueLoop, executor, queueRunner);
+        QueueLoop queueLoop = mock(QueueLoop.class);
+        when(executor.submit(any(Runnable.class))).thenReturn(mock(Future.class));
+        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueTaskPoller, executor, queueRunner,
+                () -> queueLoop);
+        pool.start();
         pool.isPaused();
         verify(queueLoop).isPaused();
     }
@@ -94,9 +114,11 @@ public class QueueExecutionPoolTest {
                 QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
-        QueueLoop queueLoop = mock(QueueLoop.class);
+        QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
         ExecutorService executor = mock(ExecutorService.class);
-        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueLoop, executor, queueRunner);
+        QueueLoop queueLoop = mock(QueueLoop.class);
+        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueTaskPoller, executor, queueRunner,
+                () -> queueLoop);
         pool.isTerminated();
         verify(executor).isTerminated();
     }
@@ -108,36 +130,81 @@ public class QueueExecutionPoolTest {
                 QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
-        QueueLoop queueLoop = mock(QueueLoop.class);
+        QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
         ExecutorService executor = mock(ExecutorService.class);
-        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueLoop, executor, queueRunner);
+        QueueLoop queueLoop = mock(QueueLoop.class);
+        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueTaskPoller, executor, queueRunner,
+                () -> queueLoop);
         pool.isShutdown();
         verify(executor).isShutdown();
     }
 
+    @Test
     public void should_await_termination() throws InterruptedException {
         QueueConfig queueConfig = new QueueConfig(
                 QueueLocation.builder().withTableName("testTable").withQueueId(new QueueId("queue1")).build(),
                 QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
-        QueueLoop queueLoop = mock(QueueLoop.class);
+        QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
         ExecutorService executor = mock(ExecutorService.class);
-        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueLoop, executor, queueRunner);
+        QueueLoop queueLoop = mock(QueueLoop.class);
+        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueTaskPoller, executor, queueRunner,
+                () -> queueLoop);
         pool.awaitTermination(Duration.ofSeconds(10));
         verify(executor).awaitTermination(10, TimeUnit.SECONDS);
     }
 
-    public void should_wakeup() throws InterruptedException {
+    @Test
+    public void should_wakeup() {
         QueueConfig queueConfig = new QueueConfig(
                 QueueLocation.builder().withTableName("testTable").withQueueId(new QueueId("queue1")).build(),
                 QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
-        QueueLoop queueLoop = mock(QueueLoop.class);
+        QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
         ExecutorService executor = mock(ExecutorService.class);
-        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueLoop, executor, queueRunner);
+        QueueLoop queueLoop = mock(QueueLoop.class);
+        when(executor.submit(any(Runnable.class))).thenReturn(mock(Future.class));
+        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueTaskPoller, executor, queueRunner,
+                () -> queueLoop);
+        pool.start();
         pool.wakeup();
-        verify(queueLoop).wakeup();
+        verify(queueLoop).doContinue();
+    }
+
+    @Test
+    public void should_resize_queue_pool() throws InterruptedException {
+        QueueConfig queueConfig = new QueueConfig(
+                QueueLocation.builder().withTableName("testTable").withQueueId(new QueueId("queue1")).build(),
+                QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO)
+                        .withThreadCount(0).build());
+        StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
+        QueueRunner queueRunner = mock(QueueRunner.class);
+        QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
+        ThreadPoolExecutor executor = spy(new ThreadPoolExecutor(
+                0,
+                Integer.MAX_VALUE,
+                1L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(),
+                new QueueThreadFactory(
+                        queueConfig.getLocation(), DEFAULT_SHARD.getShardId())));
+
+        QueueLoop queueLoop = mock(QueueLoop.class);
+        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueTaskPoller, executor, queueRunner,
+                () -> queueLoop);
+        pool.start();
+        verify(executor, times(0)).submit(any(Runnable.class));
+        assertThat(executor.getPoolSize(), equalTo(0));
+        pool.resizePool(1);
+        assertThat(executor.getPoolSize(), equalTo(1));
+        verify(executor, times(1)).submit(any(Runnable.class));
+        pool.resizePool(0);
+        Thread.sleep(100);
+        assertThat(executor.getPoolSize(), equalTo(0));
+        verify(executor, times(3)).allowCoreThreadTimeOut(eq(true));
+        verify(executor, times(2)).setCorePoolSize(eq(0));
+        verify(executor, times(3)).purge();
+
     }
 }

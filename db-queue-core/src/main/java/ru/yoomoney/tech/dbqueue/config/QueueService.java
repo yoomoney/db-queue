@@ -76,13 +76,6 @@ public class QueueService {
             log.info("queue is already registered: queueId={}", queueId);
             return false;
         }
-
-        int threadCount = consumer.getQueueConfig().getSettings().getThreadCount();
-        if (threadCount <= 0) {
-            log.info("queue is turned off, skipping registration: queueId={}", queueId);
-            return false;
-        }
-
         Map<QueueShardId, QueueExecutionPool> queueShardPools = new LinkedHashMap<>();
         queueShards.forEach(shard -> queueShardPools.put(shard.getShardId(),
                 queueExecutionPoolFactory.apply(shard, consumer)));
@@ -282,5 +275,26 @@ public class QueueService {
         }
         queueExecutionPool.wakeup();
     }
+
+    /**
+     * Resize queue execution pool in runtime
+     *
+     * @param queueId      Queue identifier.
+     * @param queueShardId Shard identifier.
+     * @param threadCount thread count for execution pool.
+     */
+    public void resizeQueueExecutionPool(@Nonnull QueueId queueId, @Nonnull QueueShardId queueShardId,
+                                         int threadCount) {
+        requireNonNull(queueId, "queueId");
+        requireNonNull(queueShardId, "queueShardId");
+        Map<QueueShardId, QueueExecutionPool> queuePools = getQueuePools(queueId, "wakeup");
+        QueueExecutionPool queueExecutionPool = queuePools.get(queueShardId);
+        if (queueExecutionPool == null) {
+            throw new IllegalArgumentException("cannot wakeup, unknown shard: " +
+                    "queueId=" + queueId + ", shardId=" + queueShardId);
+        }
+        queueExecutionPool.resizePool(threadCount);
+    }
+
 
 }

@@ -19,15 +19,15 @@ dependencies {
             'org.mockito:mockito-core:3.6.28',
             'nl.jqno.equalsverifier:equalsverifier:3.3',
 
-            'org.testcontainers:testcontainers:1.12.5',
+            'org.testcontainers:testcontainers:1.16.0',
 
-            'org.testcontainers:postgresql:1.13.0',
+            'org.testcontainers:postgresql:1.16.0',
             'org.postgresql:postgresql:42.2.18',
 
-            'org.testcontainers:mssqlserver:1.10.7',
+            'org.testcontainers:mssqlserver:1.16.0',
             'com.microsoft.sqlserver:mssql-jdbc:8.2.0.jre8',
 
-            'org.testcontainers:oracle-xe:1.13.0',
+            'org.testcontainers:oracle-xe:1.16.0',
             'com.oracle.ojdbc:ojdbc8:19.3.0.0',
 
             'com.h2database:h2:1.4.200'

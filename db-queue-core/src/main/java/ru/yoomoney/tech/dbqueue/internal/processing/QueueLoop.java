@@ -1,117 +1,151 @@
 package ru.yoomoney.tech.dbqueue.internal.processing;
 
-import ru.yoomoney.tech.dbqueue.api.QueueConsumer;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.yoomoney.tech.dbqueue.config.QueueShardId;
-import ru.yoomoney.tech.dbqueue.config.ThreadLifecycleListener;
-import ru.yoomoney.tech.dbqueue.internal.runner.QueueRunner;
+import ru.yoomoney.tech.dbqueue.settings.QueueId;
 
-import javax.annotation.Nonnull;
-
-import static java.util.Objects.requireNonNull;
+import java.time.Duration;
 
 /**
- * Цикл обработки задачи в очереди.
+ * Вспомогательный класс, для задания стратегии
+ * выполнения задачи в цикле
  *
  * @author Oleg Kandaurov
- * @since 09.07.2017
+ * @since 15.07.2017
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
-public class QueueLoop {
-
-    @Nonnull
-    private final LoopPolicy loopPolicy;
-    @Nonnull
-    private final ThreadLifecycleListener threadLifecycleListener;
-    @Nonnull
-    private final MillisTimeProvider millisTimeProvider;
+public interface QueueLoop {
 
     /**
-     * Конструктор
+     * Запустить выполнение кода
      *
-     * @param loopPolicy              стратегия выполнения цикла
-     * @param threadLifecycleListener слушатель событий исполнения очереди
-     * @param millisTimeProvider      поставщик текущего времени
+     * @param runnable код для исполнения
      */
-    public QueueLoop(@Nonnull LoopPolicy loopPolicy,
-                     @Nonnull ThreadLifecycleListener threadLifecycleListener,
-                     @Nonnull MillisTimeProvider millisTimeProvider) {
-        this.loopPolicy = requireNonNull(loopPolicy);
-        this.threadLifecycleListener = requireNonNull(threadLifecycleListener);
-        this.millisTimeProvider = requireNonNull(millisTimeProvider);
-    }
+    void doRun(Runnable runnable);
 
     /**
-     * Возобновить цикл обработки задач
+     * Продолжить исполнение кода
      */
-    public void wakeup() {
-        loopPolicy.doContinue();
-    }
+    void doContinue();
 
     /**
-     * Запустить цикл обработки задач в очереди
+     * Приостановить исполнение кода
      *
-     * @param shardId       идентификатор шарда, на котором происходит обработка
-     * @param queueConsumer выполняемая очередь
-     * @param queueRunner   исполнитель очереди
+     * @param timeout       промежуток на который следует приостановить работу
+     * @param waitInterrupt признак, что разрешено прервать ожидание и продолжить работу
      */
-    public void start(@Nonnull QueueShardId shardId,
-                      @Nonnull QueueConsumer queueConsumer,
-                      @Nonnull QueueRunner queueRunner) {
-        requireNonNull(shardId);
-        requireNonNull(queueConsumer);
-        requireNonNull(queueRunner);
-        loopPolicy.doRun(() -> {
-            try {
-                long startTime = millisTimeProvider.getMillis();
-                threadLifecycleListener.started(shardId, queueConsumer.getQueueConfig().getLocation());
-                QueueProcessingStatus queueProcessingStatus = queueRunner.runQueue(queueConsumer);
-                threadLifecycleListener.executed(shardId, queueConsumer.getQueueConfig().getLocation(),
-                        queueProcessingStatus != QueueProcessingStatus.SKIPPED,
-                        millisTimeProvider.getMillis() - startTime);
+    void doWait(Duration timeout, WaitInterrupt waitInterrupt);
 
-                switch (queueProcessingStatus) {
-                    case SKIPPED:
-                        loopPolicy.doWait(queueConsumer.getQueueConfig().getSettings().getNoTaskTimeout(),
-                                LoopPolicy.WaitInterrupt.ALLOW);
-                        return;
-                    case PROCESSED:
-                        loopPolicy.doWait(queueConsumer.getQueueConfig().getSettings().getBetweenTaskTimeout(),
-                                LoopPolicy.WaitInterrupt.DENY);
-                        return;
-                    default:
-                        throw new IllegalStateException("unknown task loop result" + queueProcessingStatus);
+    /**
+     * Получить признак, что исполнение кода приостановлено
+     *
+     * @return true, если исполнение приостановлено
+     */
+    boolean isPaused();
+
+    /**
+     * Безусловно приостановить исполнение кода
+     */
+    void pause();
+
+    /**
+     * Безусловно продолжить исполнение кода
+     */
+    void unpause();
+
+    /**
+     * Cтратегия выполнения задачи в потоке
+     */
+    @SuppressFBWarnings("LO_SUSPECT_LOG_CLASS")
+    class WakeupQueueLoop implements QueueLoop {
+        private static final Logger log = LoggerFactory.getLogger(QueueLoop.class);
+
+        private final Object monitor = new Object();
+        private volatile boolean isWakedUp = false;
+        private volatile boolean isPaused = true;
+
+        @Override
+        public void doRun(Runnable runnable) {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    synchronized (monitor) {
+                        while (isPaused) {
+                            monitor.wait();
+                        }
+                    }
+                    runnable.run();
+                } catch (InterruptedException ignored) {
+                    log.info("sleep interrupted: threadName={}", Thread.currentThread().getName());
+                    Thread.currentThread().interrupt();
                 }
-            } catch (Throwable e) {
-                threadLifecycleListener.crashed(shardId, queueConsumer.getQueueConfig().getLocation(), e);
-                loopPolicy.doWait(queueConsumer.getQueueConfig().getSettings().getFatalCrashTimeout(),
-                        LoopPolicy.WaitInterrupt.DENY);
-            } finally {
-                threadLifecycleListener.finished(shardId, queueConsumer.getQueueConfig().getLocation());
             }
-        });
+        }
+
+        @Override
+        public void doContinue() {
+            synchronized (monitor) {
+                isWakedUp = true;
+                monitor.notify();
+            }
+        }
+
+        @Override
+        public void doWait(Duration timeout, WaitInterrupt waitInterrupt) {
+            try {
+                synchronized (monitor) {
+                    long plannedWakeupTime = System.currentTimeMillis() + timeout.toMillis();
+                    long timeToSleep = plannedWakeupTime - System.currentTimeMillis();
+                    while (timeToSleep > 1L) {
+                        if (!isWakedUp) {
+                            monitor.wait(timeToSleep);
+                        }
+                        if (isWakedUp && waitInterrupt == WaitInterrupt.ALLOW) {
+                            break;
+                        }
+                        if (isWakedUp && waitInterrupt == WaitInterrupt.DENY) {
+                            isWakedUp = false;
+                        }
+                        timeToSleep = plannedWakeupTime - System.currentTimeMillis();
+                    }
+                    isWakedUp = false;
+                }
+            } catch (InterruptedException ignored) {
+                log.info("sleep interrupted: threadName={}", Thread.currentThread().getName());
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        @Override
+        public boolean isPaused() {
+            return isPaused;
+        }
+
+        @Override
+        public void pause() {
+            isPaused = true;
+        }
+
+        @Override
+        public void unpause() {
+            synchronized (monitor) {
+                isPaused = false;
+                monitor.notifyAll();
+            }
+        }
     }
 
     /**
-     * Прекратить работу цикла обработки задач в очереди
+     * Признак прерывания ожидания
      */
-    public void pause() {
-        loopPolicy.pause();
+    enum WaitInterrupt {
+        /**
+         * Прерывание разрешено
+         */
+        ALLOW,
+        /**
+         * Прерывание запрещено
+         */
+        DENY
     }
-
-    /**
-     * Возобновить работу цикла обработки задач в очереди
-     */
-    public void unpause() {
-        loopPolicy.unpause();
-    }
-
-    /**
-     * Возвращает признак, что выполнение приостановлено
-     *
-     * @return признак приостановки выполнения
-     */
-    public boolean isPaused() {
-        return loopPolicy.isPaused();
-    }
-
 }

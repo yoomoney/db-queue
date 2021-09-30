@@ -1,5 +1,7 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=MINOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+* Added method `QueueService#resizeQueueExecutionPool` to dynamically allocate or
+dispose threads for particular queue.
 ### NEXT_VERSION_DESCRIPTION_END
 ## [13.1.0]() (26-08-2021)
 
