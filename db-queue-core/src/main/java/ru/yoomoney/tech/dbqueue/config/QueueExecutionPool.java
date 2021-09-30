@@ -45,7 +45,7 @@ class QueueExecutionPool {
     private final QueueRunner queueRunner;
     @Nonnull
     private final Supplier<QueueLoop> queueLoopFactory;
-
+    @Nonnull
     private final List<QueueWorker> queueWorkers = new ArrayList<>();
 
     private boolean started = false;
@@ -99,15 +99,22 @@ class QueueExecutionPool {
      * Start task processing in the queue
      */
     void start() {
-        if (!started) {
+        if (!started && !isShutdown()) {
+            int threadCount = queueConsumer.getQueueConfig().getSettings().getThreadCount();
+            log.info("starting queue: queueId={}, shardId={}, threadCount={}", getQueueId(), queueShard.getShardId(),
+                    threadCount);
+            for (int i = 0; i < threadCount; i++) {
+                startThread(true);
+            }
+            setupExecutor(threadCount);
             started = true;
-            log.info("starting queue: queueId={}, shardId={}", getQueueId(), queueShard.getShardId());
-            resizePool(queueConsumer.getQueueConfig().getSettings().getThreadCount());
+        } else {
+            log.info("execution pool is already started or underlying executor is closed");
         }
     }
 
     /**
-     * Resize queue execution pool in runtime
+     * Resize queue execution pool
      *
      * @param newThreadCount thread count for execution pool.
      */
@@ -119,30 +126,33 @@ class QueueExecutionPool {
                 queueShard.getShardId(), oldThreadCount, newThreadCount);
         if (newThreadCount > oldThreadCount) {
             for (int i = oldThreadCount; i < newThreadCount; i++) {
-                startThread();
+                startThread(!isPaused());
             }
         } else if (newThreadCount < oldThreadCount) {
             for (int i = oldThreadCount; i > newThreadCount; i--) {
                 disposeThread();
             }
         }
+        setupExecutor(newThreadCount);
+    }
+
+    private void setupExecutor(int newThreadCount) {
         if (executor instanceof ThreadPoolExecutor) {
             ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
             threadPoolExecutor.setCorePoolSize(newThreadCount);
             threadPoolExecutor.allowCoreThreadTimeOut(true);
             threadPoolExecutor.purge();
         }
-
     }
 
-    private void startThread() {
+    private void startThread(boolean startProcessing) {
         QueueLoop queueLoop = queueLoopFactory.get();
-        Future<?> future = executor.submit(() -> queueTaskPoller.start(queueLoop,
-                queueShard.getShardId(), queueConsumer, queueRunner));
-        queueWorkers.add(new QueueWorker(future, queueLoop));
-        if (started) {
+        Future<?> future = executor.submit(() -> queueTaskPoller.start(queueLoop, queueShard.getShardId(),
+                queueConsumer, queueRunner));
+        if (startProcessing) {
             queueLoop.unpause();
         }
+        queueWorkers.add(new QueueWorker(future, queueLoop));
     }
 
     private void disposeThread() {
@@ -155,17 +165,32 @@ class QueueExecutionPool {
      * Stop tasks processing, semantic is the same as for {@link ExecutorService#shutdownNow()}
      */
     void shutdown() {
-        log.info("shutting down queue: queueId={}, shardId={}", getQueueId(), queueShard.getShardId());
-        executor.shutdownNow();
+        if (started && !isShutdown()) {
+            log.info("shutting down queue: queueId={}, shardId={}", getQueueId(), queueShard.getShardId());
+            resizePool(0);
+            executor.shutdownNow();
+            started = false;
+        } else {
+            log.info("execution pool is already stopped or underlying executor is closed");
+        }
     }
 
     /**
      * Pause task processing.
-     * To start the processing again, use {@link QueueExecutionPool#start()} method
+     * To start the processing again, use {@link QueueExecutionPool#unpause()} method
      */
     void pause() {
         log.info("pausing queue: queueId={}, shardId={}", getQueueId(), queueShard.getShardId());
         queueWorkers.forEach(queueWorker -> queueWorker.getLoop().pause());
+    }
+
+    /**
+     * Continue task processing.
+     * To pause processing, use {@link QueueExecutionPool#pause()} method
+     */
+    void unpause() {
+        log.info("unpausing queue: queueId={}, shardId={}", getQueueId(), queueShard.getShardId());
+        queueWorkers.forEach(queueWorker -> queueWorker.getLoop().unpause());
     }
 
     /**
@@ -174,7 +199,7 @@ class QueueExecutionPool {
      * @return true if the tasks processing was paused.
      */
     boolean isPaused() {
-        return queueWorkers.stream().anyMatch(queueWorker -> queueWorker.getLoop().isPaused());
+        return queueWorkers.stream().allMatch(queueWorker -> queueWorker.getLoop().isPaused());
     }
 
     /**

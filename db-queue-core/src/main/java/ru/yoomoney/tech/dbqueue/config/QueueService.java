@@ -172,7 +172,7 @@ public class QueueService {
 
     /**
      * Pause task processing in specified queue.
-     * To start the processing again, use {{@link QueueService#start(QueueId)} method.
+     * To start the processing again, use {{@link QueueService#unpause(QueueId)} method.
      *
      * @param queueId Queue identifier.
      */
@@ -184,11 +184,32 @@ public class QueueService {
 
     /**
      * Pause task processing in all queues.
-     * To start the processing again, use {@link QueueService#start()} method.
+     * To start processing, use {@link QueueService#unpause()} method.
      */
     public void pause() {
         log.info("pausing all queues");
         registeredQueues.keySet().forEach(this::pause);
+    }
+
+    /**
+     * Continue task processing in specified queue.
+     * To pause processing, use {{@link QueueService#pause(QueueId)} method.
+     *
+     * @param queueId Queue identifier.
+     */
+    public void unpause(@Nonnull QueueId queueId) {
+        requireNonNull(queueId, "queueId");
+        log.info("unpausing queue: queueId={}", queueId);
+        getQueuePools(queueId, "unpause").values().forEach(QueueExecutionPool::unpause);
+    }
+
+    /**
+     * Continue task processing in all queues.
+     * To pause processing, use {@link QueueService#pause()} method.
+     */
+    public void unpause() {
+        log.info("pausing all queues");
+        registeredQueues.keySet().forEach(this::unpause);
     }
 
     /**
@@ -277,17 +298,16 @@ public class QueueService {
     }
 
     /**
-     * Resize queue execution pool in runtime
+     * Resize queue execution pool
      *
      * @param queueId      Queue identifier.
      * @param queueShardId Shard identifier.
      * @param threadCount thread count for execution pool.
      */
-    public void resizeQueueExecutionPool(@Nonnull QueueId queueId, @Nonnull QueueShardId queueShardId,
-                                         int threadCount) {
+    public void resizePool(@Nonnull QueueId queueId, @Nonnull QueueShardId queueShardId, int threadCount) {
         requireNonNull(queueId, "queueId");
         requireNonNull(queueShardId, "queueShardId");
-        Map<QueueShardId, QueueExecutionPool> queuePools = getQueuePools(queueId, "wakeup");
+        Map<QueueShardId, QueueExecutionPool> queuePools = getQueuePools(queueId, "resizePool");
         QueueExecutionPool queueExecutionPool = queuePools.get(queueShardId);
         if (queueExecutionPool == null) {
             throw new IllegalArgumentException("cannot wakeup, unknown shard: " +

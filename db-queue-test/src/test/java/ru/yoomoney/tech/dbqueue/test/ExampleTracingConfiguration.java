@@ -34,9 +34,11 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Thread.sleep;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.equalTo;
 
 /**
  * @author Oleg Kandaurov
@@ -61,7 +63,7 @@ public class ExampleTracingConfiguration {
 
     @Test
     public void tracing_config() throws InterruptedException {
-        AtomicBoolean isTaskConsumed = new AtomicBoolean(false);
+        AtomicInteger taskConsumedCount = new AtomicInteger(0);
         DefaultDatabaseInitializer.createTable(PG_TRACING_TABLE_DDL, "tracing_task_table");
         SpringDatabaseAccessLayer databaseAccessLayer = new SpringDatabaseAccessLayer(
                 DatabaseDialect.POSTGRESQL, QueueTableSchema.builder()
@@ -86,7 +88,7 @@ public class ExampleTracingConfiguration {
                 config, NoopPayloadTransformer.getInstance(), new SingleQueueShardRouter<>(shard));
         QueueProducer<String> monitoringQueueProducer = new MonitoringQueueProducer<>(shardingQueueProducer, queueId);
         TracingQueueProducer<String> tracingQueueProducer = new TracingQueueProducer<>(monitoringQueueProducer, queueId, tracing, "trace_info");
-        StringQueueConsumer consumer = new StringQueueConsumer(config, isTaskConsumed);
+        StringQueueConsumer consumer = new StringQueueConsumer(config, taskConsumedCount);
 
         QueueService queueService = new QueueService(singletonList(shard),
                 new CompositeThreadLifecycleListener(singletonList(
@@ -104,7 +106,7 @@ public class ExampleTracingConfiguration {
         sleep(1000);
         queueService.shutdown();
         queueService.awaitTermination(Duration.ofSeconds(10));
-        Assert.assertTrue(isTaskConsumed.get());
+        Assert.assertThat(taskConsumedCount.get(), equalTo(1));
     }
 
 }

@@ -23,9 +23,11 @@ import ru.yoomoney.tech.dbqueue.spring.dao.SpringDatabaseAccessLayer;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Thread.sleep;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.equalTo;
 
 /**
  * @author Oleg Kandaurov
@@ -50,7 +52,7 @@ public class ExampleBasicConfiguration {
 
     @Test
     public void example_config() throws InterruptedException {
-        AtomicBoolean isTaskConsumed = new AtomicBoolean(false);
+        AtomicInteger taskConsumedCount = new AtomicInteger(0);
         DefaultDatabaseInitializer.createTable(PG_DEFAULT_TABLE_DDL, "example_task_table");
 
         SpringDatabaseAccessLayer databaseAccessLayer = new SpringDatabaseAccessLayer(
@@ -71,7 +73,7 @@ public class ExampleBasicConfiguration {
         ShardingQueueProducer<String, SpringDatabaseAccessLayer> shardingQueueProducer = new ShardingQueueProducer<>(
                 config, NoopPayloadTransformer.getInstance(), new SingleQueueShardRouter<>(shard));
         QueueProducer<String> producer = new MonitoringQueueProducer<>(shardingQueueProducer, queueId);
-        StringQueueConsumer consumer = new StringQueueConsumer(config, isTaskConsumed);
+        StringQueueConsumer consumer = new StringQueueConsumer(config, taskConsumedCount);
 
         QueueService queueService = new QueueService(singletonList(shard),
                 new LoggingThreadLifecycleListener(),
@@ -80,11 +82,16 @@ public class ExampleBasicConfiguration {
         queueService.registerQueue(consumer);
         queueService.start();
         producer.enqueue(EnqueueParams.create("example task"));
-        sleep(1000);
+        sleep(500);
+        queueService.pause();
+        producer.enqueue(EnqueueParams.create("example task"));
+        sleep(500);
+        queueService.unpause();
+        sleep(500);
         queueService.shutdown();
         queueService.awaitTermination(Duration.ofSeconds(10));
 
-        Assert.assertTrue(isTaskConsumed.get());
+        Assert.assertThat(taskConsumedCount.get(), equalTo(2));
     }
 
 }

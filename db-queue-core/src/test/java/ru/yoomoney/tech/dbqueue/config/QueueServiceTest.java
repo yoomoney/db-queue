@@ -1,6 +1,5 @@
 package ru.yoomoney.tech.dbqueue.config;
 
-import org.junit.Assert;
 import org.junit.Test;
 import ru.yoomoney.tech.dbqueue.api.QueueConsumer;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
@@ -63,6 +62,12 @@ public class QueueServiceTest {
         } catch (IllegalArgumentException exc) {
             errorMessages.add(exc.getMessage());
         }
+        queueService.unpause();
+        try {
+            queueService.unpause(queueId);
+        } catch (IllegalArgumentException exc) {
+            errorMessages.add(exc.getMessage());
+        }
         queueService.isPaused();
         try {
             queueService.isPaused(queueId);
@@ -93,16 +98,24 @@ public class QueueServiceTest {
         } catch (IllegalArgumentException exc) {
             errorMessages.add(exc.getMessage());
         }
+        try {
+            queueService.resizePool(queueId, DEFAULT_SHARD.getShardId(), 1);
+        } catch (IllegalArgumentException exc) {
+            errorMessages.add(exc.getMessage());
+        }
 
         verifyZeroInteractions(queueExecutionPool);
         assertThat(errorMessages.toString(), equalTo(
                 "[cannot invoke start, queue is not registered: queueId=test, " +
                         "cannot invoke pause, queue is not registered: queueId=test, " +
+                        "cannot invoke unpause, queue is not registered: queueId=test, " +
                         "cannot invoke isPaused, queue is not registered: queueId=test, " +
                         "cannot invoke isShutdown, queue is not registered: queueId=test, " +
                         "cannot invoke isTerminated, queue is not registered: queueId=test, " +
                         "cannot invoke awaitTermination, queue is not registered: queueId=test, " +
-                        "cannot invoke wakeup, queue is not registered: queueId=test]"));
+                        "cannot invoke wakeup, queue is not registered: queueId=test, " +
+                        "cannot invoke resizePool, queue is not registered: queueId=test" +
+                        "]"));
     }
 
     @Test
@@ -167,6 +180,8 @@ public class QueueServiceTest {
         queueService.start(queueId1);
         queueService.pause();
         queueService.pause(queueId1);
+        queueService.unpause();
+        queueService.unpause(queueId1);
         queueService.isPaused();
         queueService.isPaused(queueId1);
         queueService.isShutdown();
@@ -177,6 +192,7 @@ public class QueueServiceTest {
 
         verify(queueExecutionPool1, times(2)).start();
         verify(queueExecutionPool1, times(2)).pause();
+        verify(queueExecutionPool1, times(2)).unpause();
         verify(queueExecutionPool1, times(2)).isPaused();
         verify(queueExecutionPool1, times(2)).isShutdown();
         verify(queueExecutionPool1, times(2)).isTerminated();
@@ -184,6 +200,7 @@ public class QueueServiceTest {
 
         verify(queueExecutionPool2, times(1)).start();
         verify(queueExecutionPool2, times(1)).pause();
+        verify(queueExecutionPool2, times(1)).unpause();
         verify(queueExecutionPool2, times(1)).isPaused();
         verify(queueExecutionPool2, times(1)).isShutdown();
         verify(queueExecutionPool2, times(1)).isTerminated();
@@ -228,6 +245,7 @@ public class QueueServiceTest {
         assertTrue(queueService.registerQueue(consumer1));
         queueService.start();
         queueService.pause();
+        queueService.unpause();
         queueService.isPaused();
         queueService.isShutdown();
         queueService.isTerminated();
@@ -236,6 +254,7 @@ public class QueueServiceTest {
 
         verify(queueExecutionPool1, times(1)).start();
         verify(queueExecutionPool1, times(1)).pause();
+        verify(queueExecutionPool1, times(1)).unpause();
         verify(queueExecutionPool1, times(1)).isPaused();
         verify(queueExecutionPool1, times(1)).isShutdown();
         verify(queueExecutionPool1, times(1)).isTerminated();
@@ -243,6 +262,7 @@ public class QueueServiceTest {
 
         verify(queueExecutionPool2, times(1)).start();
         verify(queueExecutionPool2, times(1)).pause();
+        verify(queueExecutionPool2, times(1)).unpause();
         verify(queueExecutionPool2, times(1)).isPaused();
         verify(queueExecutionPool2, times(1)).isShutdown();
         verify(queueExecutionPool2, times(1)).isTerminated();

@@ -11,6 +11,7 @@ import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Objects.requireNonNull;
 
@@ -27,19 +28,19 @@ public class StringQueueConsumer implements QueueConsumer<String> {
     @Nonnull
     private final QueueConfig queueConfig;
     @Nonnull
-    private final AtomicBoolean isTaskConsumed;
+    private final AtomicInteger taskConsumedCount;
 
     public StringQueueConsumer(@Nonnull QueueConfig queueConfig,
-                               @Nonnull AtomicBoolean isTaskConsumed) {
+                               @Nonnull AtomicInteger taskConsumedCount) {
         this.queueConfig = requireNonNull(queueConfig);
-        this.isTaskConsumed = requireNonNull(isTaskConsumed);
+        this.taskConsumedCount = requireNonNull(taskConsumedCount);
     }
 
     @Nonnull
     @Override
     public TaskExecutionResult execute(@Nonnull Task<String> task) {
         log.info("payload={}", task.getPayloadOrThrow());
-        isTaskConsumed.set(true);
+        taskConsumedCount.incrementAndGet();
         return TaskExecutionResult.finish();
     }
 

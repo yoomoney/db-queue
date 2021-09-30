@@ -65,8 +65,10 @@ public class QueueExecutionPoolTest {
         QueueRunner queueRunner = mock(QueueRunner.class);
         QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
         ExecutorService executor = mock(ExecutorService.class);
+        when(executor.submit(any(Runnable.class))).thenReturn(mock(Future.class));
         QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueTaskPoller, executor, queueRunner,
                 SyncQueueLoop::new);
+        pool.start();
         pool.shutdown();
         verify(executor).shutdownNow();
     }
