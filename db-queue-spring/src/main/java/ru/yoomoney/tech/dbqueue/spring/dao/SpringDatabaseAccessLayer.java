@@ -5,9 +5,10 @@ import org.springframework.transaction.support.TransactionOperations;
 import ru.yoomoney.tech.dbqueue.config.DatabaseAccessLayer;
 import ru.yoomoney.tech.dbqueue.config.DatabaseDialect;
 import ru.yoomoney.tech.dbqueue.config.QueueTableSchema;
-import ru.yoomoney.tech.dbqueue.dao.PickTaskSettings;
 import ru.yoomoney.tech.dbqueue.dao.QueueDao;
 import ru.yoomoney.tech.dbqueue.dao.QueuePickTaskDao;
+import ru.yoomoney.tech.dbqueue.settings.FailureSettings;
+import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
 import java.util.function.Supplier;
@@ -81,19 +82,21 @@ public class SpringDatabaseAccessLayer implements DatabaseAccessLayer {
 
     @Override
     @Nonnull
-    public QueuePickTaskDao createQueuePickTaskDao(@Nonnull PickTaskSettings pickTaskSettings) {
+    public QueuePickTaskDao createQueuePickTaskDao(@Nonnull QueueLocation queueLocation,
+                                                   @Nonnull FailureSettings failureSettings) {
         requireNonNull(databaseDialect);
         requireNonNull(queueTableSchema);
-        requireNonNull(pickTaskSettings);
+        requireNonNull(queueLocation);
+        requireNonNull(failureSettings);
         switch (databaseDialect) {
             case POSTGRESQL:
-                return new PostgresQueuePickTaskDao(jdbcOperations, queueTableSchema, pickTaskSettings);
+                return new PostgresQueuePickTaskDao(jdbcOperations, queueTableSchema, queueLocation, failureSettings);
             case MSSQL:
-                return new MssqlQueuePickTaskDao(jdbcOperations, queueTableSchema, pickTaskSettings);
+                return new MssqlQueuePickTaskDao(jdbcOperations, queueTableSchema, queueLocation, failureSettings);
             case ORACLE_11G:
-                return new Oracle11QueuePickTaskDao(jdbcOperations, queueTableSchema, pickTaskSettings);
+                return new Oracle11QueuePickTaskDao(jdbcOperations, queueTableSchema, queueLocation, failureSettings);
             case H2:
-                return new H2QueuePickTaskDao(jdbcOperations, queueTableSchema, pickTaskSettings);
+                return new H2QueuePickTaskDao(jdbcOperations, queueTableSchema, queueLocation, failureSettings);
             default:
                 throw new IllegalArgumentException("unsupported database kind: " + databaseDialect);
         }

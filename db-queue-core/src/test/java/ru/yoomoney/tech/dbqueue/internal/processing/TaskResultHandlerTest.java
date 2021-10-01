@@ -7,11 +7,12 @@ import ru.yoomoney.tech.dbqueue.config.QueueShard;
 import ru.yoomoney.tech.dbqueue.dao.QueueDao;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
+import ru.yoomoney.tech.dbqueue.settings.ReenqueueRetryType;
+import ru.yoomoney.tech.dbqueue.settings.ReenqueueSettings;
 import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
 
 import java.time.Duration;
 
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,15 +37,12 @@ public class TaskResultHandlerTest {
         QueueDao queueDao = mock(QueueDao.class);
         when(queueShard.getDatabaseAccessLayer()).thenReturn(new StubDatabaseAccessLayer(queueDao));
 
-        ReenqueueRetryStrategy strategy = mock(ReenqueueRetryStrategy.class);
-
         TaskExecutionResult result = TaskExecutionResult.reenqueue(reenqueueDelay);
-
-        new TaskResultHandler(location, queueShard, strategy).handleResult(taskRecord, result);
+        ReenqueueSettings reenqueueSettings = ReenqueueSettings.builder().withRetryType(ReenqueueRetryType.MANUAL).build();
+        new TaskResultHandler(location, queueShard, reenqueueSettings).handleResult(taskRecord, result);
 
         verify(queueShard, times(2)).getDatabaseAccessLayer();
         verify(queueDao).reenqueue(location, taskId, reenqueueDelay);
-        verifyNoInteractions(strategy);
     }
 
     @Test
@@ -58,15 +56,14 @@ public class TaskResultHandlerTest {
         QueueShard queueShard = mock(QueueShard.class);
         when(queueShard.getDatabaseAccessLayer()).thenReturn(new StubDatabaseAccessLayer(queueDao));
 
-        ReenqueueRetryStrategy strategy = mock(ReenqueueRetryStrategy.class);
-
         TaskExecutionResult result = TaskExecutionResult.finish();
 
-        new TaskResultHandler(location, queueShard, strategy).handleResult(taskRecord, result);
+        ReenqueueSettings reenqueueSettings = ReenqueueSettings.builder().withRetryType(ReenqueueRetryType.MANUAL).build();
+        new TaskResultHandler(location, queueShard, reenqueueSettings)
+                .handleResult(taskRecord, result);
 
         verify(queueShard, times(2)).getDatabaseAccessLayer();
         verify(queueDao).deleteTask(location, taskId);
-        verifyNoInteractions(strategy);
     }
 
     @Test
@@ -78,13 +75,12 @@ public class TaskResultHandlerTest {
         QueueShard queueShard = mock(QueueShard.class);
         when(queueShard.getDatabaseAccessLayer()).thenReturn(new StubDatabaseAccessLayer());
 
-        ReenqueueRetryStrategy strategy = mock(ReenqueueRetryStrategy.class);
-
         TaskExecutionResult result = TaskExecutionResult.fail();
 
-        new TaskResultHandler(location, queueShard, strategy).handleResult(taskRecord, result);
+        ReenqueueSettings reenqueueSettings = ReenqueueSettings.builder().withRetryType(ReenqueueRetryType.MANUAL).build();
+        new TaskResultHandler(location, queueShard, reenqueueSettings).handleResult(taskRecord, result);
 
-        verifyNoInteractions(queueShard, strategy);
+        verifyNoInteractions(queueShard);
     }
 
     @Test
@@ -102,15 +98,13 @@ public class TaskResultHandlerTest {
         QueueShard queueShard = mock(QueueShard.class);
         when(queueShard.getDatabaseAccessLayer()).thenReturn(new StubDatabaseAccessLayer(queueDao));
 
-        ReenqueueRetryStrategy strategy = mock(ReenqueueRetryStrategy.class);
-        when(strategy.calculateDelay(any())).thenReturn(Duration.ofSeconds(10L));
 
         TaskExecutionResult result = TaskExecutionResult.reenqueue();
-
-        new TaskResultHandler(location, queueShard, strategy).handleResult(taskRecord, result);
+        ReenqueueSettings reenqueueSettings = ReenqueueSettings.builder().withRetryType(ReenqueueRetryType.FIXED)
+                .withFixedDelay(Duration.ofSeconds(10L)).build();
+        new TaskResultHandler(location, queueShard, reenqueueSettings).handleResult(taskRecord, result);
 
         verify(queueShard, times(2)).getDatabaseAccessLayer();
         verify(queueDao).reenqueue(location, taskId, Duration.ofSeconds(10L));
-        verify(strategy).calculateDelay(taskRecord);
     }
 }

@@ -8,14 +8,12 @@ import ru.yoomoney.tech.dbqueue.internal.runner.QueueRunner;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
-import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
 import ru.yoomoney.tech.dbqueue.stub.NoopQueueConsumer;
 import ru.yoomoney.tech.dbqueue.stub.StringQueueConsumer;
 import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
+import ru.yoomoney.tech.dbqueue.stub.TestFixtures;
 
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -24,7 +22,13 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Oleg Kandaurov
@@ -40,10 +44,9 @@ public class QueueExecutionPoolTest {
         QueueConfig queueConfig = new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
                         .withQueueId(new QueueId("queue1")).build(),
-                QueueSettings.builder()
-                        .withNoTaskTimeout(Duration.ZERO)
-                        .withThreadCount(2)
-                        .withBetweenTaskTimeout(Duration.ZERO).build());
+                TestFixtures.createQueueSettings().withProcessingSettings(
+                                TestFixtures.createProcessingSettings().withThreadCount(2).build())
+                        .build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
         QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
@@ -60,7 +63,7 @@ public class QueueExecutionPoolTest {
     public void should_shutdown() {
         QueueConfig queueConfig = new QueueConfig(
                 QueueLocation.builder().withTableName("testTable").withQueueId(new QueueId("queue1")).build(),
-                QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
+                TestFixtures.createQueueSettings().build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
         QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
@@ -77,7 +80,7 @@ public class QueueExecutionPoolTest {
     public void should_pause() {
         QueueConfig queueConfig = new QueueConfig(
                 QueueLocation.builder().withTableName("testTable").withQueueId(new QueueId("queue1")).build(),
-                QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
+                TestFixtures.createQueueSettings().build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
         QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
@@ -95,7 +98,7 @@ public class QueueExecutionPoolTest {
     public void should_invoke_ispaused() {
         QueueConfig queueConfig = new QueueConfig(
                 QueueLocation.builder().withTableName("testTable").withQueueId(new QueueId("queue1")).build(),
-                QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
+                TestFixtures.createQueueSettings().build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
         QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
@@ -113,7 +116,7 @@ public class QueueExecutionPoolTest {
     public void should_invoke_isterminated() {
         QueueConfig queueConfig = new QueueConfig(
                 QueueLocation.builder().withTableName("testTable").withQueueId(new QueueId("queue1")).build(),
-                QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
+                TestFixtures.createQueueSettings().build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
         QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
@@ -129,7 +132,7 @@ public class QueueExecutionPoolTest {
     public void should_invoke_isshutdown() {
         QueueConfig queueConfig = new QueueConfig(
                 QueueLocation.builder().withTableName("testTable").withQueueId(new QueueId("queue1")).build(),
-                QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
+                TestFixtures.createQueueSettings().build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
         QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
@@ -145,7 +148,7 @@ public class QueueExecutionPoolTest {
     public void should_await_termination() throws InterruptedException {
         QueueConfig queueConfig = new QueueConfig(
                 QueueLocation.builder().withTableName("testTable").withQueueId(new QueueId("queue1")).build(),
-                QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
+                TestFixtures.createQueueSettings().build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
         QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
@@ -161,7 +164,7 @@ public class QueueExecutionPoolTest {
     public void should_wakeup() {
         QueueConfig queueConfig = new QueueConfig(
                 QueueLocation.builder().withTableName("testTable").withQueueId(new QueueId("queue1")).build(),
-                QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO).build());
+                TestFixtures.createQueueSettings().build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
         QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
@@ -179,8 +182,8 @@ public class QueueExecutionPoolTest {
     public void should_resize_queue_pool() throws InterruptedException {
         QueueConfig queueConfig = new QueueConfig(
                 QueueLocation.builder().withTableName("testTable").withQueueId(new QueueId("queue1")).build(),
-                QueueSettings.builder().withNoTaskTimeout(Duration.ZERO).withBetweenTaskTimeout(Duration.ZERO)
-                        .withThreadCount(0).build());
+                TestFixtures.createQueueSettings().withProcessingSettings(
+                        TestFixtures.createProcessingSettings().withThreadCount(0).build()).build());
         StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
         QueueRunner queueRunner = mock(QueueRunner.class);
         QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);

@@ -23,8 +23,8 @@ public class DefaultOracle11QueuePickTaskDaoTest extends QueuePickTaskDaoTest {
 
     public DefaultOracle11QueuePickTaskDaoTest() {
         super(new Oracle11QueueDao(OracleDatabaseInitializer.getJdbcTemplate(), OracleDatabaseInitializer.DEFAULT_SCHEMA),
-                pickTaskSettings -> new Oracle11QueuePickTaskDao(OracleDatabaseInitializer.getJdbcTemplate(),
-                        PostgresDatabaseInitializer.DEFAULT_SCHEMA, pickTaskSettings),
+                (queueLocation, failureSettings) -> new Oracle11QueuePickTaskDao(OracleDatabaseInitializer.getJdbcTemplate(),
+                        PostgresDatabaseInitializer.DEFAULT_SCHEMA, queueLocation, failureSettings),
                 OracleDatabaseInitializer.DEFAULT_TABLE_NAME, OracleDatabaseInitializer.DEFAULT_SCHEMA,
                 OracleDatabaseInitializer.getJdbcTemplate(), OracleDatabaseInitializer.getTransactionTemplate());
     }

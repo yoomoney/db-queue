@@ -11,10 +11,9 @@ import ru.yoomoney.tech.dbqueue.dao.QueueDao;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
-import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
 import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
+import ru.yoomoney.tech.dbqueue.stub.TestFixtures;
 
-import java.time.Duration;
 import java.util.Objects;
 
 import static org.junit.Assert.assertThat;
@@ -35,10 +34,7 @@ public class ShardingQueueProducerTest {
         QueueConfig queueConfig = new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
                         .withQueueId(new QueueId("main")).build(),
-                QueueSettings.builder()
-                        .withNoTaskTimeout(Duration.ZERO)
-                        .withThreadCount(0)
-                        .withBetweenTaskTimeout(Duration.ZERO).build());
+                TestFixtures.createQueueSettings().build());
 
         QueueDao queueDao = stubDatabaseAccessLayer.getQueueDao();
         when(queueDao.enqueue(eq(queueConfig.getLocation()), eq(EnqueueParams.create("1")))).thenReturn(11L);

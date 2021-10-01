@@ -58,7 +58,7 @@ class QueueExecutionPool {
                 new QueueTaskPoller(threadLifecycleListener,
                         new MillisTimeProvider.SystemMillisTimeProvider()),
                 new ThreadPoolExecutor(
-                        queueConsumer.getQueueConfig().getSettings().getThreadCount(),
+                        queueConsumer.getQueueConfig().getSettings().getProcessingSettings().getThreadCount(),
                         Integer.MAX_VALUE,
                         1L, TimeUnit.MILLISECONDS,
                         new LinkedBlockingQueue<>(),
@@ -66,6 +66,8 @@ class QueueExecutionPool {
                                 queueConsumer.getQueueConfig().getLocation(), queueShard.getShardId())),
                 QueueRunner.Factory.create(queueConsumer, queueShard, taskLifecycleListener),
                 QueueLoop.WakeupQueueLoop::new);
+        queueConsumer.getQueueConfig().getSettings().getProcessingSettings().registerObserver(
+                (oldValue, newValue) -> resizePool(newValue.getThreadCount()));
     }
 
     QueueExecutionPool(@Nonnull QueueConsumer<?> queueConsumer,
@@ -100,7 +102,7 @@ class QueueExecutionPool {
      */
     void start() {
         if (!started && !isShutdown()) {
-            int threadCount = queueConsumer.getQueueConfig().getSettings().getThreadCount();
+            int threadCount = queueConsumer.getQueueConfig().getSettings().getProcessingSettings().getThreadCount();
             log.info("starting queue: queueId={}, shardId={}, threadCount={}", getQueueId(), queueShard.getShardId(),
                     threadCount);
             for (int i = 0; i < threadCount; i++) {

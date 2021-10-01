@@ -8,15 +8,13 @@ import ru.yoomoney.tech.dbqueue.internal.runner.QueueRunner;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
-import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
 import ru.yoomoney.tech.dbqueue.stub.FakeMillisTimeProvider;
+import ru.yoomoney.tech.dbqueue.stub.TestFixtures;
 
 import java.time.Duration;
 import java.util.Arrays;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -38,10 +36,10 @@ public class QueueTaskPollerTest {
                 .withQueueId(new QueueId("queue")).build();
         Duration waitDuration = Duration.ofMillis(100L);
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
-                QueueSettings.builder()
-                        .withBetweenTaskTimeout(Duration.ZERO)
-                        .withNoTaskTimeout(waitDuration)
-                        .build()));
+                TestFixtures.createQueueSettings().withPollSettings(
+                        TestFixtures.createPollSettings().withBetweenTaskTimeout(Duration.ZERO)
+                                .withNoTaskTimeout(waitDuration)
+                                .build()).build()));
         QueueRunner queueRunner = mock(QueueRunner.class);
         when(queueRunner.runQueue(queueConsumer)).thenReturn(QueueProcessingStatus.SKIPPED);
 
@@ -68,11 +66,11 @@ public class QueueTaskPollerTest {
                 .withQueueId(new QueueId("queue")).build();
         Duration fatalCrashTimeout = Duration.ofDays(1L);
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
-                QueueSettings.builder()
-                        .withBetweenTaskTimeout(Duration.ZERO)
-                        .withNoTaskTimeout(Duration.ZERO)
-                        .withFatalCrashTimeout(fatalCrashTimeout)
-                        .build()));
+                TestFixtures.createQueueSettings().withPollSettings(
+                        TestFixtures.createPollSettings().withBetweenTaskTimeout(Duration.ZERO)
+                                .withNoTaskTimeout(Duration.ZERO)
+                                .withFatalCrashTimeout(fatalCrashTimeout)
+                                .build()).build()));
         QueueRunner queueRunner = mock(QueueRunner.class);
 
         RuntimeException exception = new RuntimeException("exc");

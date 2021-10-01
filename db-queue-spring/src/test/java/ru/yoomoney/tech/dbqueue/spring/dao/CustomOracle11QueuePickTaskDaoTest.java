@@ -22,8 +22,8 @@ public class CustomOracle11QueuePickTaskDaoTest extends QueuePickTaskDaoTest {
 
     public CustomOracle11QueuePickTaskDaoTest() {
         super(new Oracle11QueueDao(OracleDatabaseInitializer.getJdbcTemplate(), OracleDatabaseInitializer.CUSTOM_SCHEMA),
-                pickTaskSettings -> new Oracle11QueuePickTaskDao(OracleDatabaseInitializer.getJdbcTemplate(),
-                        OracleDatabaseInitializer.CUSTOM_SCHEMA, pickTaskSettings),
+                (queueLocation, failureSettings) -> new Oracle11QueuePickTaskDao(OracleDatabaseInitializer.getJdbcTemplate(),
+                        OracleDatabaseInitializer.CUSTOM_SCHEMA, queueLocation, failureSettings),
                 OracleDatabaseInitializer.CUSTOM_TABLE_NAME, OracleDatabaseInitializer.CUSTOM_SCHEMA,
                 OracleDatabaseInitializer.getJdbcTemplate(), OracleDatabaseInitializer.getTransactionTemplate());
     }

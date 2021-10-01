@@ -25,6 +25,7 @@ public class DefaultMssqlWithSequenceQueueDaoTest extends QueueDaoTest {
                 MssqlDatabaseInitializer.getJdbcTemplate(), MssqlDatabaseInitializer.getTransactionTemplate());
     }
 
+    @Override
     protected QueueLocation generateUniqueLocation() {
         return QueueLocation.builder().withTableName(tableName)
                 .withQueueId(new QueueId("test-queue-" + UUID.randomUUID()))

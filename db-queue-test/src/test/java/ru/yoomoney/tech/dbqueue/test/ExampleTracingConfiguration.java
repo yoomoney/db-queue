@@ -24,16 +24,21 @@ import ru.yoomoney.tech.dbqueue.config.impl.CompositeTaskLifecycleListener;
 import ru.yoomoney.tech.dbqueue.config.impl.CompositeThreadLifecycleListener;
 import ru.yoomoney.tech.dbqueue.config.impl.LoggingTaskLifecycleListener;
 import ru.yoomoney.tech.dbqueue.config.impl.LoggingThreadLifecycleListener;
+import ru.yoomoney.tech.dbqueue.settings.FailRetryType;
+import ru.yoomoney.tech.dbqueue.settings.FailureSettings;
+import ru.yoomoney.tech.dbqueue.settings.PollSettings;
+import ru.yoomoney.tech.dbqueue.settings.ProcessingMode;
+import ru.yoomoney.tech.dbqueue.settings.ProcessingSettings;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
 import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
+import ru.yoomoney.tech.dbqueue.settings.ReenqueueRetryType;
+import ru.yoomoney.tech.dbqueue.settings.ReenqueueSettings;
 import ru.yoomoney.tech.dbqueue.spring.dao.SpringDatabaseAccessLayer;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Thread.sleep;
@@ -67,17 +72,28 @@ public class ExampleTracingConfiguration {
         DefaultDatabaseInitializer.createTable(PG_TRACING_TABLE_DDL, "tracing_task_table");
         SpringDatabaseAccessLayer databaseAccessLayer = new SpringDatabaseAccessLayer(
                 DatabaseDialect.POSTGRESQL, QueueTableSchema.builder()
-                .withExtFields(Collections.singletonList("trace_info")).build(),
+                .withExtFields(singletonList("trace_info")).build(),
                 DefaultDatabaseInitializer.getJdbcTemplate(),
                 DefaultDatabaseInitializer.getTransactionTemplate());
         QueueShard<SpringDatabaseAccessLayer> shard = new QueueShard<>(new QueueShardId("main"), databaseAccessLayer);
 
         QueueId queueId = new QueueId("tracing_queue");
-        QueueConfig config = new QueueConfig(QueueLocation.builder().withTableName("tracing_task_table")
+        QueueConfig config = new QueueConfig(QueueLocation.builder()
+                .withTableName("tracing_task_table")
                 .withQueueId(queueId).build(),
                 QueueSettings.builder()
-                        .withBetweenTaskTimeout(Duration.ofMillis(100))
-                        .withNoTaskTimeout(Duration.ofMillis(100))
+                        .withProcessingSettings(ProcessingSettings.builder()
+                                .withProcessingMode(ProcessingMode.SEPARATE_TRANSACTIONS)
+                                .withThreadCount(1).build())
+                        .withPollSettings(PollSettings.builder()
+                                .withBetweenTaskTimeout(Duration.ofMillis(100))
+                                .withNoTaskTimeout(Duration.ofMillis(100))
+                                .withFatalCrashTimeout(Duration.ofSeconds(1)).build())
+                        .withFailureSettings(FailureSettings.builder()
+                                .withRetryType(FailRetryType.GEOMETRIC_BACKOFF)
+                                .withRetryInterval(Duration.ofMinutes(1)).build())
+                        .withReenqueueSettings(ReenqueueSettings.builder()
+                                .withRetryType(ReenqueueRetryType.MANUAL).build())
                         .build());
 
         Tracing tracing = Tracing.newBuilder().currentTraceContext(ThreadLocalCurrentTraceContext.newBuilder()

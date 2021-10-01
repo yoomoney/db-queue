@@ -4,6 +4,7 @@ import ru.yoomoney.tech.dbqueue.api.QueueConsumer;
 import ru.yoomoney.tech.dbqueue.config.QueueShardId;
 import ru.yoomoney.tech.dbqueue.config.ThreadLifecycleListener;
 import ru.yoomoney.tech.dbqueue.internal.runner.QueueRunner;
+import ru.yoomoney.tech.dbqueue.settings.PollSettings;
 
 import javax.annotation.Nonnull;
 
@@ -51,6 +52,7 @@ public class QueueTaskPoller {
         requireNonNull(queueConsumer);
         requireNonNull(queueRunner);
         requireNonNull(queueLoop);
+        PollSettings pollSettings = queueConsumer.getQueueConfig().getSettings().getPollSettings();
         queueLoop.doRun(() -> {
             try {
                 long startTime = millisTimeProvider.getMillis();
@@ -62,11 +64,11 @@ public class QueueTaskPoller {
 
                 switch (queueProcessingStatus) {
                     case SKIPPED:
-                        queueLoop.doWait(queueConsumer.getQueueConfig().getSettings().getNoTaskTimeout(),
+                        queueLoop.doWait(pollSettings.getNoTaskTimeout(),
                                 QueueLoop.WaitInterrupt.ALLOW);
                         return;
                     case PROCESSED:
-                        queueLoop.doWait(queueConsumer.getQueueConfig().getSettings().getBetweenTaskTimeout(),
+                        queueLoop.doWait(pollSettings.getBetweenTaskTimeout(),
                                 QueueLoop.WaitInterrupt.DENY);
                         return;
                     default:
@@ -74,7 +76,7 @@ public class QueueTaskPoller {
                 }
             } catch (Throwable e) {
                 threadLifecycleListener.crashed(shardId, queueConsumer.getQueueConfig().getLocation(), e);
-                queueLoop.doWait(queueConsumer.getQueueConfig().getSettings().getFatalCrashTimeout(),
+                queueLoop.doWait(pollSettings.getFatalCrashTimeout(),
                         QueueLoop.WaitInterrupt.DENY);
             } finally {
                 threadLifecycleListener.finished(shardId, queueConsumer.getQueueConfig().getLocation());

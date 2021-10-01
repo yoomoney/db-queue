@@ -43,7 +43,7 @@ public class BaseQueueRunner implements QueueRunner {
     @Override
     @Nonnull
     public QueueProcessingStatus runQueue(@Nonnull QueueConsumer queueConsumer) {
-        TaskRecord taskRecord = taskPicker.pickTask(queueConsumer);
+        TaskRecord taskRecord = taskPicker.pickTask();
         if (taskRecord == null) {
             return QueueProcessingStatus.SKIPPED;
         }

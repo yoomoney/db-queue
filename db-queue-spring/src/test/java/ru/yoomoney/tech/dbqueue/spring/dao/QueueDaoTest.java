@@ -59,11 +59,11 @@ public abstract class QueueDaoTest {
         QueueLocation location = generateUniqueLocation();
         String payload = "{}";
         Duration executionDelay = Duration.ofHours(1L);
-        ZonedDateTime beforeExecution = ZonedDateTime.now();
+        ZonedDateTime beforeExecution = ZonedDateTime.now().minusMinutes(1L);
         long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, EnqueueParams.create(payload)
                 .withExecutionDelay(executionDelay)));
         jdbcTemplate.query("select * from " + tableName + " where " + tableSchema.getIdField() + "=" + enqueueId, rs -> {
-            ZonedDateTime afterExecution = ZonedDateTime.now();
+            ZonedDateTime afterExecution = ZonedDateTime.now().plusMinutes(1);
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getString(tableSchema.getPayloadField()), equalTo(payload));
             ZonedDateTime nextProcessAt = ZonedDateTime.ofInstant(rs.getTimestamp(tableSchema.getNextProcessAtField()).toInstant(),
@@ -109,12 +109,12 @@ public abstract class QueueDaoTest {
         Long enqueueId = executeInTransaction(() ->
                 queueDao.enqueue(location, new EnqueueParams<>()));
 
-        ZonedDateTime beforeExecution = ZonedDateTime.now();
+        ZonedDateTime beforeExecution = ZonedDateTime.now().minusMinutes(1L);
         Duration executionDelay = Duration.ofHours(1L);
         Boolean reenqueueResult = executeInTransaction(() -> queueDao.reenqueue(location, enqueueId, executionDelay));
         Assert.assertThat(reenqueueResult, equalTo(true));
         jdbcTemplate.query("select * from " + tableName + " where " + tableSchema.getIdField() + "=" + enqueueId, rs -> {
-            ZonedDateTime afterExecution = ZonedDateTime.now();
+            ZonedDateTime afterExecution = ZonedDateTime.now().plusMinutes(1);
             Assert.assertThat(rs.next(), equalTo(true));
             ZonedDateTime nextProcessAt = ZonedDateTime.ofInstant(rs.getTimestamp(tableSchema.getNextProcessAtField()).toInstant(),
                     ZoneId.systemDefault());

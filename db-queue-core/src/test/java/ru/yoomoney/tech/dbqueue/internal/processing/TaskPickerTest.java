@@ -10,11 +10,10 @@ import ru.yoomoney.tech.dbqueue.dao.QueuePickTaskDao;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
-import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
 import ru.yoomoney.tech.dbqueue.stub.FakeMillisTimeProvider;
 import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
+import ru.yoomoney.tech.dbqueue.stub.TestFixtures;
 
-import java.time.Duration;
 import java.util.Arrays;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -41,23 +40,22 @@ public class TaskPickerTest {
         when(queueShard.getShardId()).thenReturn(shardId);
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
-                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
-                        .withNoTaskTimeout(Duration.ZERO).build()));
+                TestFixtures.createQueueSettings().build()));
         QueuePickTaskDao pickTaskDao = mock(QueuePickTaskDao.class);
         when(queueShard.getDatabaseAccessLayer()).thenReturn(new StubDatabaseAccessLayer());
         TaskRecord taskRecord = TaskRecord.builder().build();
-        when(pickTaskDao.pickTask(location)).thenReturn(taskRecord);
+        when(pickTaskDao.pickTask()).thenReturn(taskRecord);
         when(queueShard.getShardId()).thenReturn(shardId);
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
         FakeMillisTimeProvider millisTimeProvider = spy(new FakeMillisTimeProvider(Arrays.asList(3L, 5L)));
 
-        TaskRecord pickedTask = new TaskPicker(queueShard, listener, millisTimeProvider, pickTaskDao).pickTask(queueConsumer);
+        TaskRecord pickedTask = new TaskPicker(queueShard, location, listener, millisTimeProvider, pickTaskDao).pickTask();
 
         assertThat(pickedTask, equalTo(taskRecord));
 
         verify(millisTimeProvider, times(2)).getMillis();
         verify(queueShard).getDatabaseAccessLayer();
-        verify(pickTaskDao).pickTask(location);
+        verify(pickTaskDao).pickTask();
         verify(listener).picked(shardId, location, taskRecord, 2L);
     }
 
@@ -68,21 +66,20 @@ public class TaskPickerTest {
         QueueShard queueShard = mock(QueueShard.class);
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
-                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
-                        .withNoTaskTimeout(Duration.ZERO).build()));
+                TestFixtures.createQueueSettings().build()));
         QueuePickTaskDao pickTaskDao = mock(QueuePickTaskDao.class);
         when(queueShard.getDatabaseAccessLayer()).thenReturn(new StubDatabaseAccessLayer());
-        when(pickTaskDao.pickTask(location)).thenReturn(null);
+        when(pickTaskDao.pickTask()).thenReturn(null);
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
         FakeMillisTimeProvider millisTimeProvider = spy(new FakeMillisTimeProvider(Arrays.asList(3L, 5L)));
 
-        TaskRecord pickedTask = new TaskPicker(queueShard, listener, millisTimeProvider, pickTaskDao).pickTask(queueConsumer);
+        TaskRecord pickedTask = new TaskPicker(queueShard, location, listener, millisTimeProvider, pickTaskDao).pickTask();
 
         assertThat(pickedTask, equalTo(null));
 
         verify(millisTimeProvider).getMillis();
         verify(queueShard).getDatabaseAccessLayer();
-        verify(pickTaskDao).pickTask(location);
+        verify(pickTaskDao).pickTask();
         verifyNoInteractions(listener);
     }
 
@@ -93,21 +90,20 @@ public class TaskPickerTest {
         QueueShard queueShard = mock(QueueShard.class);
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(location,
-                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO)
-                        .withNoTaskTimeout(Duration.ZERO).build()));
+                TestFixtures.createQueueSettings().build()));
         QueuePickTaskDao pickTaskDao = mock(QueuePickTaskDao.class);
         when(queueShard.getDatabaseAccessLayer()).thenReturn(new StubDatabaseAccessLayer());
-        when(pickTaskDao.pickTask(location)).thenThrow(new IllegalStateException("fail"));
+        when(pickTaskDao.pickTask()).thenThrow(new IllegalStateException("fail"));
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
         FakeMillisTimeProvider millisTimeProvider = spy(new FakeMillisTimeProvider(Arrays.asList(3L, 5L)));
 
-        TaskRecord pickedTask = new TaskPicker(queueShard, listener, millisTimeProvider, pickTaskDao).pickTask(queueConsumer);
+        TaskRecord pickedTask = new TaskPicker(queueShard, location, listener, millisTimeProvider, pickTaskDao).pickTask();
 
         assertThat(pickedTask, equalTo(null));
 
         verify(millisTimeProvider).getMillis();
         verify(queueShard).getDatabaseAccessLayer();
-        verify(pickTaskDao).pickTask(location);
+        verify(pickTaskDao).pickTask();
         verifyNoInteractions(listener);
     }
 }

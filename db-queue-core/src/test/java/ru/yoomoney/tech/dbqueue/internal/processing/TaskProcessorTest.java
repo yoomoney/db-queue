@@ -1,7 +1,6 @@
 package ru.yoomoney.tech.dbqueue.internal.processing;
 
 import org.junit.Test;
-import org.mockito.Mockito;
 import ru.yoomoney.tech.dbqueue.api.QueueConsumer;
 import ru.yoomoney.tech.dbqueue.api.Task;
 import ru.yoomoney.tech.dbqueue.api.TaskExecutionResult;
@@ -13,11 +12,10 @@ import ru.yoomoney.tech.dbqueue.config.TaskLifecycleListener;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
-import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
 import ru.yoomoney.tech.dbqueue.stub.FakeMillisTimeProvider;
 import ru.yoomoney.tech.dbqueue.stub.FakeQueueConsumer;
+import ru.yoomoney.tech.dbqueue.stub.TestFixtures;
 
-import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -51,12 +49,12 @@ public class TaskProcessorTest {
         QueueShard queueShard = mock(QueueShard.class);
         when(queueShard.getShardId()).thenReturn(shardId);
         TaskLifecycleListener listener = mock(TaskLifecycleListener.class);
-        MillisTimeProvider millisTimeProvider = Mockito.spy(new FakeMillisTimeProvider(Arrays.asList(3L, 5L)));
+        MillisTimeProvider millisTimeProvider = spy(new FakeMillisTimeProvider(Arrays.asList(3L, 5L)));
         TaskResultHandler resultHandler = mock(TaskResultHandler.class);
         TaskPayloadTransformer<String> transformer = mock(TaskPayloadTransformer.class);
         when(transformer.toObject(taskRecord.getPayload())).thenReturn(transformedPayload);
-        QueueConsumer<String> queueConsumer = Mockito.spy(new FakeQueueConsumer(new QueueConfig(location,
-                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO).build()),
+        QueueConsumer<String> queueConsumer = spy(new FakeQueueConsumer(new QueueConfig(location,
+                TestFixtures.createQueueSettings().build()),
                 transformer, r -> queueResult));
 
 
@@ -94,7 +92,7 @@ public class TaskProcessorTest {
         TaskPayloadTransformer<String> transformer = mock(TaskPayloadTransformer.class);
         when(transformer.toObject(taskRecord.getPayload())).thenReturn(taskRecord.getPayload());
         QueueConsumer<String> queueConsumer = spy(new FakeQueueConsumer(new QueueConfig(location,
-                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO).build()),
+                TestFixtures.createQueueSettings().build()),
                 transformer, r -> {
             throw queueException;
         }));
@@ -128,7 +126,7 @@ public class TaskProcessorTest {
         TaskPayloadTransformer<String> transformer = mock(TaskPayloadTransformer.class);
         when(transformer.toObject(taskRecord.getPayload())).thenReturn(taskRecord.getPayload());
         QueueConsumer<String> queueConsumer = spy(new FakeQueueConsumer(new QueueConfig(location,
-                QueueSettings.builder().withBetweenTaskTimeout(Duration.ZERO).withNoTaskTimeout(Duration.ZERO).build()),
+                TestFixtures.createQueueSettings().build()),
                 transformer, r -> queueResult));
 
 

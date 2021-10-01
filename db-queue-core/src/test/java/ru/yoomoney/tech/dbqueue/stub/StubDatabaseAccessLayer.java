@@ -3,9 +3,10 @@ package ru.yoomoney.tech.dbqueue.stub;
 import ru.yoomoney.tech.dbqueue.config.DatabaseAccessLayer;
 import ru.yoomoney.tech.dbqueue.config.DatabaseDialect;
 import ru.yoomoney.tech.dbqueue.config.QueueTableSchema;
-import ru.yoomoney.tech.dbqueue.dao.PickTaskSettings;
 import ru.yoomoney.tech.dbqueue.dao.QueueDao;
 import ru.yoomoney.tech.dbqueue.dao.QueuePickTaskDao;
+import ru.yoomoney.tech.dbqueue.settings.FailureSettings;
+import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
 import java.util.function.Supplier;
@@ -32,7 +33,8 @@ public class StubDatabaseAccessLayer implements DatabaseAccessLayer {
 
     @Override
     @Nonnull
-    public QueuePickTaskDao createQueuePickTaskDao(@Nonnull PickTaskSettings pickTaskSettings) {
+    public QueuePickTaskDao createQueuePickTaskDao(@Nonnull QueueLocation queueLocation,
+                                                   @Nonnull FailureSettings failureSettings) {
         return mock(QueuePickTaskDao.class);
     }
 

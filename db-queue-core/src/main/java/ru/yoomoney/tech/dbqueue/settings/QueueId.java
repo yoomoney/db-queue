@@ -20,7 +20,7 @@ public final class QueueId {
      * @param id String representation of queue identifier.
      */
     public QueueId(@Nonnull String id) {
-        this.id = Objects.requireNonNull(id, "id");
+        this.id = Objects.requireNonNull(id, "queue id must not be null");
     }
 
     /**

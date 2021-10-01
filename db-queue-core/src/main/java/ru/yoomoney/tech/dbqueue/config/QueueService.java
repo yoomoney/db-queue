@@ -5,14 +5,18 @@ import org.slf4j.LoggerFactory;
 import ru.yoomoney.tech.dbqueue.api.QueueConsumer;
 import ru.yoomoney.tech.dbqueue.internal.processing.MillisTimeProvider;
 import ru.yoomoney.tech.dbqueue.internal.processing.TimeLimiter;
+import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfigsReader;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
+import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -31,6 +35,8 @@ public class QueueService {
 
     @Nonnull
     private final Map<QueueId, Map<QueueShardId, QueueExecutionPool>> registeredQueues = new LinkedHashMap<>();
+    @Nonnull
+    private final Map<QueueId, QueueConsumer<?>> registeredConsumer = new LinkedHashMap<>();
     @Nonnull
     private final List<QueueShard<?>> queueShards;
     @Nonnull
@@ -80,7 +86,37 @@ public class QueueService {
         queueShards.forEach(shard -> queueShardPools.put(shard.getShardId(),
                 queueExecutionPoolFactory.apply(shard, consumer)));
         registeredQueues.put(queueId, queueShardPools);
+        registeredConsumer.put(queueId, consumer);
         return true;
+    }
+
+    public void updateQueueConfigs(@Nonnull Collection<QueueConfig> configs) {
+        requireNonNull(configs);
+        configs.forEach(newConfig -> {
+            if (!registeredConsumer.containsKey(newConfig.getLocation().getQueueId())) {
+                throw new IllegalArgumentException("cannot update queue configuration" +
+                        ", queue is not registered: queueId=" + newConfig.getLocation().getQueueId());
+            }
+
+            StringJoiner diff = new StringJoiner(",");
+            QueueSettings actualSettings = registeredConsumer.get(newConfig.getLocation().getQueueId())
+                    .getQueueConfig().getSettings();
+            QueueSettings newSettings = newConfig.getSettings();
+
+            actualSettings.getProcessingSettings().setValue(
+                    newSettings.getProcessingSettings()).ifPresent(diff::add);
+            actualSettings.getPollSettings().setValue(
+                    newSettings.getPollSettings()).ifPresent(diff::add);
+            actualSettings.getFailureSettings().setValue(
+                    newSettings.getFailureSettings()).ifPresent(diff::add);
+            actualSettings.getReenqueueSettings().setValue(
+                    newSettings.getReenqueueSettings()).ifPresent(diff::add);
+
+            if (!diff.toString().isEmpty()) {
+                log.info("Applied new queue configuration: queueId={}, diff={}",
+                        registeredConsumer.get(newConfig.getLocation().getQueueId()).getQueueConfig().getLocation().getQueueId(), diff);
+            }
+        });
     }
 
     /**
@@ -208,7 +244,7 @@ public class QueueService {
      * To pause processing, use {@link QueueService#pause()} method.
      */
     public void unpause() {
-        log.info("pausing all queues");
+        log.info("unpausing all queues");
         registeredQueues.keySet().forEach(this::unpause);
     }
 

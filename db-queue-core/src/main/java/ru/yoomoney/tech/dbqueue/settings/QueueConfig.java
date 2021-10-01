@@ -24,8 +24,8 @@ public final class QueueConfig {
      */
     public QueueConfig(@Nonnull QueueLocation location,
                        @Nonnull QueueSettings settings) {
-        this.location = Objects.requireNonNull(location);
-        this.settings = Objects.requireNonNull(settings);
+        this.location = Objects.requireNonNull(location, "location must not be null");
+        this.settings = Objects.requireNonNull(settings, "settings must not be null");
     }
 
     /**

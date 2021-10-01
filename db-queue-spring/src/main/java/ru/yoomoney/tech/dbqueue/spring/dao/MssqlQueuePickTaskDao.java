@@ -5,10 +5,10 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import ru.yoomoney.tech.dbqueue.api.TaskRecord;
 import ru.yoomoney.tech.dbqueue.config.QueueTableSchema;
-import ru.yoomoney.tech.dbqueue.dao.PickTaskSettings;
 import ru.yoomoney.tech.dbqueue.dao.QueuePickTaskDao;
+import ru.yoomoney.tech.dbqueue.settings.FailRetryType;
+import ru.yoomoney.tech.dbqueue.settings.FailureSettings;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
-import ru.yoomoney.tech.dbqueue.settings.TaskRetryType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -19,8 +19,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -34,30 +32,34 @@ import static java.util.Objects.requireNonNull;
  */
 public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
 
-    private final Map<QueueLocation, String> pickTaskSqlCache = new ConcurrentHashMap<>();
-
+    private String pickTaskSql;
+    private MapSqlParameterSource pickTaskSqlPlaceholders;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final QueueTableSchema queueTableSchema;
-    private final PickTaskSettings pickTaskSettings;
 
     public MssqlQueuePickTaskDao(@Nonnull JdbcOperations jdbcTemplate,
                                  @Nonnull QueueTableSchema queueTableSchema,
-                                 @Nonnull PickTaskSettings pickTaskSettings) {
+                                 @Nonnull QueueLocation queueLocation,
+                                 @Nonnull FailureSettings failureSettings) {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(requireNonNull(jdbcTemplate));
         this.queueTableSchema = requireNonNull(queueTableSchema);
-        this.pickTaskSettings = requireNonNull(pickTaskSettings);
+        pickTaskSqlPlaceholders = new MapSqlParameterSource()
+                .addValue("queueName", queueLocation.getQueueId().asString())
+                .addValue("retryInterval", failureSettings.getRetryInterval().getSeconds());
+        pickTaskSql = createPickTaskSql(queueLocation, failureSettings);
+        failureSettings.registerObserver((oldValue, newValue) -> {
+            pickTaskSql = createPickTaskSql(queueLocation, newValue);
+            pickTaskSqlPlaceholders = new MapSqlParameterSource()
+                    .addValue("queueName", queueLocation.getQueueId().asString())
+                    .addValue("retryInterval", newValue.getRetryInterval().getSeconds());
+        });
     }
 
     @Override
     @Nullable
-    public TaskRecord pickTask(@Nonnull QueueLocation location) {
-        requireNonNull(location);
-        MapSqlParameterSource placeholders = new MapSqlParameterSource()
-                .addValue("queueName", location.getQueueId().asString())
-                .addValue("retryInterval", pickTaskSettings.getRetryInterval().getSeconds());
-
-        return jdbcTemplate.execute(pickTaskSqlCache.computeIfAbsent(location, this::createPickTaskSql),
-                placeholders,
+    public TaskRecord pickTask() {
+        return jdbcTemplate.execute(pickTaskSql,
+                pickTaskSqlPlaceholders,
                 (PreparedStatement ps) -> {
                     try (ResultSet rs = ps.executeQuery()) {
                         if (!rs.next()) {
@@ -86,7 +88,7 @@ public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
                 });
     }
 
-    private String createPickTaskSql(@Nonnull QueueLocation location) {
+    private String createPickTaskSql(@Nonnull QueueLocation location, FailureSettings failureSettings) {
         return "WITH cte AS (" +
                 "SELECT " + queueTableSchema.getIdField() + " " +
                 "FROM " + location.getTableName() + " with (readpast, updlock) " +
@@ -98,7 +100,7 @@ public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
                 "UPDATE " + location.getTableName() + " " +
                 "SET " +
                 "  " + queueTableSchema.getNextProcessAtField() + " = " +
-                getNextProcessTimeSql(pickTaskSettings.getRetryType(), queueTableSchema) + ", " +
+                getNextProcessTimeSql(failureSettings.getRetryType(), queueTableSchema) + ", " +
                 "  " + queueTableSchema.getAttemptField() + " = " + queueTableSchema.getAttemptField() + " + 1, " +
                 "  " + queueTableSchema.getTotalAttemptField() + " = " + queueTableSchema.getTotalAttemptField() + " + 1 " +
                 "OUTPUT inserted." + queueTableSchema.getIdField() + ", " +
@@ -120,9 +122,9 @@ public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
 
 
     @Nonnull
-    private String getNextProcessTimeSql(@Nonnull TaskRetryType taskRetryType, QueueTableSchema queueTableSchema) {
-        Objects.requireNonNull(taskRetryType);
-        switch (taskRetryType) {
+    private String getNextProcessTimeSql(@Nonnull FailRetryType failRetryType, QueueTableSchema queueTableSchema) {
+        requireNonNull(failRetryType);
+        switch (failRetryType) {
             case GEOMETRIC_BACKOFF:
                 return "dateadd(ss, power(2, " + queueTableSchema.getAttemptField() + ") * :retryInterval, SYSDATETIMEOFFSET())";
             case ARITHMETIC_BACKOFF:
@@ -130,7 +132,7 @@ public class MssqlQueuePickTaskDao implements QueuePickTaskDao {
             case LINEAR_BACKOFF:
                 return "dateadd(ss, :retryInterval, SYSDATETIMEOFFSET())";
             default:
-                throw new IllegalStateException("unknown retry type: " + taskRetryType);
+                throw new IllegalStateException("unknown retry type: " + failRetryType);
         }
     }
 }

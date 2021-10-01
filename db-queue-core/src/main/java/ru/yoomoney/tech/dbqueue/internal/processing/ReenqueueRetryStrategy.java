@@ -1,7 +1,7 @@
 package ru.yoomoney.tech.dbqueue.internal.processing;
 
 import ru.yoomoney.tech.dbqueue.api.TaskRecord;
-import ru.yoomoney.tech.dbqueue.settings.ReenqueueRetrySettings;
+import ru.yoomoney.tech.dbqueue.settings.ReenqueueSettings;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
@@ -37,32 +37,32 @@ public interface ReenqueueRetryStrategy {
         /**
          * Создает стратегию на основе переданных настроек переоткладывания задач для очереди.
          *
-         * @param reenqueueRetrySettings настройки переоткладывания задач
+         * @param reenqueueSettings настройки переоткладывания задач
          * @return стратегия
          */
         @Nonnull
-        public static ReenqueueRetryStrategy create(@Nonnull ReenqueueRetrySettings reenqueueRetrySettings) {
-            Objects.requireNonNull(reenqueueRetrySettings, "reenqueueRetrySettings");
+        public static ReenqueueRetryStrategy create(@Nonnull ReenqueueSettings reenqueueSettings) {
+            Objects.requireNonNull(reenqueueSettings, "reenqueueRetrySettings");
 
-            switch (reenqueueRetrySettings.getType()) {
+            switch (reenqueueSettings.getRetryType()) {
                 case MANUAL:
                     return new ManualReenqueueRetryStrategy();
                 case FIXED:
-                    return new FixedDelayReenqueueRetryStrategy(reenqueueRetrySettings.getFixedDelayOrThrow());
+                    return new FixedDelayReenqueueRetryStrategy(reenqueueSettings.getFixedDelayOrThrow());
                 case SEQUENTIAL:
-                    return new SequentialReenqueueRetryStrategy(reenqueueRetrySettings.getSequentialPlanOrThrow());
+                    return new SequentialReenqueueRetryStrategy(reenqueueSettings.getSequentialPlanOrThrow());
                 case ARITHMETIC:
                     return new ArithmeticReenqueueRetryStrategy(
-                            reenqueueRetrySettings.getInitialDelay(),
-                            reenqueueRetrySettings.getArithmeticStep()
+                            reenqueueSettings.getInitialDelayOrThrow(),
+                            reenqueueSettings.getArithmeticStepOrThrow()
                     );
                 case GEOMETRIC:
                     return new GeometricReenqueueRetryStrategy(
-                            reenqueueRetrySettings.getInitialDelay(),
-                            reenqueueRetrySettings.getGeometricRatio()
+                            reenqueueSettings.getInitialDelayOrThrow(),
+                            reenqueueSettings.getGeometricRatioOrThrow()
                     );
                 default:
-                    throw new IllegalArgumentException("unknown re-enqueue retry type: type=" + reenqueueRetrySettings.getType());
+                    throw new IllegalArgumentException("unknown re-enqueue retry type: type=" + reenqueueSettings.getRetryType());
             }
         }
     }
