@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Thread factory for tasks execution pool.
@@ -22,11 +23,12 @@ class QueueThreadFactory implements ThreadFactory {
     private static final Logger log = LoggerFactory.getLogger(QueueThreadFactory.class);
 
     private static final String THREAD_FACTORY_NAME = "queue-";
-    private static final AtomicInteger threadNumber = new AtomicInteger(0);
-    private final ThreadFactory backingThreadFactory = Executors.defaultThreadFactory();
+    private static final AtomicLong threadNumber = new AtomicLong(0);
     private final Thread.UncaughtExceptionHandler exceptionHandler =
             new QueueUncaughtExceptionHandler();
+    @Nonnull
     private final QueueLocation location;
+    @Nonnull
     private final QueueShardId shardId;
 
     @SuppressFBWarnings("STT_TOSTRING_STORED_IN_FIELD")
@@ -37,12 +39,33 @@ class QueueThreadFactory implements ThreadFactory {
 
     @Override
     public Thread newThread(@Nonnull Runnable runnable) {
-        Thread thread = backingThreadFactory.newThread(runnable);
         String threadName = THREAD_FACTORY_NAME + threadNumber.getAndIncrement();
-        thread.setName(threadName);
+        Thread thread = new QueueThread(Thread.currentThread().getThreadGroup(), runnable, threadName,
+                0, location, shardId);
         thread.setUncaughtExceptionHandler(exceptionHandler);
-        log.info("created queue thread: threadName={}, location={}, shardId={}", threadName, location, shardId);
         return thread;
+    }
+
+    private static class QueueThread extends Thread {
+
+        @Nonnull
+        private final QueueLocation location;
+        @Nonnull
+        private final QueueShardId shardId;
+
+        public QueueThread(ThreadGroup group, Runnable target, String name, long stackSize,
+                           @Nonnull QueueLocation location, @Nonnull QueueShardId shardId) {
+            super(group, target, name, stackSize);
+            this.location = Objects.requireNonNull(location);
+            this.shardId = Objects.requireNonNull(shardId);
+        }
+
+        @Override
+        public void run() {
+            log.info("starting queue thread: threadName={}, location={}, shardId={}", getName(), location, shardId);
+            super.run();
+            log.info("disposing queue thread: threadName={}, location={}, shardId={}", getName(), location, shardId);
+        }
     }
 
     private static class QueueUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
