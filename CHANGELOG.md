@@ -8,6 +8,16 @@ To unpause task processing use `QueueService#unpause` instead of `QueueService#s
 * Added method `QueueService#unpause` and `QueueService#unpause(QueueId)` to continue tasks processing which
 have been paused by `QueueService#pause` method.
 ### NEXT_VERSION_DESCRIPTION_END
+## [14.0.0]() (04-10-2021)
+
+**breaking changes**
+Changed semantic of `QueueService#start`. Now it must be called once at start of application to initialize queues.
+To unpause task processing use `QueueService#unpause` instead of `QueueService#start`.
+**new features**
+* Added method `QueueService#resizePool` to dynamically allocate or dispose threads for particular queue.
+* Added method `QueueService#unpause` and `QueueService#unpause(QueueId)` to continue tasks processing which
+have been paused by `QueueService#pause` method.
+
 ## [13.1.0]() (26-08-2021)
 
 * The repository moved yoomoney-tech -> yoomoney
