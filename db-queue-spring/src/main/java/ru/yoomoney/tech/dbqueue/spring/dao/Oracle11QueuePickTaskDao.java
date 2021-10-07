@@ -164,14 +164,6 @@ public class Oracle11QueuePickTaskDao implements QueuePickTaskDao {
         );
         cursorSelect.append(queueTableSchema.getNextProcessAtField()).append(" ");
 
-        String fetchCursor = " FROM " + queueLocation.getTableName() + " "
-                + " WHERE " + queueTableSchema.getQueueNameField() + " = ? AND "
-                + queueTableSchema.getNextProcessAtField() + " <= CURRENT_TIMESTAMP"
-                + " FOR UPDATE SKIP LOCKED;"
-                + " BEGIN \n"
-                + " OPEN c; \n"
-                + " FETCH c INTO ";
-
         StringBuilder fetchParams = new StringBuilder("rid, " +
                 "rpayload, " +
                 "rattempt, " +
@@ -204,6 +196,14 @@ public class Oracle11QueuePickTaskDao implements QueuePickTaskDao {
                 "\n ? := rnext_process_at; ");
         queueTableSchema.getExtFields().forEach(field -> returnParams.append("\n ? := r").append(field).append("; "));
         returnParams.append("\n END; ");
+
+        String fetchCursor = " FROM " + queueLocation.getTableName() + " "
+                + " WHERE " + queueTableSchema.getQueueNameField() + " = ? AND "
+                + queueTableSchema.getNextProcessAtField() + " <= CURRENT_TIMESTAMP"
+                + " FOR UPDATE SKIP LOCKED;"
+                + " BEGIN \n"
+                + " OPEN c; \n"
+                + " FETCH c INTO ";
 
         return declaration.toString() + cursorSelect + fetchCursor + fetchParams + updateSql + returnParams;
     }

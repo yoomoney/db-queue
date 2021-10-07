@@ -9,7 +9,7 @@ import java.util.function.BiFunction;
 import static java.util.Objects.requireNonNull;
 
 /**
- * TODO: javadoc
+ * Task polling settings.
  *
  * @author Oleg Kandaurov
  * @since 01.10.2021

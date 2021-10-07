@@ -1,8 +1,10 @@
 package ru.yoomoney.tech.dbqueue.settings;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -10,17 +12,38 @@ import static ru.yoomoney.tech.dbqueue.settings.QueueConfigsReader.SETTING_BETWE
 import static ru.yoomoney.tech.dbqueue.settings.QueueConfigsReader.SETTING_FATAL_CRASH_TIMEOUT;
 import static ru.yoomoney.tech.dbqueue.settings.QueueConfigsReader.SETTING_NO_TASK_TIMEOUT;
 
-public class PollSettingsParser {
+/**
+ * Parser for {@link PollSettings}
+ *
+ * @author Oleg Kandaurov
+ * @since 01.10.2021
+ */
+class PollSettingsParser {
 
     private final Supplier<PollSettings.Builder> defaultSettings;
     private final List<String> errorMessages;
 
+    /**
+     * Constructor
+     *
+     * @param defaultSettings default settings
+     * @param errorMessages   list of error messages
+     */
     PollSettingsParser(Supplier<PollSettings.Builder> defaultSettings, List<String> errorMessages) {
         this.defaultSettings = defaultSettings;
         this.errorMessages = errorMessages;
     }
 
-    Optional<PollSettings> parseSettings(String queueId, Map<String, String> settings) {
+    /**
+     * Parse settings
+     *
+     * @param queueId  raw queue identifier
+     * @param settings raw settings
+     * @return settings or empty object in case of failure
+     */
+    Optional<PollSettings> parseSettings(@Nonnull String queueId, @Nonnull Map<String, String> settings) {
+        Objects.requireNonNull(queueId, "queueId");
+        Objects.requireNonNull(settings, "settings");
         try {
             PollSettings.Builder pollSettings = defaultSettings.get();
             settings.forEach((key, value) -> fillSettings(pollSettings, key, value));

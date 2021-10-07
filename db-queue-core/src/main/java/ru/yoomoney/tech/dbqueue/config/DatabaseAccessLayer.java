@@ -27,7 +27,8 @@ public interface DatabaseAccessLayer {
     /**
      * Create an instance of database-specific DAO based on database type and table schema.
      *
-     * @param failureSettings settings for picking up tasks
+     * @param queueLocation   queue location
+     * @param failureSettings settings for handling failures
      * @return database-specific DAO instance.
      */
     @Nonnull

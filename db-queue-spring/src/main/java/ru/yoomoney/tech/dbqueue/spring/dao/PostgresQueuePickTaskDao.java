@@ -37,10 +37,12 @@ public class PostgresQueuePickTaskDao implements QueuePickTaskDao {
     private final QueueTableSchema queueTableSchema;
 
     /**
-     * Конструктор
+     * Constructor
      *
      * @param jdbcTemplate     spring jdbc template
-     * @param queueTableSchema схема таблицы очередей
+     * @param queueTableSchema table schema
+     * @param queueLocation    queue location
+     * @param failureSettings  failure settings
      */
     public PostgresQueuePickTaskDao(@Nonnull JdbcOperations jdbcTemplate,
                                     @Nonnull QueueTableSchema queueTableSchema,

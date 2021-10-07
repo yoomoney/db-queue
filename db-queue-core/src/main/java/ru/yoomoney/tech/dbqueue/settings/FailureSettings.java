@@ -9,7 +9,7 @@ import java.util.function.BiFunction;
 import static java.util.Objects.requireNonNull;
 
 /**
- * TODO: javadoc
+ * Settings for task execution strategy in case of failure.
  *
  * @author Oleg Kandaurov
  * @since 01.10.2021

@@ -45,16 +45,31 @@ public final class QueueSettings {
         this.additionalSettings = Collections.unmodifiableMap(new HashMap<>(additionalSettings));
     }
 
+    /**
+     * Get task processing settings.
+     *
+     * @return polling settings.
+     */
     @Nonnull
     public ProcessingSettings getProcessingSettings() {
         return processingSettings;
     }
 
+    /**
+     * Get task polling settings.
+     *
+     * @return polling settings.
+     */
     @Nonnull
     public PollSettings getPollSettings() {
         return pollSettings;
     }
 
+    /**
+     * Settings for task execution strategy in case of failure.
+     *
+     * @return failure settings.
+     */
     @Nonnull
     public FailureSettings getFailureSettings() {
         return failureSettings;
@@ -115,11 +130,17 @@ public final class QueueSettings {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        QueueSettings that = (QueueSettings) o;
-        return processingSettings.equals(that.processingSettings) && pollSettings.equals(that.pollSettings) && failureSettings.equals(that.failureSettings) && reenqueueSettings.equals(that.reenqueueSettings) && additionalSettings.equals(that.additionalSettings);
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        QueueSettings that = (QueueSettings) obj;
+        return processingSettings.equals(that.processingSettings) && pollSettings.equals(that.pollSettings) &&
+                failureSettings.equals(that.failureSettings) && reenqueueSettings.equals(that.reenqueueSettings)
+                && additionalSettings.equals(that.additionalSettings);
     }
 
     @Override
@@ -152,9 +173,9 @@ public final class QueueSettings {
         }
 
         /**
-         * TODO
+         * Sets task processing settings.
          *
-         * @param processingSettings TODO
+         * @param processingSettings processing settings
          * @return Reference to the same builder.
          */
         public Builder withProcessingSettings(@Nonnull ProcessingSettings processingSettings) {
@@ -163,9 +184,9 @@ public final class QueueSettings {
         }
 
         /**
-         * TODO
+         * Sets task polling settings
          *
-         * @param pollSettings TODO
+         * @param pollSettings poll settings
          * @return Reference to the same builder.
          */
         public Builder withPollSettings(@Nonnull PollSettings pollSettings) {
@@ -174,9 +195,9 @@ public final class QueueSettings {
         }
 
         /**
-         * TODO
+         * Sets settings for task execution strategy in case of failure.
          *
-         * @param failureSettings TODO
+         * @param failureSettings fail postpone settings
          * @return Reference to the same builder.
          */
         public Builder withFailureSettings(@Nonnull FailureSettings failureSettings) {

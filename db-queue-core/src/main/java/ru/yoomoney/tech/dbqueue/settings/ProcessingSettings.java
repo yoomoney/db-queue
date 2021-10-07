@@ -5,14 +5,20 @@ import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.function.BiFunction;
 
+/**
+ * Task processing settings.
+ *
+ * @author Oleg Kandaurov
+ * @since 01.10.2021
+ */
 public class ProcessingSettings extends DynamicSetting<ProcessingSettings> {
     @Nonnull
     private Integer threadCount;
     @Nonnull
     private ProcessingMode processingMode;
 
-    ProcessingSettings(@Nonnull Integer threadCount,
-                       @Nonnull ProcessingMode processingMode) {
+    private ProcessingSettings(@Nonnull Integer threadCount,
+                               @Nonnull ProcessingMode processingMode) {
         this.threadCount = Objects.requireNonNull(threadCount, "threadCount must not be null");
         this.processingMode = Objects.requireNonNull(processingMode, "processingMode must not be null");
         if (threadCount < 0) {
@@ -115,7 +121,6 @@ public class ProcessingSettings extends DynamicSetting<ProcessingSettings> {
     public static class Builder {
         private Integer threadCount;
         private ProcessingMode processingMode;
-
 
         private Builder() {
         }

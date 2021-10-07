@@ -17,51 +17,21 @@ import java.util.function.BiFunction;
  */
 public class ReenqueueSettings extends DynamicSetting<ReenqueueSettings> {
 
-    /**
-     * Strategy type, which computes delay to the next processing of the same task.
-     * <p>
-     * Required field.
-     */
     @Nonnull
     private ReenqueueRetryType retryType;
 
-    /**
-     * Sequence of delays for task processing.
-     * <p>
-     * Required when {@code type == ReenqueueRetryType.SEQUENTIAL}.
-     */
     @Nullable
     private List<Duration> sequentialPlan;
 
-    /**
-     * Fixed delay.
-     * <p>
-     * Required when {@code type == ReenqueueRetryType.FIXED}.
-     */
     @Nullable
     private Duration fixedDelay;
 
-    /**
-     * The first term of the progression to compute delays.
-     * <p>
-     * Required when {@code type == ReenqueueRetryType.ARITHMETIC} or {@code type == ReenqueueRetryType.GEOMETRIC}.
-     */
     @Nullable
     private Duration initialDelay;
 
-    /**
-     * The difference of the arithmetic progression.
-     * <p>
-     * Required when {@code type == ReenqueueRetryType.ARITHMETIC}.
-     */
     @Nullable
     private Duration arithmeticStep;
 
-    /**
-     * Denominator of the geometric progression.
-     * <p>
-     * Required when {@code type == ReenqueueRetryType.GEOMETRIC}.
-     */
     @Nullable
     private Long geometricRatio;
 
@@ -78,26 +48,37 @@ public class ReenqueueSettings extends DynamicSetting<ReenqueueSettings> {
         this.arithmeticStep = arithmeticStep;
         this.geometricRatio = geometricRatio;
         if (retryType == ReenqueueRetryType.SEQUENTIAL && (sequentialPlan == null || sequentialPlan.isEmpty())) {
-            throw new IllegalArgumentException("sequentialPlan must not be empty when retryType=" + ReenqueueRetryType.SEQUENTIAL);
+            throw new IllegalArgumentException(
+                    "sequentialPlan must not be empty when retryType=" + ReenqueueRetryType.SEQUENTIAL);
         }
         if (retryType == ReenqueueRetryType.FIXED && fixedDelay == null) {
-            throw new IllegalArgumentException("fixedDelay must not be empty when retryType=" + ReenqueueRetryType.FIXED);
+            throw new IllegalArgumentException(
+                    "fixedDelay must not be empty when retryType=" + ReenqueueRetryType.FIXED);
         }
         if (retryType == ReenqueueRetryType.ARITHMETIC && (arithmeticStep == null || initialDelay == null)) {
-            throw new IllegalArgumentException("arithmeticStep and initialDelay must not be empty when retryType=" + ReenqueueRetryType.ARITHMETIC);
+            throw new IllegalArgumentException(
+                    "arithmeticStep and initialDelay must not be empty when retryType=" + ReenqueueRetryType.ARITHMETIC);
         }
         if (retryType == ReenqueueRetryType.GEOMETRIC && (geometricRatio == null || initialDelay == null)) {
-            throw new IllegalArgumentException("geometricRatio and initialDelay must not be empty when retryType=" + ReenqueueRetryType.GEOMETRIC);
+            throw new IllegalArgumentException(
+                    "geometricRatio and initialDelay must not be empty when retryType=" + ReenqueueRetryType.GEOMETRIC);
         }
     }
 
+    /**
+     * Strategy type, which computes delay to the next processing of the same task.
+     *
+     * @return reenqueue retry type
+     */
     @Nonnull
     public ReenqueueRetryType getRetryType() {
         return retryType;
     }
 
     /**
-     * Get the sequential plan of delays for task processing or throw an exception when plan is not present.
+     * Get the sequential plan of delays for task processing.
+     * <p>
+     * Required when {@code type == ReenqueueRetryType.SEQUENTIAL}.
      *
      * @return Sequential plan of delays
      * @throws IllegalStateException when plan is not present.
@@ -111,10 +92,12 @@ public class ReenqueueSettings extends DynamicSetting<ReenqueueSettings> {
     }
 
     /**
-     * Get fixed delay.
+     * Fixed delay.
+     * <p>
+     * Required when {@code type == ReenqueueRetryType.FIXED}.
      *
      * @return Fixed delay.
-     * @see IllegalStateException when fixed delay is not present.
+     * @throws IllegalStateException when fixed delay is not present.
      */
     @Nonnull
     public Duration getFixedDelayOrThrow() {
@@ -124,7 +107,15 @@ public class ReenqueueSettings extends DynamicSetting<ReenqueueSettings> {
         return fixedDelay;
     }
 
-    @Nullable
+    /**
+     * The first term of the progression to compute delays.
+     * <p>
+     * Required when {@code type == ReenqueueRetryType.ARITHMETIC} or {@code type == ReenqueueRetryType.GEOMETRIC}.
+     *
+     * @return initial delay
+     * @throws IllegalStateException when initial delay is not present.
+     */
+    @Nonnull
     public Duration getInitialDelayOrThrow() {
         if (initialDelay == null) {
             throw new IllegalStateException("initial delay is null");
@@ -132,7 +123,15 @@ public class ReenqueueSettings extends DynamicSetting<ReenqueueSettings> {
         return initialDelay;
     }
 
-    @Nullable
+    /**
+     * The difference of the arithmetic progression.
+     * <p>
+     * Required when {@code type == ReenqueueRetryType.ARITHMETIC}.
+     *
+     * @return arithmetic step
+     * @throws IllegalStateException when artithmetic step is not present.
+     */
+    @Nonnull
     public Duration getArithmeticStepOrThrow() {
         if (arithmeticStep == null) {
             throw new IllegalStateException("arithmetic step is null");
@@ -140,10 +139,18 @@ public class ReenqueueSettings extends DynamicSetting<ReenqueueSettings> {
         return arithmeticStep;
     }
 
-    @Nullable
+    /**
+     * Denominator of the geometric progression.
+     * <p>
+     * Required when {@code type == ReenqueueRetryType.GEOMETRIC}.
+     *
+     * @return geometric ratio
+     * @throws IllegalStateException when geometric ratio is not present.
+     */
+    @Nonnull
     public Long getGeometricRatioOrThrow() {
         if (geometricRatio == null) {
-            throw new IllegalStateException("arithmetic step is null");
+            throw new IllegalStateException("geometric ratio is null");
         }
         return geometricRatio;
     }

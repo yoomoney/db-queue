@@ -1,21 +1,43 @@
 package ru.yoomoney.tech.dbqueue.settings;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static ru.yoomoney.tech.dbqueue.settings.QueueConfigsReader.SETTING_ID_SEQUENCE;
 import static ru.yoomoney.tech.dbqueue.settings.QueueConfigsReader.SETTING_TABLE;
 
-public class QueueLocationParser {
+/**
+ * Parser for {@link QueueLocation}
+ *
+ * @author Oleg Kandaurov
+ * @since 01.10.2021
+ */
+class QueueLocationParser {
 
     private final List<String> errorMessages;
 
-    QueueLocationParser(List<String> errorMessages) {
-        this.errorMessages = errorMessages;
+    /**
+     * Constructor
+     *
+     * @param errorMessages list of error messages
+     */
+    QueueLocationParser(@Nonnull List<String> errorMessages) {
+        this.errorMessages = Objects.requireNonNull(errorMessages, "errorMessages");
     }
 
-    Optional<QueueLocation> parseQueueLocation(String queueId, Map<String, String> settings) {
+    /**
+     * Parse settings
+     *
+     * @param queueId  raw queue identifier
+     * @param settings raw settings
+     * @return settings or empty object in case of failure
+     */
+    Optional<QueueLocation> parseQueueLocation(@Nonnull String queueId, @Nonnull Map<String, String> settings) {
+        Objects.requireNonNull(queueId, "queueId");
+        Objects.requireNonNull(settings, "settings");
         try {
             QueueLocation.Builder queueLocation = QueueLocation.builder();
             queueLocation.withQueueId(new QueueId(queueId));

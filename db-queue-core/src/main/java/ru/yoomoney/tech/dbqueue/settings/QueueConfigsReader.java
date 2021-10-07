@@ -266,17 +266,14 @@ public class QueueConfigsReader {
     }
 
     /**
-     * Constructor for backward compatibility
-     *
-     * @param configPaths    files to read configuration from.
-     * @param settingsPrefix prefix that will be used for queue settings.
-     */
-
-    /**
      * Constructor
      *
-     * @param configPaths    files to read configuration from.
-     * @param settingsPrefix prefix that will be used for queue settings.
+     * @param configPaths               files to read configuration from.
+     * @param settingsPrefix            prefix that will be used for queue settings.
+     * @param defaultProcessingSettings default {@link ProcessingSettings}
+     * @param defaultPollSettings       default {@link PollSettings}
+     * @param defaultFailureSettings    default {@link FailureSettings}
+     * @param defaultReenqueueSettings  default {@link ReenqueueSettings}
      */
     public QueueConfigsReader(@Nonnull List<Path> configPaths,
                               @Nonnull String settingsPrefix,
@@ -294,11 +291,6 @@ public class QueueConfigsReader {
         if (configPaths.isEmpty()) {
             throw new IllegalArgumentException("config paths must not be empty");
         }
-    }
-
-    @Nonnull
-    public List<Path> getConfigPaths() {
-        return configPaths;
     }
 
     /**

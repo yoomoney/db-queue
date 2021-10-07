@@ -5,10 +5,14 @@ import org.slf4j.LoggerFactory;
 import ru.yoomoney.tech.dbqueue.api.QueueConsumer;
 import ru.yoomoney.tech.dbqueue.internal.processing.MillisTimeProvider;
 import ru.yoomoney.tech.dbqueue.internal.processing.TimeLimiter;
+import ru.yoomoney.tech.dbqueue.settings.FailureSettings;
+import ru.yoomoney.tech.dbqueue.settings.PollSettings;
+import ru.yoomoney.tech.dbqueue.settings.ProcessingSettings;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfigsReader;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
+import ru.yoomoney.tech.dbqueue.settings.ReenqueueSettings;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
@@ -90,6 +94,15 @@ public class QueueService {
         return true;
     }
 
+    /**
+     * Update queue configurations.
+     * Applies update these type of settings:
+     * <p>
+     * {@link ProcessingSettings} - supports update only for {@link ProcessingSettings#getThreadCount()} setting
+     * {@link PollSettings}, {@link FailureSettings}, {@link ReenqueueSettings} - supports update of all settings
+     *
+     * @param configs new configuration
+     */
     public void updateQueueConfigs(@Nonnull Collection<QueueConfig> configs) {
         requireNonNull(configs);
         configs.forEach(newConfig -> {

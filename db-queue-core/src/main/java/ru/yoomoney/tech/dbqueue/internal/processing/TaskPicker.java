@@ -1,6 +1,5 @@
 package ru.yoomoney.tech.dbqueue.internal.processing;
 
-import ru.yoomoney.tech.dbqueue.api.QueueConsumer;
 import ru.yoomoney.tech.dbqueue.api.TaskRecord;
 import ru.yoomoney.tech.dbqueue.config.QueueShard;
 import ru.yoomoney.tech.dbqueue.config.TaskLifecycleListener;
@@ -34,12 +33,13 @@ public class TaskPicker {
 
 
     /**
-     * Конструктор
+     * Constructor
      *
-     * @param queueShard            шард с которого требуется выбрать задачу
-     * @param taskLifecycleListener слушатель жизненного цикла задачи в очереди
-     * @param millisTimeProvider    поставщик текущего времени
-     * @param pickTaskDao           dao для выборки задач
+     * @param queueShard            shard to bound task picker to
+     * @param queueLocation         queue location
+     * @param taskLifecycleListener task listener
+     * @param millisTimeProvider    current time provider
+     * @param pickTaskDao           dao for picking up tasks
      */
     public TaskPicker(@Nonnull QueueShard<?> queueShard,
                       @Nonnull QueueLocation queueLocation,

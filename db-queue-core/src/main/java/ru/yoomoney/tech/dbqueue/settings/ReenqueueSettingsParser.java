@@ -1,9 +1,11 @@
 package ru.yoomoney.tech.dbqueue.settings;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -20,17 +22,39 @@ import static ru.yoomoney.tech.dbqueue.settings.QueueConfigsReader.VALUE_REENQUE
 import static ru.yoomoney.tech.dbqueue.settings.QueueConfigsReader.VALUE_REENQUEUE_RETRY_TYPE_MANUAL;
 import static ru.yoomoney.tech.dbqueue.settings.QueueConfigsReader.VALUE_REENQUEUE_RETRY_TYPE_SEQUENTIAL;
 
-public class ReenqueueSettingsParser {
+/**
+ * Parser for {@link ReenqueueSettings}
+ *
+ * @author Oleg Kandaurov
+ * @since 01.10.2021
+ */
+class ReenqueueSettingsParser {
 
     private final Supplier<ReenqueueSettings.Builder> defaultSettings;
     private final List<String> errorMessages;
 
-    ReenqueueSettingsParser(Supplier<ReenqueueSettings.Builder> defaultSettings, List<String> errorMessages) {
-        this.defaultSettings = defaultSettings;
-        this.errorMessages = errorMessages;
+    /**
+     * Constructor
+     *
+     * @param defaultSettings default settings
+     * @param errorMessages   list of error messages
+     */
+    ReenqueueSettingsParser(@Nonnull Supplier<ReenqueueSettings.Builder> defaultSettings,
+                            List<String> errorMessages) {
+        this.defaultSettings = Objects.requireNonNull(defaultSettings, "defaultSettings");
+        this.errorMessages = Objects.requireNonNull(errorMessages, "errorMessages");
     }
 
-    Optional<ReenqueueSettings> parseSettings(String queueId, Map<String, String> settings) {
+    /**
+     * Parse settings
+     *
+     * @param queueId  raw queue identifier
+     * @param settings raw settings
+     * @return settings or empty object in case of failure
+     */
+    Optional<ReenqueueSettings> parseSettings(@Nonnull String queueId, @Nonnull Map<String, String> settings) {
+        Objects.requireNonNull(queueId, "queueId");
+        Objects.requireNonNull(settings, "settings");
         try {
             ReenqueueSettings.Builder reenqueueSettings = defaultSettings.get();
             settings.forEach((key, value) -> fillSettings(reenqueueSettings, key, value));
@@ -63,7 +87,6 @@ public class ReenqueueSettingsParser {
                     builder.withGeometricRatio(Long.valueOf(value));
                     return;
                 default:
-                    return;
             }
         } catch (RuntimeException exc) {
             errorMessages.add(String.format("cannot parse setting: name=%s, value=%s, exception=%s", name, value,
@@ -71,7 +94,7 @@ public class ReenqueueSettingsParser {
         }
     }
 
-    private ReenqueueRetryType parseReenqueueRetryType(String type) {
+    private static ReenqueueRetryType parseReenqueueRetryType(String type) {
         switch (type) {
             case VALUE_REENQUEUE_RETRY_TYPE_MANUAL:
                 return ReenqueueRetryType.MANUAL;
@@ -88,7 +111,7 @@ public class ReenqueueSettingsParser {
         }
     }
 
-    private List<Duration> parseReenqueueRetryPlan(String plan) {
+    private static List<Duration> parseReenqueueRetryPlan(String plan) {
         String[] values = plan.split(",");
         return Arrays.stream(values)
                 .map(Duration::parse)
