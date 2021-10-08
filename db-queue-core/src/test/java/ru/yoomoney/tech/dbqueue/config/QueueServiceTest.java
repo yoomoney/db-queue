@@ -106,11 +106,6 @@ public class QueueServiceTest {
         } catch (IllegalArgumentException exc) {
             errorMessages.add(exc.getMessage());
         }
-        try {
-            queueService.resizePool(queueId, DEFAULT_SHARD.getShardId(), 1);
-        } catch (IllegalArgumentException exc) {
-            errorMessages.add(exc.getMessage());
-        }
 
         verifyZeroInteractions(queueExecutionPool);
         assertThat(errorMessages.toString(), equalTo(
@@ -121,8 +116,7 @@ public class QueueServiceTest {
                         "cannot invoke isShutdown, queue is not registered: queueId=test, " +
                         "cannot invoke isTerminated, queue is not registered: queueId=test, " +
                         "cannot invoke awaitTermination, queue is not registered: queueId=test, " +
-                        "cannot invoke wakeup, queue is not registered: queueId=test, " +
-                        "cannot invoke resizePool, queue is not registered: queueId=test" +
+                        "cannot invoke wakeup, queue is not registered: queueId=test" +
                         "]"));
     }
 

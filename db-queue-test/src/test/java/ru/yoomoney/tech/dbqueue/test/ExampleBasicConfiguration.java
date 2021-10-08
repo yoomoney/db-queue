@@ -15,6 +15,7 @@ import ru.yoomoney.tech.dbqueue.config.QueueShardId;
 import ru.yoomoney.tech.dbqueue.config.QueueTableSchema;
 import ru.yoomoney.tech.dbqueue.config.impl.LoggingTaskLifecycleListener;
 import ru.yoomoney.tech.dbqueue.config.impl.LoggingThreadLifecycleListener;
+import ru.yoomoney.tech.dbqueue.settings.ExtSettings;
 import ru.yoomoney.tech.dbqueue.settings.FailRetryType;
 import ru.yoomoney.tech.dbqueue.settings.FailureSettings;
 import ru.yoomoney.tech.dbqueue.settings.PollSettings;
@@ -29,6 +30,7 @@ import ru.yoomoney.tech.dbqueue.settings.ReenqueueSettings;
 import ru.yoomoney.tech.dbqueue.spring.dao.SpringDatabaseAccessLayer;
 
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Thread.sleep;
@@ -81,6 +83,7 @@ public class ExampleBasicConfiguration {
                         .withRetryInterval(Duration.ofMinutes(1)).build())
                 .withReenqueueSettings(ReenqueueSettings.builder()
                         .withRetryType(ReenqueueRetryType.MANUAL).build())
+                .withExtSettings(ExtSettings.builder().withSettings(new LinkedHashMap<>()).build())
                 .build();
         QueueConfig config = new QueueConfig(QueueLocation.builder().withTableName("example_task_table")
                 .withQueueId(queueId).build(), queueSettings);

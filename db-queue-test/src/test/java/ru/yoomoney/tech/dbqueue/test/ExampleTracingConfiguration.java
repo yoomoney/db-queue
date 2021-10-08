@@ -24,6 +24,7 @@ import ru.yoomoney.tech.dbqueue.config.impl.CompositeTaskLifecycleListener;
 import ru.yoomoney.tech.dbqueue.config.impl.CompositeThreadLifecycleListener;
 import ru.yoomoney.tech.dbqueue.config.impl.LoggingTaskLifecycleListener;
 import ru.yoomoney.tech.dbqueue.config.impl.LoggingThreadLifecycleListener;
+import ru.yoomoney.tech.dbqueue.settings.ExtSettings;
 import ru.yoomoney.tech.dbqueue.settings.FailRetryType;
 import ru.yoomoney.tech.dbqueue.settings.FailureSettings;
 import ru.yoomoney.tech.dbqueue.settings.PollSettings;
@@ -39,6 +40,7 @@ import ru.yoomoney.tech.dbqueue.spring.dao.SpringDatabaseAccessLayer;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Thread.sleep;
@@ -94,6 +96,7 @@ public class ExampleTracingConfiguration {
                                 .withRetryInterval(Duration.ofMinutes(1)).build())
                         .withReenqueueSettings(ReenqueueSettings.builder()
                                 .withRetryType(ReenqueueRetryType.MANUAL).build())
+                        .withExtSettings(ExtSettings.builder().withSettings(new LinkedHashMap<>()).build())
                         .build());
 
         Tracing tracing = Tracing.newBuilder().currentTraceContext(ThreadLocalCurrentTraceContext.newBuilder()
