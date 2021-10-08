@@ -14,7 +14,6 @@ import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -48,7 +47,7 @@ class QueueExecutionPool {
     @Nonnull
     private final List<QueueWorker> queueWorkers = new ArrayList<>();
 
-    private boolean started = false;
+    private boolean started;
 
     QueueExecutionPool(@Nonnull QueueConsumer<?> queueConsumer,
                        @Nonnull QueueShard<?> queueShard,
@@ -66,8 +65,6 @@ class QueueExecutionPool {
                                 queueConsumer.getQueueConfig().getLocation(), queueShard.getShardId())),
                 QueueRunner.Factory.create(queueConsumer, queueShard, taskLifecycleListener),
                 QueueLoop.WakeupQueueLoop::new);
-        queueConsumer.getQueueConfig().getSettings().getProcessingSettings().registerObserver(
-                (oldValue, newValue) -> resizePool(newValue.getThreadCount()));
     }
 
     QueueExecutionPool(@Nonnull QueueConsumer<?> queueConsumer,
@@ -82,6 +79,8 @@ class QueueExecutionPool {
         this.executor = requireNonNull(executor);
         this.queueRunner = requireNonNull(queueRunner);
         this.queueLoopFactory = requireNonNull(queueLoopFactory);
+        queueConsumer.getQueueConfig().getSettings().getProcessingSettings().registerObserver(
+                (oldValue, newValue) -> resizePool(newValue.getThreadCount()));
     }
 
     private QueueId getQueueId() {
@@ -122,6 +121,9 @@ class QueueExecutionPool {
      */
     void resizePool(int newThreadCount) {
         int oldThreadCount = queueWorkers.size();
+        if (newThreadCount == oldThreadCount) {
+            return;
+        }
         log.info("resizing queue execution pool: queueId={}, shardId={}, oldThreadCount={}, " +
                         "newThreadCount={}",
                 queueConsumer.getQueueConfig().getLocation().getQueueId(),
@@ -130,7 +132,7 @@ class QueueExecutionPool {
             for (int i = oldThreadCount; i < newThreadCount; i++) {
                 startThread(!isPaused());
             }
-        } else if (newThreadCount < oldThreadCount) {
+        } else {
             for (int i = oldThreadCount; i > newThreadCount; i--) {
                 disposeThread();
             }
@@ -258,8 +260,8 @@ class QueueExecutionPool {
         private final QueueLoop loop;
 
         private QueueWorker(@Nonnull Future<?> future, @Nonnull QueueLoop loop) {
-            this.future = Objects.requireNonNull(future);
-            this.loop = Objects.requireNonNull(loop);
+            this.future = requireNonNull(future);
+            this.loop = requireNonNull(loop);
         }
 
         @Nonnull

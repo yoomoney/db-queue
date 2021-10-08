@@ -102,25 +102,6 @@ public class ExampleBasicConfiguration {
         queueService.pause();
         producer.enqueue(EnqueueParams.create("example task"));
         sleep(500);
-
-        QueueSettings newSettings = QueueSettings.builder()
-                .withProcessingSettings(ProcessingSettings.builder()
-                        .withProcessingMode(ProcessingMode.SEPARATE_TRANSACTIONS)
-                        .withThreadCount(1).build())
-                .withPollSettings(PollSettings.builder()
-                        .withBetweenTaskTimeout(Duration.ofMillis(0))
-                        .withNoTaskTimeout(Duration.ofMillis(0))
-                        .withFatalCrashTimeout(Duration.ofSeconds(0)).build())
-                .withFailureSettings(FailureSettings.builder()
-                        .withRetryType(FailRetryType.GEOMETRIC_BACKOFF)
-                        .withRetryInterval(Duration.ofMinutes(1)).build())
-                .withReenqueueSettings(ReenqueueSettings.builder()
-                        .withRetryType(ReenqueueRetryType.MANUAL).build())
-                .build();
-        QueueConfig newConfig = new QueueConfig(QueueLocation.builder().withTableName("example_task_table")
-                .withQueueId(queueId).build(), newSettings);
-        queueService.updateQueueConfigs(singletonList(newConfig));
-
         queueService.unpause();
         sleep(500);
         queueService.shutdown();

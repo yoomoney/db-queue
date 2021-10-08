@@ -30,6 +30,11 @@ import static org.hamcrest.CoreMatchers.not;
 @Ignore
 public abstract class QueueDaoTest {
 
+    /**
+     * Some glitches with Windows
+     */
+    private static final Duration WINDOWS_OS_DELAY = Duration.ofMinutes(1);
+
     protected final JdbcTemplate jdbcTemplate;
     protected final TransactionTemplate transactionTemplate;
 
@@ -59,17 +64,17 @@ public abstract class QueueDaoTest {
         QueueLocation location = generateUniqueLocation();
         String payload = "{}";
         Duration executionDelay = Duration.ofHours(1L);
-        ZonedDateTime beforeExecution = ZonedDateTime.now().minusMinutes(1L);
+        ZonedDateTime beforeExecution = ZonedDateTime.now();
         long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, EnqueueParams.create(payload)
                 .withExecutionDelay(executionDelay)));
         jdbcTemplate.query("select * from " + tableName + " where " + tableSchema.getIdField() + "=" + enqueueId, rs -> {
-            ZonedDateTime afterExecution = ZonedDateTime.now().plusMinutes(1);
+            ZonedDateTime afterExecution = ZonedDateTime.now();
             Assert.assertThat(rs.next(), equalTo(true));
             Assert.assertThat(rs.getString(tableSchema.getPayloadField()), equalTo(payload));
             ZonedDateTime nextProcessAt = ZonedDateTime.ofInstant(rs.getTimestamp(tableSchema.getNextProcessAtField()).toInstant(),
                     ZoneId.systemDefault());
-            Assert.assertThat(nextProcessAt.isAfter(beforeExecution.plus(executionDelay)), equalTo(true));
-            Assert.assertThat(nextProcessAt.isBefore(afterExecution.plus(executionDelay)), equalTo(true));
+            Assert.assertThat(nextProcessAt.isAfter(beforeExecution.plus(executionDelay).minus(WINDOWS_OS_DELAY)), equalTo(true));
+            Assert.assertThat(nextProcessAt.isBefore(afterExecution.plus(executionDelay).plus(WINDOWS_OS_DELAY)), equalTo(true));
             ZonedDateTime createdAt = ZonedDateTime.ofInstant(rs.getTimestamp(tableSchema.getCreatedAtField()).toInstant(),
                     ZoneId.systemDefault());
             Assert.assertThat(createdAt.isAfter(beforeExecution), equalTo(true));
@@ -109,18 +114,18 @@ public abstract class QueueDaoTest {
         Long enqueueId = executeInTransaction(() ->
                 queueDao.enqueue(location, new EnqueueParams<>()));
 
-        ZonedDateTime beforeExecution = ZonedDateTime.now().minusMinutes(1L);
+        ZonedDateTime beforeExecution = ZonedDateTime.now();
         Duration executionDelay = Duration.ofHours(1L);
         Boolean reenqueueResult = executeInTransaction(() -> queueDao.reenqueue(location, enqueueId, executionDelay));
         Assert.assertThat(reenqueueResult, equalTo(true));
         jdbcTemplate.query("select * from " + tableName + " where " + tableSchema.getIdField() + "=" + enqueueId, rs -> {
-            ZonedDateTime afterExecution = ZonedDateTime.now().plusMinutes(1);
+            ZonedDateTime afterExecution = ZonedDateTime.now();
             Assert.assertThat(rs.next(), equalTo(true));
             ZonedDateTime nextProcessAt = ZonedDateTime.ofInstant(rs.getTimestamp(tableSchema.getNextProcessAtField()).toInstant(),
                     ZoneId.systemDefault());
 
-            Assert.assertThat(nextProcessAt.isAfter(beforeExecution.plus(executionDelay)), equalTo(true));
-            Assert.assertThat(nextProcessAt.isBefore(afterExecution.plus(executionDelay)), equalTo(true));
+            Assert.assertThat(nextProcessAt.isAfter(beforeExecution.plus(executionDelay).minus(WINDOWS_OS_DELAY)), equalTo(true));
+            Assert.assertThat(nextProcessAt.isBefore(afterExecution.plus(executionDelay).plus(WINDOWS_OS_DELAY)), equalTo(true));
             return new Object();
         });
     }

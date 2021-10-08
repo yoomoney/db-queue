@@ -12,15 +12,14 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -102,7 +101,7 @@ import java.util.stream.Collectors;
  * queue-prefix.testQueue.processing-mode=use-external-executor
  *
  * # see {@link QueueConfigsReader#SETTING_ADDITIONAL}
- * # see {@link QueueSettings#getAdditionalSettings()}
+ * # see {@link QueueSettings#getExtSettings()}
  * queue-prefix.testQueue.additional-settings.custom-val=custom-key
  *
  * # you can define custom settings to use it in enqueueing or processing
@@ -179,31 +178,30 @@ public class QueueConfigsReader {
      * Representation of {@link FailureSettings#getRetryInterval()}
      */
     public static final String SETTING_RETRY_INTERVAL = "retry-interval";
-    private static final String REENQUEUE_RETRY_PREFIX = "reenqueue-retry";
     /**
      * Representation of {@link ReenqueueSettings#getRetryType()}
      */
-    public static final String SETTING_REENQUEUE_RETRY_TYPE = REENQUEUE_RETRY_PREFIX + "-type";
+    public static final String SETTING_REENQUEUE_RETRY_TYPE = "reenqueue-retry-type";
     /**
      * Representation of {@link ReenqueueSettings#getSequentialPlanOrThrow()}
      */
-    public static final String SETTING_REENQUEUE_RETRY_PLAN = REENQUEUE_RETRY_PREFIX + "-plan";
+    public static final String SETTING_REENQUEUE_RETRY_PLAN = "reenqueue-retry-plan";
     /**
      * Representation of {@link ReenqueueSettings#getFixedDelayOrThrow()}
      */
-    public static final String SETTING_REENQUEUE_RETRY_DELAY = REENQUEUE_RETRY_PREFIX + "-delay";
+    public static final String SETTING_REENQUEUE_RETRY_DELAY = "reenqueue-retry-delay";
     /**
      * Representation of {@link ReenqueueSettings#getInitialDelayOrThrow()}
      */
-    public static final String SETTING_REENQUEUE_RETRY_INITIAL_DELAY = REENQUEUE_RETRY_PREFIX + "-initial-delay";
+    public static final String SETTING_REENQUEUE_RETRY_INITIAL_DELAY = "reenqueue-retry-initial-delay";
     /**
      * Representation of {@link ReenqueueSettings#getArithmeticStepOrThrow()}
      */
-    public static final String SETTING_REENQUEUE_RETRY_STEP = REENQUEUE_RETRY_PREFIX + "-step";
+    public static final String SETTING_REENQUEUE_RETRY_STEP = "reenqueue-retry-step";
     /**
      * Representation of {@link ReenqueueSettings#getGeometricRatioOrThrow()}
      */
-    public static final String SETTING_REENQUEUE_RETRY_RATIO = REENQUEUE_RETRY_PREFIX + "-ratio";
+    public static final String SETTING_REENQUEUE_RETRY_RATIO = "reenqueue-retry-ratio";
     /**
      * Representation of {@link ProcessingSettings#getThreadCount()}
      */
@@ -229,7 +227,7 @@ public class QueueConfigsReader {
      */
     public static final String SETTING_ID_SEQUENCE = "id-sequence";
     /**
-     * Representation of {@link QueueSettings#getAdditionalSettings()}
+     * Representation of {@link QueueSettings#getExtSettings()}
      */
     public static final String SETTING_ADDITIONAL = "additional-settings";
 
@@ -239,7 +237,8 @@ public class QueueConfigsReader {
             SETTING_PROCESSING_MODE, SETTING_BETWEEN_TASK_TIMEOUT, SETTING_TABLE,
             SETTING_NO_TASK_TIMEOUT, SETTING_ID_SEQUENCE, SETTING_FATAL_CRASH_TIMEOUT,
             SETTING_REENQUEUE_RETRY_DELAY, SETTING_REENQUEUE_RETRY_PLAN, SETTING_REENQUEUE_RETRY_INITIAL_DELAY,
-            SETTING_REENQUEUE_RETRY_RATIO, SETTING_REENQUEUE_RETRY_TYPE, SETTING_REENQUEUE_RETRY_STEP));
+            SETTING_REENQUEUE_RETRY_RATIO, SETTING_REENQUEUE_RETRY_TYPE, SETTING_REENQUEUE_RETRY_STEP,
+            SETTING_RETRY_TYPE, SETTING_RETRY_INTERVAL, SETTING_THREAD_COUNT, SETTING_THREAD_COUNT));
 
     @Nonnull
     private final List<Path> configPaths;
@@ -336,7 +335,7 @@ public class QueueConfigsReader {
                         .withPollSettings(pollSettings.get())
                         .withFailureSettings(failureSettings.get())
                         .withReenqueueSettings(reenqueueSettings.get())
-                        .withAdditionalSettings(buildAdditionalSettings(settings)).build();
+                        .withExtSettings(parseExtSettings(settings)).build();
                 queueConfigs.add(new QueueConfig(queueLocation.get(), queueSettings));
             }
         });
@@ -350,15 +349,18 @@ public class QueueConfigsReader {
         try (InputStream is = Files.newInputStream(filePath)) {
             Properties props = new Properties();
             props.load(is);
-            return cleanupProperties(props.stringPropertyNames().stream()
-                    .collect(Collectors.toMap(Function.identity(), props::getProperty)));
+            Map<String, String> map = new LinkedHashMap<>();
+            for (String name : props.stringPropertyNames()) {
+                map.put(name, props.getProperty(name));
+            }
+            return cleanupProperties(map);
         } catch (IOException ioe) {
             throw new IllegalArgumentException("cannot read queue properties: file=" + filePath, ioe);
         }
     }
 
     private Map<String, Map<String, String>> splitRawSettingsByQueueId(Map<String, String> rawSettings) {
-        Map<String, Map<String, String>> result = new HashMap<>();
+        Map<String, Map<String, String>> result = new LinkedHashMap<>();
         Pattern settingPattern = Pattern.compile(settingsPrefix + "\\.([A-Za-z0-9\\-_]+)\\.(.*)");
         rawSettings.forEach((setting, value) -> {
             Matcher matcher = settingPattern.matcher(setting);
@@ -367,7 +369,7 @@ public class QueueConfigsReader {
             } else {
                 String queueId = matcher.group(1);
                 String settingName = matcher.group(2);
-                result.computeIfAbsent(queueId, s -> new HashMap<>());
+                result.computeIfAbsent(queueId, s -> new LinkedHashMap<>());
                 result.get(queueId).put(settingName, value);
             }
         });
@@ -377,13 +379,15 @@ public class QueueConfigsReader {
     }
 
     @Nonnull
-    private Map<String, String> buildAdditionalSettings(Map<String, String> settings) {
-        String additionalSettingsName = SETTING_ADDITIONAL + ".";
-        return settings.entrySet().stream()
-                .filter(property -> property.getKey().startsWith(additionalSettingsName))
-                .collect(Collectors.toMap(
-                        entry -> entry.getKey().substring(additionalSettingsName.length()),
-                        Map.Entry::getValue));
+    private static ExtSettings parseExtSettings(Map<String, String> settings) {
+        String extSettingsPrefix = SETTING_ADDITIONAL + '.';
+        Map<String, String> map = new LinkedHashMap<>();
+        for (Map.Entry<String, String> property : settings.entrySet()) {
+            if (property.getKey().startsWith(extSettingsPrefix)) {
+                map.put(property.getKey().substring(extSettingsPrefix.length()), property.getValue());
+            }
+        }
+        return ExtSettings.builder().withSettings(map).build();
     }
 
 
@@ -394,8 +398,8 @@ public class QueueConfigsReader {
         }
     }
 
-    private void overrideExistingSettings(Map<String, String> existingSettings,
-                                          Map<String, String> newSettings) {
+    private static void overrideExistingSettings(Map<String, String> existingSettings,
+                                                 Map<String, String> newSettings) {
         newSettings.forEach((key, newValue) -> {
             String existingValue = existingSettings.get(key);
             if (existingValue != null) {
@@ -414,11 +418,14 @@ public class QueueConfigsReader {
     }
 
     private void validateSettings(Map<String, Map<String, String>> queuesSettings) {
-        queuesSettings.forEach((queueId, settings) -> settings.keySet().stream()
-                .filter(setting -> ALLOWED_SETTINGS.contains(setting))
-                .filter(setting -> setting.startsWith(SETTING_ADDITIONAL + "."))
-                .forEach(unknownSetting -> errorMessages.add(
-                        String.format("%s setting is unknown: queueId=%s", unknownSetting, queueId))));
+        queuesSettings.forEach((queueId, settings) -> {
+            for (String setting : settings.keySet()) {
+                if (!ALLOWED_SETTINGS.contains(setting) && !setting.startsWith(SETTING_ADDITIONAL + ".")) {
+                    errorMessages.add(
+                            String.format("%s setting is unknown: queueId=%s", setting, queueId));
+                }
+            }
+        });
     }
 
 }

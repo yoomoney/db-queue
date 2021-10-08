@@ -130,6 +130,34 @@ public abstract class QueuePickTaskDaoTest {
     }
 
     @Test
+    public void pick_task_should_delay_with_linear_delay_after_setting_changed() {
+        QueueLocation location = generateUniqueLocation();
+        Duration expectedDelay = Duration.ofMinutes(3L);
+        ZonedDateTime beforePickingTask;
+        ZonedDateTime afterPickingTask;
+        TaskRecord taskRecord;
+        FailureSettings failureSettings = FailureSettings.builder()
+                .withRetryType(FailRetryType.GEOMETRIC_BACKOFF)
+                .withRetryInterval(Duration.ofMinutes(99)).build();
+        QueuePickTaskDao pickTaskDao = pickTaskDaoFactory.apply(location, failureSettings);
+
+        failureSettings.setValue(FailureSettings.builder()
+                .withRetryType(FailRetryType.LINEAR_BACKOFF)
+                .withRetryInterval(Duration.ofMinutes(3)).build());
+
+        Long enqueueId = executeInTransaction(() -> queueDao.enqueue(location, new EnqueueParams<>()));
+
+        for (int attempt = 1; attempt < 10; attempt++) {
+            beforePickingTask = ZonedDateTime.now();
+            taskRecord = resetProcessTimeAndPick(pickTaskDao, enqueueId);
+            afterPickingTask = ZonedDateTime.now();
+            Assert.assertThat(taskRecord.getAttemptsCount(), equalTo((long) attempt));
+            Assert.assertThat(taskRecord.getNextProcessAt().isAfter(beforePickingTask.plus(expectedDelay.minus(WINDOWS_OS_DELAY))), equalTo(true));
+            Assert.assertThat(taskRecord.getNextProcessAt().isBefore(afterPickingTask.plus(expectedDelay).plus(WINDOWS_OS_DELAY)), equalTo(true));
+        }
+    }
+
+    @Test
     public void pick_task_should_delay_with_arithmetic_strategy() {
         QueueLocation location = generateUniqueLocation();
         Duration expectedDelay;

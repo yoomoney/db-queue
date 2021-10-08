@@ -210,6 +210,33 @@ public class QueueExecutionPoolTest {
         verify(executor, times(3)).allowCoreThreadTimeOut(eq(true));
         verify(executor, times(2)).setCorePoolSize(eq(0));
         verify(executor, times(3)).purge();
+    }
 
+    @Test
+    public void should_resize_queue_pool_when_settings_changed() throws InterruptedException {
+        QueueConfig queueConfig = new QueueConfig(
+                QueueLocation.builder().withTableName("testTable").withQueueId(new QueueId("queue1")).build(),
+                TestFixtures.createQueueSettings().withProcessingSettings(
+                        TestFixtures.createProcessingSettings().withThreadCount(0).build()).build());
+        StringQueueConsumer consumer = new NoopQueueConsumer(queueConfig);
+        QueueRunner queueRunner = mock(QueueRunner.class);
+        QueueTaskPoller queueTaskPoller = mock(QueueTaskPoller.class);
+        ThreadPoolExecutor executor = spy(new ThreadPoolExecutor(
+                0,
+                Integer.MAX_VALUE,
+                1L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(),
+                new QueueThreadFactory(
+                        queueConfig.getLocation(), DEFAULT_SHARD.getShardId())));
+
+        QueueLoop queueLoop = mock(QueueLoop.class);
+        QueueExecutionPool pool = new QueueExecutionPool(consumer, DEFAULT_SHARD, queueTaskPoller, executor, queueRunner,
+                () -> queueLoop);
+        pool.start();
+        verify(executor, times(0)).submit(any(Runnable.class));
+        assertThat(executor.getPoolSize(), equalTo(0));
+        queueConfig.getSettings().getProcessingSettings().setValue(TestFixtures.createProcessingSettings().withThreadCount(1).build());
+        assertThat(executor.getPoolSize(), equalTo(1));
+        verify(executor, times(1)).submit(any(Runnable.class));
     }
 }

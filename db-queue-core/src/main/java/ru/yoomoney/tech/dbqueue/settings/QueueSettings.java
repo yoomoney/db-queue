@@ -1,14 +1,7 @@
 package ru.yoomoney.tech.dbqueue.settings;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 /**
  * Queue settings
@@ -17,9 +10,6 @@ import java.util.function.Function;
  * @since 10.07.2017
  */
 public final class QueueSettings {
-
-    private static final Function<String, Duration> DURATION_CONVERTER =
-            Memoizer.memoize(Duration::parse);
 
     @Nonnull
     private final ProcessingSettings processingSettings;
@@ -30,19 +20,19 @@ public final class QueueSettings {
     @Nonnull
     private final ReenqueueSettings reenqueueSettings;
     @Nonnull
-    private final Map<String, String> additionalSettings;
+    private final ExtSettings extSettings;
 
     private QueueSettings(
             @Nonnull ProcessingSettings processingSettings,
             @Nonnull PollSettings pollSettings,
             @Nonnull FailureSettings failureSettings,
             @Nonnull ReenqueueSettings reenqueueSettings,
-            @Nonnull Map<String, String> additionalSettings) {
+            @Nonnull ExtSettings extSettings) {
         this.processingSettings = Objects.requireNonNull(processingSettings, "processingSettings must not be null");
         this.pollSettings = Objects.requireNonNull(pollSettings, "pollSettings must not be null");
         this.failureSettings = Objects.requireNonNull(failureSettings, "failureSettings must not be null");
         this.reenqueueSettings = Objects.requireNonNull(reenqueueSettings, "reenqueueSettings must not be null");
-        this.additionalSettings = Collections.unmodifiableMap(new HashMap<>(additionalSettings));
+        this.extSettings = Objects.requireNonNull(extSettings, "extSettings must not be null");
     }
 
     /**
@@ -92,32 +82,8 @@ public final class QueueSettings {
      * @return Additional queue properties.
      */
     @Nonnull
-    public Map<String, String> getAdditionalSettings() {
-        return additionalSettings;
-    }
-
-    /**
-     * Get string value of additional queue property.
-     *
-     * @param settingName Name of the property.
-     * @return Property value.
-     */
-    @Nonnull
-    public String getProperty(@Nonnull String settingName) {
-        Objects.requireNonNull(settingName);
-        return Objects.requireNonNull(additionalSettings.get(settingName),
-                String.format("null values are not allowed: settingName=%s", settingName));
-    }
-
-    /**
-     * Get {@linkplain Duration} value of additional queue property.
-     *
-     * @param settingName Name of the property.
-     * @return Property value.
-     */
-    @Nonnull
-    public Duration getDurationProperty(@Nonnull String settingName) {
-        return DURATION_CONVERTER.apply(getProperty(settingName));
+    public ExtSettings getExtSettings() {
+        return extSettings;
     }
 
     /**
@@ -140,12 +106,12 @@ public final class QueueSettings {
         QueueSettings that = (QueueSettings) obj;
         return processingSettings.equals(that.processingSettings) && pollSettings.equals(that.pollSettings) &&
                 failureSettings.equals(that.failureSettings) && reenqueueSettings.equals(that.reenqueueSettings)
-                && additionalSettings.equals(that.additionalSettings);
+                && extSettings.equals(that.extSettings);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(processingSettings, pollSettings, failureSettings, reenqueueSettings, additionalSettings);
+        return Objects.hash(processingSettings, pollSettings, failureSettings, reenqueueSettings, extSettings);
     }
 
     @Override
@@ -155,7 +121,7 @@ public final class QueueSettings {
                 ", pollSettings=" + pollSettings +
                 ", failureSettings=" + failureSettings +
                 ", reenqueueSettings=" + reenqueueSettings +
-                ", additionalSettings=" + additionalSettings +
+                ", additionalSettings=" + extSettings +
                 '}';
     }
 
@@ -167,7 +133,7 @@ public final class QueueSettings {
         private PollSettings pollSettings;
         private FailureSettings failureSettings;
         private ReenqueueSettings reenqueueSettings;
-        private final Map<String, String> additionalSettings = new HashMap<>();
+        private ExtSettings extSettings;
 
         private Builder() {
         }
@@ -212,7 +178,7 @@ public final class QueueSettings {
          * @param reenqueueSettings Task postponing settings.
          * @return Reference to the same builder.
          */
-        public Builder withReenqueueSettings(@Nullable ReenqueueSettings reenqueueSettings) {
+        public Builder withReenqueueSettings(@Nonnull ReenqueueSettings reenqueueSettings) {
             this.reenqueueSettings = reenqueueSettings;
             return this;
         }
@@ -220,12 +186,11 @@ public final class QueueSettings {
         /**
          * Set the map of additional properties for the queue.
          *
-         * @param additionalSettings Additional properties for the queue.
+         * @param extSettings Additional properties for the queue.
          * @return Reference to the same builder.
          */
-        public Builder withAdditionalSettings(@Nonnull Map<String, String> additionalSettings) {
-            Objects.requireNonNull(additionalSettings);
-            this.additionalSettings.putAll(additionalSettings);
+        public Builder withExtSettings(@Nonnull ExtSettings extSettings) {
+            this.extSettings = extSettings;
             return this;
         }
 
@@ -235,22 +200,7 @@ public final class QueueSettings {
          * @return A new queue settings object.
          */
         public QueueSettings build() {
-            return new QueueSettings(processingSettings, pollSettings, failureSettings, reenqueueSettings,
-                    additionalSettings);
-        }
-    }
-
-
-    private static class Memoizer<T, U> {
-
-        private final Map<T, U> cache = new ConcurrentHashMap<>();
-
-        private Function<T, U> doMemoize(Function<T, U> function) {
-            return input -> cache.computeIfAbsent(input, function);
-        }
-
-        private static <T, U> Function<T, U> memoize(Function<T, U> function) {
-            return new Memoizer<T, U>().doMemoize(function);
+            return new QueueSettings(processingSettings, pollSettings, failureSettings, reenqueueSettings, extSettings);
         }
     }
 }

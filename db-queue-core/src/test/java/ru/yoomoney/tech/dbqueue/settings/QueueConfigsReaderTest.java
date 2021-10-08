@@ -87,10 +87,16 @@ public class QueueConfigsReaderTest {
                 "q.testQueue.thread-count=3",
                 "q.testQueue.retry-type=linear",
                 "q.testQueue.retry-interval=PT30S",
+                "q.testQueue.reenqueue-retry-type=fixed",
+                "q.testQueue.reenqueue-retry-plan=PT1S,PT2S",
+                "q.testQueue.reenqueue-retry-delay=PT5S",
+                "q.testQueue.reenqueue-retry-initial-delay=PT1M",
+                "q.testQueue.reenqueue-retry-ratio=1",
+                "q.testQueue.reenqueue-retry-step=PT2S",
                 "q.testQueue.processing-mode=use-external-executor",
                 "q.testQueue.additional-settings.custom=val1"
         );
-        QueueConfigsReader queueConfigsReader = createReader(path);
+        QueueConfigsReader queueConfigsReader = new QueueConfigsReader(Arrays.asList(path), "q");
         Collection<QueueConfig> configs = queueConfigsReader.parse();
         assertThat(configs, equalTo(Collections.singletonList(
                 createConfig("foo", "testQueue",
@@ -109,11 +115,16 @@ public class QueueConfigsReaderTest {
                                         .withRetryInterval(Duration.ofSeconds(30))
                                         .build())
                                 .withReenqueueSettings(ReenqueueSettings.builder()
-                                        .withRetryType(ReenqueueRetryType.MANUAL)
+                                        .withRetryType(ReenqueueRetryType.FIXED)
+                                        .withFixedDelay(Duration.ofSeconds(5))
+                                        .withInitialDelay(Duration.ofMinutes(1))
+                                        .withGeometricRatio(1L)
+                                        .withArithmeticStep(Duration.ofSeconds(2))
+                                        .withSequentialPlan(Arrays.asList(Duration.ofSeconds(1), Duration.ofSeconds(2)))
                                         .build())
-                                .withAdditionalSettings(new LinkedHashMap<String, String>() {{
+                                .withExtSettings(ExtSettings.builder().withSettings(new LinkedHashMap<String, String>() {{
                                     put("custom", "val1");
-                                }})
+                                }}).build())
                                 .build()))));
     }
 
@@ -130,7 +141,7 @@ public class QueueConfigsReaderTest {
     }
 
     @Test
-    public void should_show_parsing_errors_for_full_config() throws Exception {
+    public void should_fail_when_parse_errors() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Cannot parse queue settings:" + System.lineSeparator() +
                 "cannot parse setting: name=between-task-timeout, value=between-task, exception=DateTimeParseException(Text cannot be parsed to a Duration)" + System.lineSeparator() +
@@ -149,10 +160,42 @@ public class QueueConfigsReaderTest {
                 "q.testQueue.retry-type=unknown-retry-type",
                 "q.testQueue.retry-interval=retry-interval",
                 "q.testQueue.processing-mode=unknown-mode1",
-                "q.testQueue.processing-mode=unknown-mode2",
-                "q.testQueue.unknown1=unknown-val"
+                "q.testQueue.processing-mode=unknown-mode2"
         );
         QueueConfigsReader queueConfigsReader = createReader(path);
+        queueConfigsReader.parse();
+    }
+
+    @Test
+    public void should_fail_when_unknown_settings() throws Exception {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage(equalTo("Cannot parse queue settings:" + System.lineSeparator() +
+                "unknown1 setting is unknown: queueId=testQueue"));
+        Path path = fileSystem.write(
+                "q.testQueue.table=foo",
+                "q.testQueue.unknown1=unknown-val"
+        );
+
+        QueueConfigsReader queueConfigsReader = new QueueConfigsReader(Arrays.asList(path), "q");
+        queueConfigsReader.parse();
+    }
+
+    @Test
+    public void should_fail_when_build_errors() throws Exception {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage(equalTo("Cannot parse queue settings:" + System.lineSeparator() +
+                "cannot build failure settings: queueId=testQueue, msg=retryInterval must not be null" + System.lineSeparator() +
+                "cannot build poll settings: queueId=testQueue, msg=noTaskTimeout must not be null" + System.lineSeparator() +
+                "cannot build processing settings: queueId=testQueue, msg=processingMode must not be null" + System.lineSeparator() +
+                "cannot build reenqueue settings: queueId=testQueue, msg=retryType must not be null"));
+        Path path = fileSystem.write(
+                "q.testQueue.table=foo",
+                "q.testQueue.between-task-timeout=PT5S",
+                "q.testQueue.thread-count=1",
+                "q.testQueue.retry-type=geometric"
+        );
+
+        QueueConfigsReader queueConfigsReader = new QueueConfigsReader(Arrays.asList(path), "q");
         queueConfigsReader.parse();
     }
 
@@ -175,18 +218,6 @@ public class QueueConfigsReaderTest {
                         .withNoTaskTimeout(Duration.ofSeconds(10L))
                         .withFatalCrashTimeout(Duration.ofSeconds(2L)).build()));
     }
-
-    @Test
-    public void should_validate_for_required_settings() throws Exception {
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage(equalTo("Cannot parse queue settings:" + System.lineSeparator() +
-                "cannot build queue location: queueId=testQueue, msg=tableName must not be null"));
-
-        Path path = fileSystem.write("q.testQueue.threads=1");
-        QueueConfigsReader queueConfigsReader = createReader(path);
-        queueConfigsReader.parse();
-    }
-
 
     @Test
     public void should_check_file_existence() throws Exception {

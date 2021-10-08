@@ -203,30 +203,30 @@ public class ReenqueueSettings extends DynamicSetting<ReenqueueSettings> {
     @Override
     protected BiFunction<ReenqueueSettings, ReenqueueSettings, String> getDiffEvaluator() {
         return (oldVal, newVal) -> {
-            StringJoiner diff = new StringJoiner(",", getName() + "(", ")");
+            StringJoiner diff = new StringJoiner(",", getName() + '(', ")");
             if (!Objects.equals(oldVal.retryType, newVal.retryType)) {
                 diff.add("type=" +
-                        newVal.retryType + "<-" + oldVal.retryType);
+                        newVal.retryType + '<' + oldVal.retryType);
             }
             if (!Objects.equals(oldVal.arithmeticStep, newVal.arithmeticStep)) {
                 diff.add("arithmeticStep=" +
-                        newVal.arithmeticStep + "<-" + oldVal.arithmeticStep);
+                        newVal.arithmeticStep + '<' + oldVal.arithmeticStep);
             }
             if (!Objects.equals(oldVal.geometricRatio, newVal.geometricRatio)) {
                 diff.add("geometricRatio=" +
-                        newVal.geometricRatio + "<-" + oldVal.geometricRatio);
+                        newVal.geometricRatio + '<' + oldVal.geometricRatio);
             }
             if (!Objects.equals(oldVal.initialDelay, newVal.initialDelay)) {
                 diff.add("initialDelay=" +
-                        newVal.initialDelay + "<-" + oldVal.initialDelay);
+                        newVal.initialDelay + '<' + oldVal.initialDelay);
             }
             if (!Objects.equals(oldVal.fixedDelay, newVal.fixedDelay)) {
                 diff.add("fixedDelay=" +
-                        newVal.fixedDelay + "<-" + oldVal.fixedDelay);
+                        newVal.fixedDelay + '<' + oldVal.fixedDelay);
             }
             if (!Objects.equals(oldVal.sequentialPlan, newVal.sequentialPlan)) {
                 diff.add("sequentialPlan=" +
-                        newVal.sequentialPlan + "<-" + oldVal.sequentialPlan);
+                        newVal.sequentialPlan + '<' + oldVal.sequentialPlan);
             }
             return diff.toString();
         };

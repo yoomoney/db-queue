@@ -96,40 +96,46 @@ public class QueueService {
 
     /**
      * Update queue configurations.
-     * Applies update these type of settings:
+     * Applies update to these type of settings:
      * <p>
      * {@link ProcessingSettings} - supports update only for {@link ProcessingSettings#getThreadCount()} setting
+     * <p>
      * {@link PollSettings}, {@link FailureSettings}, {@link ReenqueueSettings} - supports update of all settings
      *
      * @param configs new configuration
+     * @return settings diff per queue
+     * @throws IllegalArgumentException when queue configuration is not found
      */
-    public void updateQueueConfigs(@Nonnull Collection<QueueConfig> configs) {
+    public Map<QueueId, String> updateQueueConfigs(@Nonnull Collection<QueueConfig> configs) {
         requireNonNull(configs);
+        Map<QueueId, String> resultDiff = new LinkedHashMap<>();
         configs.forEach(newConfig -> {
             if (!registeredConsumer.containsKey(newConfig.getLocation().getQueueId())) {
                 throw new IllegalArgumentException("cannot update queue configuration" +
                         ", queue is not registered: queueId=" + newConfig.getLocation().getQueueId());
             }
 
-            StringJoiner diff = new StringJoiner(",");
+            StringJoiner queueDiff = new StringJoiner(",");
             QueueSettings actualSettings = registeredConsumer.get(newConfig.getLocation().getQueueId())
                     .getQueueConfig().getSettings();
             QueueSettings newSettings = newConfig.getSettings();
 
             actualSettings.getProcessingSettings().setValue(
-                    newSettings.getProcessingSettings()).ifPresent(diff::add);
+                    newSettings.getProcessingSettings()).ifPresent(queueDiff::add);
             actualSettings.getPollSettings().setValue(
-                    newSettings.getPollSettings()).ifPresent(diff::add);
+                    newSettings.getPollSettings()).ifPresent(queueDiff::add);
             actualSettings.getFailureSettings().setValue(
-                    newSettings.getFailureSettings()).ifPresent(diff::add);
+                    newSettings.getFailureSettings()).ifPresent(queueDiff::add);
             actualSettings.getReenqueueSettings().setValue(
-                    newSettings.getReenqueueSettings()).ifPresent(diff::add);
+                    newSettings.getReenqueueSettings()).ifPresent(queueDiff::add);
+            actualSettings.getExtSettings().setValue(
+                    newSettings.getExtSettings()).ifPresent(queueDiff::add);
 
-            if (!diff.toString().isEmpty()) {
-                log.info("Applied new queue configuration: queueId={}, diff={}",
-                        registeredConsumer.get(newConfig.getLocation().getQueueId()).getQueueConfig().getLocation().getQueueId(), diff);
+            if (!queueDiff.toString().isEmpty()) {
+                resultDiff.put(newConfig.getLocation().getQueueId(), queueDiff.toString());
             }
         });
+        return resultDiff;
     }
 
     /**

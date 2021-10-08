@@ -46,6 +46,34 @@ public class TaskResultHandlerTest {
     }
 
     @Test
+    public void should_reenqueue_task_with_new_settings() {
+        long taskId = 5L;
+        Duration reenqueueDelay = Duration.ofMillis(500L);
+        QueueLocation location = QueueLocation.builder().withTableName("testTable")
+                .withQueueId(new QueueId("testQueue")).build();
+
+        TaskRecord taskRecord = TaskRecord.builder().withId(taskId).build();
+        QueueShard queueShard = mock(QueueShard.class);
+        QueueDao queueDao = mock(QueueDao.class);
+        when(queueShard.getDatabaseAccessLayer()).thenReturn(new StubDatabaseAccessLayer(queueDao));
+
+        ReenqueueSettings reenqueueSettings = ReenqueueSettings.builder().withRetryType(ReenqueueRetryType.MANUAL).build();
+        new TaskResultHandler(location, queueShard, reenqueueSettings).handleResult(taskRecord,
+                TaskExecutionResult.reenqueue(reenqueueDelay));
+
+        verify(queueShard, times(2)).getDatabaseAccessLayer();
+        verify(queueDao).reenqueue(location, taskId, reenqueueDelay);
+
+
+        Duration newReenqueueDelay = Duration.ofMillis(1000L);
+        reenqueueSettings.setValue(ReenqueueSettings.builder().withRetryType(ReenqueueRetryType.FIXED)
+                .withFixedDelay(newReenqueueDelay).build());
+        new TaskResultHandler(location, queueShard, reenqueueSettings).handleResult(taskRecord,
+                TaskExecutionResult.reenqueue());
+        verify(queueDao).reenqueue(location, taskId, newReenqueueDelay);
+    }
+
+    @Test
     public void should_finish_task() {
         long taskId = 5L;
         QueueLocation location = QueueLocation.builder().withTableName("testTable")

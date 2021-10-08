@@ -52,8 +52,8 @@ public class QueueTaskPoller {
         requireNonNull(queueConsumer);
         requireNonNull(queueRunner);
         requireNonNull(queueLoop);
-        PollSettings pollSettings = queueConsumer.getQueueConfig().getSettings().getPollSettings();
         queueLoop.doRun(() -> {
+            PollSettings pollSettings = queueConsumer.getQueueConfig().getSettings().getPollSettings();
             try {
                 long startTime = millisTimeProvider.getMillis();
                 threadLifecycleListener.started(shardId, queueConsumer.getQueueConfig().getLocation());

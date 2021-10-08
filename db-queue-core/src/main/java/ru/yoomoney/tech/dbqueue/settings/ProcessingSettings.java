@@ -65,14 +65,14 @@ public class ProcessingSettings extends DynamicSetting<ProcessingSettings> {
     @Override
     protected BiFunction<ProcessingSettings, ProcessingSettings, String> getDiffEvaluator() {
         return (oldVal, newVal) -> {
-            StringJoiner diff = new StringJoiner(",", getName() + "(", ")");
+            StringJoiner diff = new StringJoiner(",", getName() + '(', ")");
             if (!Objects.equals(oldVal.threadCount, newVal.threadCount)) {
                 diff.add("threadCount=" +
-                        newVal.threadCount + "<-" + oldVal.threadCount);
+                        newVal.threadCount + '<' + oldVal.threadCount);
             }
             if (!Objects.equals(oldVal.processingMode, newVal.processingMode)) {
                 diff.add("processingMode=" +
-                        newVal.processingMode + "<-" + oldVal.processingMode);
+                        newVal.processingMode + '<' + oldVal.processingMode);
             }
             return diff.toString();
         };

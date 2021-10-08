@@ -1,5 +1,6 @@
 package ru.yoomoney.tech.dbqueue.stub;
 
+import ru.yoomoney.tech.dbqueue.settings.ExtSettings;
 import ru.yoomoney.tech.dbqueue.settings.FailRetryType;
 import ru.yoomoney.tech.dbqueue.settings.FailureSettings;
 import ru.yoomoney.tech.dbqueue.settings.PollSettings;
@@ -10,6 +11,7 @@ import ru.yoomoney.tech.dbqueue.settings.ReenqueueRetryType;
 import ru.yoomoney.tech.dbqueue.settings.ReenqueueSettings;
 
 import java.time.Duration;
+import java.util.HashMap;
 
 public class TestFixtures {
 
@@ -18,7 +20,8 @@ public class TestFixtures {
                 .withProcessingSettings(createProcessingSettings().build())
                 .withPollSettings(createPollSettings().build())
                 .withFailureSettings(createFailureSettings().build())
-                .withReenqueueSettings(createReenqueueSettings().build());
+                .withReenqueueSettings(createReenqueueSettings().build())
+                .withExtSettings(ExtSettings.builder().withSettings(new HashMap<>()).build());
     }
 
     public static ProcessingSettings.Builder createProcessingSettings() {

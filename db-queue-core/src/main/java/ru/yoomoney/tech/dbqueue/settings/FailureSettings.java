@@ -91,14 +91,14 @@ public class FailureSettings extends DynamicSetting<FailureSettings> {
     @Override
     protected BiFunction<FailureSettings, FailureSettings, String> getDiffEvaluator() {
         return (oldVal, newVal) -> {
-            StringJoiner diff = new StringJoiner(",", getName() + "(", ")");
+            StringJoiner diff = new StringJoiner(",", getName() + '(', ")");
             if (!Objects.equals(oldVal.retryType, newVal.retryType)) {
-                diff.add("type=" +
-                        newVal.retryType + "<-" + oldVal.retryType);
+                diff.add("retryType=" +
+                        newVal.retryType + '<' + oldVal.retryType);
             }
             if (!Objects.equals(oldVal.retryInterval, newVal.retryInterval)) {
-                diff.add("interval=" +
-                        newVal.retryInterval + "<-" + oldVal.retryInterval);
+                diff.add("retryInterval=" +
+                        newVal.retryInterval + '<' + oldVal.retryInterval);
             }
             return diff.toString();
         };

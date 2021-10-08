@@ -106,18 +106,18 @@ public class PollSettings extends DynamicSetting<PollSettings> {
     @Override
     protected BiFunction<PollSettings, PollSettings, String> getDiffEvaluator() {
         return (oldVal, newVal) -> {
-            StringJoiner diff = new StringJoiner(",", getName() + "(", ")");
+            StringJoiner diff = new StringJoiner(",", getName() + '(', ")");
             if (!Objects.equals(oldVal.betweenTaskTimeout, newVal.betweenTaskTimeout)) {
                 diff.add("betweenTaskTimeout=" +
-                        newVal.betweenTaskTimeout + "<-" + oldVal.betweenTaskTimeout);
+                        newVal.betweenTaskTimeout + '<' + oldVal.betweenTaskTimeout);
             }
             if (!Objects.equals(oldVal.noTaskTimeout, newVal.noTaskTimeout)) {
                 diff.add("noTaskTimeout=" +
-                        newVal.noTaskTimeout + "<-" + oldVal.noTaskTimeout);
+                        newVal.noTaskTimeout + '<' + oldVal.noTaskTimeout);
             }
             if (!Objects.equals(oldVal.fatalCrashTimeout, newVal.fatalCrashTimeout)) {
                 diff.add("fatalCrashTimeout=" +
-                        newVal.fatalCrashTimeout + "<-" + oldVal.fatalCrashTimeout);
+                        newVal.fatalCrashTimeout + '<' + oldVal.fatalCrashTimeout);
             }
             return diff.toString();
         };
