@@ -77,8 +77,8 @@ public abstract class QueueDaoTest {
             Assert.assertThat(nextProcessAt.isBefore(afterExecution.plus(executionDelay).plus(WINDOWS_OS_DELAY)), equalTo(true));
             ZonedDateTime createdAt = ZonedDateTime.ofInstant(rs.getTimestamp(tableSchema.getCreatedAtField()).toInstant(),
                     ZoneId.systemDefault());
-            Assert.assertThat(createdAt.isAfter(beforeExecution), equalTo(true));
-            Assert.assertThat(createdAt.isBefore(afterExecution), equalTo(true));
+            Assert.assertThat(createdAt.isAfter(beforeExecution.minus(WINDOWS_OS_DELAY)), equalTo(true));
+            Assert.assertThat(createdAt.isBefore(afterExecution.plus(WINDOWS_OS_DELAY)), equalTo(true));
 
             long reenqueueAttempt = rs.getLong(tableSchema.getReenqueueAttemptField());
             Assert.assertFalse(rs.wasNull());
