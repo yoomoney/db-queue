@@ -26,7 +26,7 @@ configuration.
 * `ProcessingSettings` - `.withProcessingMode(ProcessingMode.SEPARATE_TRANSACTIONS).withThreadCount(1)`
 * `PollSettings` - `.withFatalCrashTimeout(Duration.ofSeconds(1))`
 * `FailureSettings` - `.withRetryInterval(Duration.ofMinutes(1)).withRetryType(FailRetryType.GEOMETRIC_BACKOFF)`
-* `ReenqueueSettings` - `.withRetryType(ReenqueueRetryType.MANUAL)`
+* `ReenqueueSettings` - `.withRetryType(ReenqueueRetryType.MANUAL).withInitialDelay(Duration.ofSeconds(1L)).withArithmeticStep(Duration.ofSeconds(2L)).withGeometricRatio(2L)`
 
 3. `QueueConfigsReader#parse` do not accept arguments. Paths to properties must be specified in constructor. Default
    values are removed from settings classes, so use special constructor which provides default builders for settings
