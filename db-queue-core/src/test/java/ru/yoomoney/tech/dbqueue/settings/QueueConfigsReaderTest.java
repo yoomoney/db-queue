@@ -1,10 +1,15 @@
 package ru.yoomoney.tech.dbqueue.settings;
 
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
@@ -21,6 +26,23 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * @since 22.08.2017
  */
 public class QueueConfigsReaderTest {
+
+    private static Path tempDir;
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        tempDir = Files.createTempDirectory(Paths.get(System.getProperty("user.dir"), "target"),
+                QueueConfigsReaderTest.class.getSimpleName());
+        tempDir.toFile().deleteOnExit();
+    }
+
+    Path write(String... lines) throws IOException {
+        Path tempFile = Files.createTempFile(tempDir, "queue", ".properties");
+        Files.write(tempFile, Arrays.asList(lines), StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+        tempFile.toFile().deleteOnExit();
+        return tempFile;
+    }
+
 
     private QueueConfigsReader createReader(Path path) {
         return createReader(Arrays.asList(path));
@@ -50,7 +72,7 @@ public class QueueConfigsReaderTest {
 
     @Test
     public void should_read_simple_config() throws Exception {
-        Path path = fileSystem.write(
+        Path path = write(
                 "q.testQueue.table=foo",
                 "q.testQueue.between-task-timeout=PT0.1S",
                 "q.testQueue.no-task-timeout=PT5S");
@@ -68,7 +90,7 @@ public class QueueConfigsReaderTest {
 
     @Test
     public void should_read_simple_config_with_id_sequence() throws Exception {
-        Path path = fileSystem.write(
+        Path path = write(
                 "q.testQueue.table=foo",
                 "q.testQueue.id-sequence=sequence");
         QueueConfigsReader queueConfigsReader = createReader(path);
@@ -79,7 +101,7 @@ public class QueueConfigsReaderTest {
 
     @Test
     public void should_read_full_config() throws Exception {
-        Path path = fileSystem.write(
+        Path path = write(
                 "q.testQueue.table=foo",
                 "q.testQueue.between-task-timeout=PT0.1S",
                 "q.testQueue.no-task-timeout=PT5S",
@@ -133,7 +155,7 @@ public class QueueConfigsReaderTest {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Cannot parse queue settings:" + System.lineSeparator() +
                 "invalid format for setting name: setting=q.testQueue*.processing-mode"));
-        Path path = fileSystem.write(
+        Path path = write(
                 "q.testQueue*.processing-mode=unknown-mode"
         );
         QueueConfigsReader queueConfigsReader = createReader(path);
@@ -151,7 +173,7 @@ public class QueueConfigsReaderTest {
                 "cannot parse setting: name=retry-interval, value=retry-interval, exception=DateTimeParseException(Text cannot be parsed to a Duration)" + System.lineSeparator() +
                 "cannot parse setting: name=retry-type, value=unknown-retry-type, exception=IllegalArgumentException(unknown retry type: name=unknown-retry-type)" + System.lineSeparator() +
                 "cannot parse setting: name=thread-count, value=count, exception=NumberFormatException(For input string: \"count\")"));
-        Path path = fileSystem.write(
+        Path path = write(
                 "q.testQueue.table=foo",
                 "q.testQueue.between-task-timeout=between-task",
                 "q.testQueue.no-task-timeout=no-task",
@@ -171,7 +193,7 @@ public class QueueConfigsReaderTest {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage(equalTo("Cannot parse queue settings:" + System.lineSeparator() +
                 "unknown1 setting is unknown: queueId=testQueue"));
-        Path path = fileSystem.write(
+        Path path = write(
                 "q.testQueue.table=foo",
                 "q.testQueue.unknown1=unknown-val"
         );
@@ -188,7 +210,7 @@ public class QueueConfigsReaderTest {
                 "cannot build poll settings: queueId=testQueue, msg=noTaskTimeout must not be null" + System.lineSeparator() +
                 "cannot build processing settings: queueId=testQueue, msg=processingMode must not be null" + System.lineSeparator() +
                 "cannot build reenqueue settings: queueId=testQueue, msg=retryType must not be null"));
-        Path path = fileSystem.write(
+        Path path = write(
                 "q.testQueue.table=foo",
                 "q.testQueue.between-task-timeout=PT5S",
                 "q.testQueue.thread-count=1",
@@ -201,11 +223,11 @@ public class QueueConfigsReaderTest {
 
     @Test
     public void should_read_and_override_simple_config() throws Exception {
-        Path basePath = fileSystem.write(
+        Path basePath = write(
                 "q.testQueue.table=foo",
                 "q.testQueue.between-task-timeout=PT0.1S",
                 "q.testQueue.no-task-timeout=PT5S");
-        Path overridePath = fileSystem.write(
+        Path overridePath = write(
                 "q.testQueue.table=bar",
                 "q.testQueue.fatal-crash-timeout=PT2S",
                 "q.testQueue.between-task-timeout=PT1S",
@@ -222,15 +244,15 @@ public class QueueConfigsReaderTest {
     @Test
     public void should_check_file_existence() throws Exception {
         thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("cannot read queue properties: file=invalid");
-        Path path = fileSystem.getValue().getPath("invalid");
+        thrown.expectMessage("config path must be a file: files=[invalid]");
+        Path path = Paths.get("invalid");
         QueueConfigsReader queueConfigsReader = createReader(path);
         queueConfigsReader.parse();
     }
 
     @Test
     public void should_parse_retry_types() throws Exception {
-        Path path = fileSystem.write(
+        Path path = write(
                 "q.testQueue1.table=foo",
                 "q.testQueue1.between-task-timeout=PT0S",
                 "q.testQueue1.no-task-timeout=PT0S",
@@ -260,7 +282,7 @@ public class QueueConfigsReaderTest {
 
     @Test
     public void should_parse_reenqueue_retry_types() throws Exception {
-        Path path = fileSystem.write(
+        Path path = write(
                 // без явного указания reenqueue-retry-type
                 "q.testQueue0.table=foo",
                 "q.testQueue0.between-task-timeout=PT0S",
@@ -335,7 +357,7 @@ public class QueueConfigsReaderTest {
 
     @Test
     public void should_parse_processing_modes() throws Exception {
-        Path path = fileSystem.write(
+        Path path = write(
                 "q.testQueue1.table=foo",
                 "q.testQueue1.between-task-timeout=PT0S",
                 "q.testQueue1.no-task-timeout=PT0S",
@@ -362,8 +384,5 @@ public class QueueConfigsReaderTest {
                     put("testQueue3", ProcessingMode.USE_EXTERNAL_EXECUTOR);
                 }}));
     }
-
-    @Rule
-    public FileSystemRule fileSystem = new FileSystemRule();
 
 }

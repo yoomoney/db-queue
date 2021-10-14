@@ -33,23 +33,26 @@ There are several reasons:
 * At-least-once task processing semantic.
 * Delayed task execution.
 * Strong-typed
-  api ([TaskPayloadTransformer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.java)).
+  api ([TaskPayloadTransformer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.java))
 * Task processing
-  modes ([ProcessingSettings](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/ProcessingSettings.java)).
+  modes ([ProcessingSettings](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/ProcessingSettings.java))
 * Task polling
   settings ([PollSettings](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/PollSettings.java))
 * Retry strategies in case of
   errors ([FailureSettings](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/FailureSettings.java))
 * Retry strategies when you need postpone
-  tasks [ReenqueueSettings](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/ReenqueueSettings.java)).
+  tasks ([ReenqueueSettings](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/ReenqueueSettings.java))
 * Tracing support
   via [Brave](https://github.com/openzipkin/brave) ([ExampleTracingConfiguration](db-queue-test/src/test/java/ru/yoomoney/tech/dbqueue/test/ExampleTracingConfiguration.java))
 * Task event listeners to build up
   monitoring ([TaskLifecycleListener](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/TaskLifecycleListener.java)
-  , [ThreadLifecycleListener](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/ThreadLifecycleListener.java))
-  .
+  ,
+  [ThreadLifecycleListener](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/ThreadLifecycleListener.java))
 * Configuration reload in
   runtime ([QueueService#updateQueueConfigs](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/QueueService.java))
+* Reading queue configuration from file and dynamic reloading when file changed
+  ([QueueConfigsReader](src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfigsReader.java),
+  [QueueConfigsReloader](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfigsReloader.java)).
 * Storing queue tasks in a separate
   tables ([QueueLocation](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueLocation.java)).
 * Storing queue tasks in a separate
@@ -90,8 +93,7 @@ There are several reasons:
 The main steps to configure the library:
 
 * Specify a queue configuration
-  through [QueueConfig](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfig.java) instance (or
-  use [QueueConfigsReader](src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfigsReader.java)).
+  through [QueueConfig](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfig.java).
 * Implement [QueueProducer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) interface.
 * Implement [QueueConsumer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueConsumer.java) interface.
 * Create [QueueService](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/QueueService.java).

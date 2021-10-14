@@ -15,6 +15,7 @@ import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
 import ru.yoomoney.tech.dbqueue.settings.ReenqueueSettings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.ThreadSafe;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -34,6 +35,7 @@ import static java.util.Objects.requireNonNull;
  * @author Oleg Kandaurov
  * @since 14.07.2017
  */
+@ThreadSafe
 public class QueueService {
     private static final Logger log = LoggerFactory.getLogger(QueueService.class);
 
@@ -79,7 +81,7 @@ public class QueueService {
      * @param <PayloadT> Type of the processor (type of the payload in the task).
      * @return Attribute of successful task processor registration.
      */
-    public <PayloadT> boolean registerQueue(@Nonnull QueueConsumer<PayloadT> consumer) {
+    public synchronized <PayloadT> boolean registerQueue(@Nonnull QueueConsumer<PayloadT> consumer) {
         requireNonNull(consumer);
         QueueId queueId = consumer.getQueueConfig().getLocation().getQueueId();
         if (registeredQueues.containsKey(queueId)) {
@@ -106,7 +108,7 @@ public class QueueService {
      * @return settings diff per queue
      * @throws IllegalArgumentException when queue configuration is not found
      */
-    public Map<QueueId, String> updateQueueConfigs(@Nonnull Collection<QueueConfig> configs) {
+    public synchronized Map<QueueId, String> updateQueueConfigs(@Nonnull Collection<QueueConfig> configs) {
         requireNonNull(configs);
         Map<QueueId, String> resultDiff = new LinkedHashMap<>();
         configs.forEach(newConfig -> {
@@ -141,7 +143,7 @@ public class QueueService {
     /**
      * Start tasks processing in all queues registered in the service.
      */
-    public void start() {
+    public synchronized void start() {
         log.info("starting all queues");
         registeredQueues.keySet().forEach(this::start);
     }
@@ -151,7 +153,7 @@ public class QueueService {
      *
      * @param queueId Queue identifier.
      */
-    public void start(@Nonnull QueueId queueId) {
+    public synchronized void start(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
         log.info("starting queue: queueId={}", queueId);
         getQueuePools(queueId, "start").values().forEach(QueueExecutionPool::start);
@@ -161,7 +163,7 @@ public class QueueService {
      * Stop tasks processing in all queues registered in the service,
      * semantic is the same as for {@link ExecutorService#shutdownNow()}.
      */
-    public void shutdown() {
+    public synchronized void shutdown() {
         log.info("shutting down all queues");
         registeredQueues.keySet().forEach(this::shutdown);
     }
@@ -172,7 +174,7 @@ public class QueueService {
      *
      * @param queueId Queue identifier.
      */
-    public void shutdown(@Nonnull QueueId queueId) {
+    public synchronized void shutdown(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
         log.info("shutting down queue: queueId={}", queueId);
         getQueuePools(queueId, "shutdown").values().forEach(QueueExecutionPool::shutdown);
@@ -186,7 +188,7 @@ public class QueueService {
      * @param queueId Queue identifier.
      * @return true if the tasks processing was stopped.
      */
-    public boolean isShutdown(@Nonnull QueueId queueId) {
+    public synchronized boolean isShutdown(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
         return getQueuePools(queueId, "isShutdown").values().stream()
                 .allMatch(QueueExecutionPool::isShutdown);
@@ -199,7 +201,7 @@ public class QueueService {
      *
      * @return true if the tasks processing was stopped.
      */
-    public boolean isShutdown() {
+    public synchronized boolean isShutdown() {
         return registeredQueues.keySet().stream().allMatch(this::isShutdown);
     }
 
@@ -210,7 +212,7 @@ public class QueueService {
      * @param queueId Queue identifier.
      * @return true if all the task threads were terminated in specified queue.
      */
-    public boolean isTerminated(@Nonnull QueueId queueId) {
+    public synchronized boolean isTerminated(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
         return getQueuePools(queueId, "isTerminated").values().stream().allMatch(QueueExecutionPool::isTerminated);
     }
@@ -221,7 +223,7 @@ public class QueueService {
      *
      * @return true if all task threads in all queues were terminated.
      */
-    public boolean isTerminated() {
+    public synchronized boolean isTerminated() {
         return registeredQueues.keySet().stream().allMatch(this::isTerminated);
     }
 
@@ -231,7 +233,7 @@ public class QueueService {
      *
      * @param queueId Queue identifier.
      */
-    public void pause(@Nonnull QueueId queueId) {
+    public synchronized void pause(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
         log.info("pausing queue: queueId={}", queueId);
         getQueuePools(queueId, "pause").values().forEach(QueueExecutionPool::pause);
@@ -241,7 +243,7 @@ public class QueueService {
      * Pause task processing in all queues.
      * To start processing, use {@link QueueService#unpause()} method.
      */
-    public void pause() {
+    public synchronized void pause() {
         log.info("pausing all queues");
         registeredQueues.keySet().forEach(this::pause);
     }
@@ -252,7 +254,7 @@ public class QueueService {
      *
      * @param queueId Queue identifier.
      */
-    public void unpause(@Nonnull QueueId queueId) {
+    public synchronized void unpause(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
         log.info("unpausing queue: queueId={}", queueId);
         getQueuePools(queueId, "unpause").values().forEach(QueueExecutionPool::unpause);
@@ -262,7 +264,7 @@ public class QueueService {
      * Continue task processing in all queues.
      * To pause processing, use {@link QueueService#pause()} method.
      */
-    public void unpause() {
+    public synchronized void unpause() {
         log.info("unpausing all queues");
         registeredQueues.keySet().forEach(this::unpause);
     }
@@ -272,7 +274,7 @@ public class QueueService {
      *
      * @return true if queues were paused.
      */
-    public boolean isPaused() {
+    public synchronized boolean isPaused() {
         return registeredQueues.keySet().stream().allMatch(this::isPaused);
     }
 
@@ -282,7 +284,7 @@ public class QueueService {
      * @param queueId Queue identifier.
      * @return true if specified queue were paused.
      */
-    public boolean isPaused(@Nonnull QueueId queueId) {
+    public synchronized boolean isPaused(@Nonnull QueueId queueId) {
         requireNonNull(queueId, "queueId");
         return getQueuePools(queueId, "isPaused").values().stream()
                 .allMatch(QueueExecutionPool::isPaused);
@@ -295,7 +297,7 @@ public class QueueService {
      * @param timeout Wait timeout.
      * @return List of queues, which didn't stop their work (didn't terminate).
      */
-    public List<QueueId> awaitTermination(@Nonnull Duration timeout) {
+    public synchronized List<QueueId> awaitTermination(@Nonnull Duration timeout) {
         requireNonNull(timeout, "timeout");
         log.info("awaiting all queues termination: timeout={}", timeout);
         TimeLimiter timeLimiter = new TimeLimiter(new MillisTimeProvider.SystemMillisTimeProvider(), timeout);
@@ -312,7 +314,7 @@ public class QueueService {
      * @param timeout Wait timeout.
      * @return List of shards, where the work didn't stop (working threads on which were not terminated).
      */
-    public List<QueueShardId> awaitTermination(@Nonnull QueueId queueId, @Nonnull Duration timeout) {
+    public synchronized List<QueueShardId> awaitTermination(@Nonnull QueueId queueId, @Nonnull Duration timeout) {
         requireNonNull(queueId, "queueId");
         requireNonNull(timeout, "timeout");
         log.info("awaiting queue termination: queueId={}, timeout={}", queueId, timeout);
@@ -340,7 +342,7 @@ public class QueueService {
      * @param queueId      Queue identifier.
      * @param queueShardId Shard identifier.
      */
-    public void wakeup(@Nonnull QueueId queueId, @Nonnull QueueShardId queueShardId) {
+    public synchronized void wakeup(@Nonnull QueueId queueId, @Nonnull QueueShardId queueShardId) {
         requireNonNull(queueId, "queueId");
         requireNonNull(queueShardId, "queueShardId");
         Map<QueueShardId, QueueExecutionPool> queuePools = getQueuePools(queueId, "wakeup");
@@ -351,25 +353,5 @@ public class QueueService {
         }
         queueExecutionPool.wakeup();
     }
-
-    /**
-     * Resize queue execution pool
-     *
-     * @param queueId      Queue identifier.
-     * @param queueShardId Shard identifier.
-     * @param threadCount thread count for execution pool.
-     */
-    public void resizePool(@Nonnull QueueId queueId, @Nonnull QueueShardId queueShardId, int threadCount) {
-        requireNonNull(queueId, "queueId");
-        requireNonNull(queueShardId, "queueShardId");
-        Map<QueueShardId, QueueExecutionPool> queuePools = getQueuePools(queueId, "resizePool");
-        QueueExecutionPool queueExecutionPool = queuePools.get(queueShardId);
-        if (queueExecutionPool == null) {
-            throw new IllegalArgumentException("cannot wakeup, unknown shard: " +
-                    "queueId=" + queueId + ", shardId=" + queueShardId);
-        }
-        queueExecutionPool.resizePool(threadCount);
-    }
-
 
 }

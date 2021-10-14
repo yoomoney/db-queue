@@ -1,5 +1,4 @@
 ### NEXT_VERSION_TYPE=MAJOR
-
 ### NEXT_VERSION_DESCRIPTION_BEGIN
 
 This release brings dynamic configuration of almost all queue settings. There are many breaking changes related to queue
@@ -7,7 +6,9 @@ configuration.
 
 **new features**
 
-Added method `QueueService#updateQueueConfigs`. Use this method to change queue settings in runtime.
+* Added method `QueueService#updateQueueConfigs`. Use this method to change queue settings in runtime.
+* Added class `QueueConfigsReloader`. Configure this class to track queue properties changes and reload queue
+  configuration in runtime.
 
 **breaking changes**
 

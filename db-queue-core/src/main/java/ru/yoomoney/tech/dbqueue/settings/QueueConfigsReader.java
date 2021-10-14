@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.ThreadSafe;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -118,6 +119,7 @@ import java.util.stream.Collectors;
  * @see QueueConfig
  * @since 22.08.2017
  */
+@ThreadSafe
 public class QueueConfigsReader {
 
     private static final Logger log = LoggerFactory.getLogger(QueueConfigsReader.class);
@@ -286,10 +288,23 @@ public class QueueConfigsReader {
         this.defaultPollSettings = Objects.requireNonNull(defaultPollSettings);
         this.defaultFailureSettings = Objects.requireNonNull(defaultFailureSettings);
         this.defaultReenqueueSettings = Objects.requireNonNull(defaultReenqueueSettings);
-
         if (configPaths.isEmpty()) {
             throw new IllegalArgumentException("config paths must not be empty");
         }
+        List<Path> illegalConfigs = configPaths.stream().filter(path -> !path.toFile().isFile()).collect(Collectors.toList());
+        if (!illegalConfigs.isEmpty()) {
+            throw new IllegalArgumentException("config path must be a file: files=" + illegalConfigs);
+        }
+    }
+
+    /**
+     * Get paths to queue configs
+     *
+     * @return paths to queue configs
+     */
+    @Nonnull
+    public List<Path> getConfigPaths() {
+        return new ArrayList<>(configPaths);
     }
 
     /**
@@ -299,6 +314,7 @@ public class QueueConfigsReader {
      */
     @Nonnull
     public List<QueueConfig> parse() {
+        log.info("loading queue configuration: paths={}", configPaths);
         Path configPath = configPaths.get(0);
         Map<String, String> rawSettings = readRawSettings(configPath);
         if (configPaths.size() > 1) {
