@@ -1,5 +1,4 @@
-### NEXT_VERSION_TYPE=MAJOR
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [15.0.0]() (15-10-2021)
 
 This release brings dynamic configuration of almost all queue settings. There are many breaking changes related to queue
 configuration.
@@ -8,7 +7,7 @@ configuration.
 
 * Added method `QueueService#updateQueueConfigs`. Use this method to change queue settings in runtime.
 * Added class `QueueConfigsReloader`. Configure this class to track queue properties changes and reload queue
-  configuration in runtime.
+configuration in runtime.
 
 **breaking changes**
 
@@ -21,7 +20,7 @@ configuration.
 * `ExtSettings` - wrapper for `additionalSettings` map
 
 2. Default values are removed from all settings classes. In order to maintain backward compatibility in your code, use
-   next settings:
+next settings:
 
 * `ProcessingSettings` - `.withProcessingMode(ProcessingMode.SEPARATE_TRANSACTIONS).withThreadCount(1)`
 * `PollSettings` - `.withFatalCrashTimeout(Duration.ofSeconds(1))`
@@ -29,12 +28,11 @@ configuration.
 * `ReenqueueSettings` - `.withRetryType(ReenqueueRetryType.MANUAL).withInitialDelay(Duration.ofSeconds(1L)).withArithmeticStep(Duration.ofSeconds(2L)).withGeometricRatio(2L)`
 
 3. `QueueConfigsReader#parse` do not accept arguments. Paths to properties must be specified in constructor. Default
-   values are removed from settings classes, so use special constructor which provides default builders for settings
-   classes.
+values are removed from settings classes, so use special constructor which provides default builders for settings
+classes.
 
 4. `QueueService#resizePool` is removed and should be replaced by `QueueService#updateQueueConfigs`.
 
-### NEXT_VERSION_DESCRIPTION_END
 
 ## [14.0.0]() (04-10-2021)
 
