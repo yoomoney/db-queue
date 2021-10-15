@@ -28,8 +28,9 @@ public final class QueueLocation {
 
     private QueueLocation(@Nonnull QueueId queueId, @Nonnull String tableName,
                           @Nullable String idSequence) {
-        this.queueId = Objects.requireNonNull(queueId);
-        this.tableName = DISALLOWED_CHARS.matcher(Objects.requireNonNull(tableName)).replaceAll("");
+        this.queueId = Objects.requireNonNull(queueId, "queueId must not be null");
+        this.tableName = DISALLOWED_CHARS.matcher(
+                Objects.requireNonNull(tableName, "tableName must not be null")).replaceAll("");
         this.idSequence = idSequence != null ? DISALLOWED_CHARS.matcher(idSequence).replaceAll("") : null;
     }
 
@@ -120,7 +121,7 @@ public final class QueueLocation {
          * @return Reference to the same builder.
          */
         public Builder withTableName(@Nonnull String tableName) {
-            this.tableName = Objects.requireNonNull(tableName);
+            this.tableName = tableName;
             return this;
         }
 
@@ -131,7 +132,7 @@ public final class QueueLocation {
          * @return Reference to the same builder.
          */
         public Builder withQueueId(@Nonnull QueueId queueId) {
-            this.queueId = Objects.requireNonNull(queueId);
+            this.queueId = queueId;
             return this;
         }
 

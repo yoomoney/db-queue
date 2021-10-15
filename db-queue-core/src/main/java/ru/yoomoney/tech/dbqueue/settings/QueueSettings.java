@@ -1,14 +1,7 @@
 package ru.yoomoney.tech.dbqueue.settings;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 /**
  * Queue settings
@@ -18,71 +11,58 @@ import java.util.function.Function;
  */
 public final class QueueSettings {
 
-    private static final Function<String, Duration> DURATION_CONVERTER =
-            Memoizer.memoize(Duration::parse);
+    @Nonnull
+    private final ProcessingSettings processingSettings;
+    @Nonnull
+    private final PollSettings pollSettings;
+    @Nonnull
+    private final FailureSettings failureSettings;
+    @Nonnull
+    private final ReenqueueSettings reenqueueSettings;
+    @Nonnull
+    private final ExtSettings extSettings;
 
-    private static final Duration DEFAULT_TIMEOUT_ON_FATAL_CRASH = Duration.ofSeconds(1L);
-
-    private final int threadCount;
-    @Nonnull
-    private final Duration noTaskTimeout;
-    @Nonnull
-    private final Duration betweenTaskTimeout;
-    @Nonnull
-    private final Duration fatalCrashTimeout;
-    @Nonnull
-    private final Duration retryInterval;
-    @Nonnull
-    private final TaskRetryType retryType;
-    @Nonnull
-    private final ReenqueueRetrySettings reenqueueRetrySettings;
-    @Nonnull
-    private final ProcessingMode processingMode;
-    @Nonnull
-    private final Map<String, String> additionalSettings;
-
-    private QueueSettings(@Nonnull Duration noTaskTimeout,
-                          @Nonnull Duration betweenTaskTimeout,
-                          @Nullable Duration fatalCrashTimeout,
-                          @Nullable Integer threadCount,
-                          @Nullable TaskRetryType retryType,
-                          @Nullable Duration retryInterval,
-                          @Nullable ReenqueueRetrySettings reenqueueRetrySettings,
-                          @Nullable ProcessingMode processingMode,
-                          @Nullable Map<String, String> additionalSettings) {
-        this.noTaskTimeout = Objects.requireNonNull(noTaskTimeout, "noTaskTimeout cannot be null");
-        this.betweenTaskTimeout = Objects.requireNonNull(betweenTaskTimeout, "betweenTaskTimeout cannot be null");
-        this.threadCount = threadCount == null ? 1 : threadCount;
-        this.fatalCrashTimeout = fatalCrashTimeout == null ? DEFAULT_TIMEOUT_ON_FATAL_CRASH : fatalCrashTimeout;
-        this.retryType = retryType == null ? TaskRetryType.GEOMETRIC_BACKOFF : retryType;
-        this.retryInterval = retryInterval == null ? Duration.ofMinutes(1) : retryInterval;
-        this.reenqueueRetrySettings = reenqueueRetrySettings == null
-                ? ReenqueueRetrySettings.createDefault()
-                : reenqueueRetrySettings;
-        this.processingMode = processingMode == null ? ProcessingMode.SEPARATE_TRANSACTIONS : processingMode;
-        this.additionalSettings = additionalSettings == null ? Collections.emptyMap() :
-                Collections.unmodifiableMap(new HashMap<>(additionalSettings));
+    private QueueSettings(
+            @Nonnull ProcessingSettings processingSettings,
+            @Nonnull PollSettings pollSettings,
+            @Nonnull FailureSettings failureSettings,
+            @Nonnull ReenqueueSettings reenqueueSettings,
+            @Nonnull ExtSettings extSettings) {
+        this.processingSettings = Objects.requireNonNull(processingSettings, "processingSettings must not be null");
+        this.pollSettings = Objects.requireNonNull(pollSettings, "pollSettings must not be null");
+        this.failureSettings = Objects.requireNonNull(failureSettings, "failureSettings must not be null");
+        this.reenqueueSettings = Objects.requireNonNull(reenqueueSettings, "reenqueueSettings must not be null");
+        this.extSettings = Objects.requireNonNull(extSettings, "extSettings must not be null");
     }
 
     /**
-     * Get task execution retry strategy.
+     * Get task processing settings.
      *
-     * @return Task execution retry strategy.
+     * @return polling settings.
      */
     @Nonnull
-    public TaskRetryType getRetryType() {
-        return retryType;
+    public ProcessingSettings getProcessingSettings() {
+        return processingSettings;
     }
 
     /**
-     * Get retry interval for task execution.
+     * Get task polling settings.
      *
-     * @return Task retry interval.
-     * @see TaskRetryType
+     * @return polling settings.
      */
     @Nonnull
-    public Duration getRetryInterval() {
-        return retryInterval;
+    public PollSettings getPollSettings() {
+        return pollSettings;
+    }
+
+    /**
+     * Settings for task execution strategy in case of failure.
+     *
+     * @return failure settings.
+     */
+    @Nonnull
+    public FailureSettings getFailureSettings() {
+        return failureSettings;
     }
 
     /**
@@ -92,57 +72,8 @@ public final class QueueSettings {
      * @return Task postponing settings.
      */
     @Nonnull
-    public ReenqueueRetrySettings getReenqueueRetrySettings() {
-        return reenqueueRetrySettings;
-    }
-
-    /**
-     * Get number of threads for processing tasks in the queue.
-     *
-     * @return Number of processing threads.
-     */
-    public int getThreadCount() {
-        return threadCount;
-    }
-
-    /**
-     * Get delay duration between picking tasks from the queue if there are no task for processing.
-     *
-     * @return Delay when there are no tasks to process.
-     */
-    @Nonnull
-    public Duration getNoTaskTimeout() {
-        return noTaskTimeout;
-    }
-
-    /**
-     * Get delay duration between picking tasks from the queue after the task was processed.
-     *
-     * @return Delay after next task was processed.
-     */
-    @Nonnull
-    public Duration getBetweenTaskTimeout() {
-        return betweenTaskTimeout;
-    }
-
-    /**
-     * Get delay duration when task execution thread sleeps after unexpected error.
-     *
-     * @return Delay after unexpected error.
-     */
-    @Nonnull
-    public Duration getFatalCrashTimeout() {
-        return fatalCrashTimeout;
-    }
-
-    /**
-     * Get task processing mode in the queue.
-     *
-     * @return Task processing mode.
-     */
-    @Nonnull
-    public ProcessingMode getProcessingMode() {
-        return processingMode;
+    public ReenqueueSettings getReenqueueSettings() {
+        return reenqueueSettings;
     }
 
     /**
@@ -151,32 +82,8 @@ public final class QueueSettings {
      * @return Additional queue properties.
      */
     @Nonnull
-    public Map<String, String> getAdditionalSettings() {
-        return additionalSettings;
-    }
-
-    /**
-     * Get string value of additional queue property.
-     *
-     * @param settingName Name of the property.
-     * @return Property value.
-     */
-    @Nonnull
-    public String getProperty(@Nonnull String settingName) {
-        Objects.requireNonNull(settingName);
-        return Objects.requireNonNull(additionalSettings.get(settingName),
-                String.format("null values are not allowed: settingName=%s", settingName));
-    }
-
-    /**
-     * Get {@linkplain Duration} value of additional queue property.
-     *
-     * @param settingName Name of the property.
-     * @return Property value.
-     */
-    @Nonnull
-    public Duration getDurationProperty(@Nonnull String settingName) {
-        return DURATION_CONVERTER.apply(getProperty(settingName));
+    public ExtSettings getExtSettings() {
+        return extSettings;
     }
 
     /**
@@ -189,21 +96,6 @@ public final class QueueSettings {
     }
 
     @Override
-    public String toString() {
-        return '{' +
-                "threadCount=" + threadCount +
-                ", betweenTaskTimeout=" + betweenTaskTimeout +
-                ", noTaskTimeout=" + noTaskTimeout +
-                ", processingMode=" + processingMode +
-                ", retryType=" + retryType +
-                ", retryInterval=" + retryInterval +
-                ", reenqueueRetrySettings=" + reenqueueRetrySettings +
-                ", fatalCrashTimeout=" + fatalCrashTimeout +
-                (additionalSettings.isEmpty() ? "" : ", additionalSettings=" + additionalSettings) +
-                '}';
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -212,105 +104,70 @@ public final class QueueSettings {
             return false;
         }
         QueueSettings that = (QueueSettings) obj;
-        return threadCount == that.threadCount &&
-                retryType == that.retryType &&
-                processingMode == that.processingMode &&
-                Objects.equals(reenqueueRetrySettings, that.reenqueueRetrySettings) &&
-                Objects.equals(noTaskTimeout, that.noTaskTimeout) &&
-                Objects.equals(betweenTaskTimeout, that.betweenTaskTimeout) &&
-                Objects.equals(fatalCrashTimeout, that.fatalCrashTimeout) &&
-                Objects.equals(retryInterval, that.retryInterval) &&
-                Objects.equals(additionalSettings, that.additionalSettings);
+        return processingSettings.equals(that.processingSettings) && pollSettings.equals(that.pollSettings) &&
+                failureSettings.equals(that.failureSettings) && reenqueueSettings.equals(that.reenqueueSettings)
+                && extSettings.equals(that.extSettings);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(threadCount, noTaskTimeout, betweenTaskTimeout, fatalCrashTimeout, retryType, reenqueueRetrySettings,
-                processingMode, retryInterval, additionalSettings);
+        return Objects.hash(processingSettings, pollSettings, failureSettings, reenqueueSettings, extSettings);
+    }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "processingSettings=" + processingSettings +
+                ", pollSettings=" + pollSettings +
+                ", failureSettings=" + failureSettings +
+                ", reenqueueSettings=" + reenqueueSettings +
+                ", additionalSettings=" + extSettings +
+                '}';
     }
 
     /**
      * A builder for queue settings.
      */
     public static class Builder {
-        private Duration noTaskTimeout;
-        private Duration betweenTaskTimeout;
-        private Duration fatalCrashTimeout;
-        private Integer threadCount;
-        private TaskRetryType retryType;
-        private Duration retryInterval;
-        private ReenqueueRetrySettings reenqueueRetrySettings;
-        private ProcessingMode processingMode;
-        private final Map<String, String> additionalSettings = new HashMap<>();
+        private ProcessingSettings processingSettings;
+        private PollSettings pollSettings;
+        private FailureSettings failureSettings;
+        private ReenqueueSettings reenqueueSettings;
+        private ExtSettings extSettings;
 
         private Builder() {
         }
 
         /**
-         * Set delay duration between picking tasks from the queue
-         * if there are no task for processing.
+         * Sets task processing settings.
          *
-         * @param noTaskTimeout Delay when there are no tasks to process.
+         * @param processingSettings processing settings
          * @return Reference to the same builder.
          */
-        public Builder withNoTaskTimeout(@Nonnull Duration noTaskTimeout) {
-            this.noTaskTimeout = Objects.requireNonNull(noTaskTimeout);
+        public Builder withProcessingSettings(@Nonnull ProcessingSettings processingSettings) {
+            this.processingSettings = processingSettings;
             return this;
         }
 
         /**
-         * Set delay duration between picking tasks from the queue
-         * after the task was processed.
+         * Sets task polling settings
          *
-         * @param betweenTaskTimeout Delay after next task was processed.
+         * @param pollSettings poll settings
          * @return Reference to the same builder.
          */
-        public Builder withBetweenTaskTimeout(@Nonnull Duration betweenTaskTimeout) {
-            this.betweenTaskTimeout = Objects.requireNonNull(betweenTaskTimeout);
+        public Builder withPollSettings(@Nonnull PollSettings pollSettings) {
+            this.pollSettings = pollSettings;
             return this;
         }
 
         /**
-         * Set delay duration after unexpected error.
+         * Sets settings for task execution strategy in case of failure.
          *
-         * @param fatalCrashTimeout Delay after unexpected error.
+         * @param failureSettings fail postpone settings
          * @return Reference to the same builder.
          */
-        public Builder withFatalCrashTimeout(@Nullable Duration fatalCrashTimeout) {
-            this.fatalCrashTimeout = fatalCrashTimeout;
-            return this;
-        }
-
-        /**
-         * Set number of threads for processing tasks in the queue.
-         *
-         * @param threadCount Number of processing threads.
-         * @return Reference to the same builder.
-         */
-        public Builder withThreadCount(@Nullable Integer threadCount) {
-            this.threadCount = threadCount;
-            return this;
-        }
-
-        /**
-         * Set task execution retry strategy.
-         *
-         * @param taskRetryType Task execution retry strategy.
-         * @return Reference to the same builder.
-         */
-        public Builder withRetryType(@Nullable TaskRetryType taskRetryType) {
-            this.retryType = taskRetryType;
-            return this;
-        }
-
-        /**
-         * Set retry interval for task execution.
-         *
-         * @param retryInterval Task retry interval.
-         * @return Reference to the same builder.
-         */
-        public Builder withRetryInterval(@Nullable Duration retryInterval) {
-            this.retryInterval = retryInterval;
+        public Builder withFailureSettings(@Nonnull FailureSettings failureSettings) {
+            this.failureSettings = failureSettings;
             return this;
         }
 
@@ -318,46 +175,22 @@ public final class QueueSettings {
          * Set Settings for the task postponing strategy
          * when the task should be brought back to the queue.
          *
-         * @param reenqueueRetrySettings Task postponing settings.
+         * @param reenqueueSettings Task postponing settings.
          * @return Reference to the same builder.
          */
-        public Builder withReenqueueRetrySettings(@Nullable ReenqueueRetrySettings reenqueueRetrySettings) {
-            this.reenqueueRetrySettings = reenqueueRetrySettings;
-            return this;
-        }
-
-        /**
-         * Set task processing mode in the queue.
-         *
-         * @param processingMode Task processing mode.
-         * @return Reference to the same builder.
-         */
-        public Builder withProcessingMode(@Nullable ProcessingMode processingMode) {
-            this.processingMode = processingMode;
+        public Builder withReenqueueSettings(@Nonnull ReenqueueSettings reenqueueSettings) {
+            this.reenqueueSettings = reenqueueSettings;
             return this;
         }
 
         /**
          * Set the map of additional properties for the queue.
          *
-         * @param additionalSettings Additional properties for the queue.
+         * @param extSettings Additional properties for the queue.
          * @return Reference to the same builder.
          */
-        public Builder withAdditionalSettings(@Nonnull Map<String, String> additionalSettings) {
-            Objects.requireNonNull(additionalSettings);
-            this.additionalSettings.putAll(additionalSettings);
-            return this;
-        }
-
-        /**
-         * Set additional property for the queue.
-         *
-         * @param settingName Property name.
-         * @param value       Property value.
-         * @return Reference to the same builder.
-         */
-        public Builder putSetting(String settingName, String value) {
-            additionalSettings.put(settingName, value);
+        public Builder withExtSettings(@Nonnull ExtSettings extSettings) {
+            this.extSettings = extSettings;
             return this;
         }
 
@@ -367,22 +200,7 @@ public final class QueueSettings {
          * @return A new queue settings object.
          */
         public QueueSettings build() {
-            return new QueueSettings(noTaskTimeout, betweenTaskTimeout, fatalCrashTimeout, threadCount,
-                    retryType, retryInterval, reenqueueRetrySettings, processingMode, additionalSettings);
-        }
-    }
-
-
-    private static class Memoizer<T, U> {
-
-        private final Map<T, U> cache = new ConcurrentHashMap<>();
-
-        private Function<T, U> doMemoize(Function<T, U> function) {
-            return input -> cache.computeIfAbsent(input, function);
-        }
-
-        private static <T, U> Function<T, U> memoize(Function<T, U> function) {
-            return new Memoizer<T, U>().doMemoize(function);
+            return new QueueSettings(processingSettings, pollSettings, failureSettings, reenqueueSettings, extSettings);
         }
     }
 }

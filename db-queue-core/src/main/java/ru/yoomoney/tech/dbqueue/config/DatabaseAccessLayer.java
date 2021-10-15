@@ -1,8 +1,9 @@
 package ru.yoomoney.tech.dbqueue.config;
 
-import ru.yoomoney.tech.dbqueue.dao.PickTaskSettings;
 import ru.yoomoney.tech.dbqueue.dao.QueueDao;
 import ru.yoomoney.tech.dbqueue.dao.QueuePickTaskDao;
+import ru.yoomoney.tech.dbqueue.settings.FailureSettings;
+import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
 import java.util.function.Supplier;
@@ -26,11 +27,13 @@ public interface DatabaseAccessLayer {
     /**
      * Create an instance of database-specific DAO based on database type and table schema.
      *
-     * @param pickTaskSettings settings for picking up tasks
+     * @param queueLocation   queue location
+     * @param failureSettings settings for handling failures
      * @return database-specific DAO instance.
      */
     @Nonnull
-    QueuePickTaskDao createQueuePickTaskDao(@Nonnull PickTaskSettings pickTaskSettings);
+    QueuePickTaskDao createQueuePickTaskDao(@Nonnull QueueLocation queueLocation,
+                                            @Nonnull FailureSettings failureSettings);
 
     /**
      * Perform an operation in transaction

@@ -2,17 +2,28 @@ package ru.yoomoney.tech.dbqueue.config;
 
 import org.junit.Test;
 import ru.yoomoney.tech.dbqueue.api.QueueConsumer;
+import ru.yoomoney.tech.dbqueue.settings.ExtSettings;
+import ru.yoomoney.tech.dbqueue.settings.FailRetryType;
+import ru.yoomoney.tech.dbqueue.settings.FailureSettings;
+import ru.yoomoney.tech.dbqueue.settings.PollSettings;
+import ru.yoomoney.tech.dbqueue.settings.ProcessingMode;
+import ru.yoomoney.tech.dbqueue.settings.ProcessingSettings;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
 import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
+import ru.yoomoney.tech.dbqueue.settings.ReenqueueRetryType;
+import ru.yoomoney.tech.dbqueue.settings.ReenqueueSettings;
 import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
+import ru.yoomoney.tech.dbqueue.stub.TestFixtures;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertFalse;
@@ -41,13 +52,10 @@ public class QueueServiceTest {
         when(consumer.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
                         .withQueueId(queueId).build(),
-                QueueSettings.builder()
-                        .withNoTaskTimeout(Duration.ZERO)
-                        .withThreadCount(0)
-                        .withBetweenTaskTimeout(Duration.ZERO).build()));
+                TestFixtures.createQueueSettings().build()));
         QueueExecutionPool queueExecutionPool = mock(QueueExecutionPool.class);
         QueueService queueService = new QueueService(Collections.singletonList(DEFAULT_SHARD),
-                ((queueShard, queueConsumer) -> queueExecutionPool));
+                (queueShard, queueConsumer) -> queueExecutionPool);
         List<String> errorMessages = new ArrayList<>();
 
         queueService.start();
@@ -98,11 +106,6 @@ public class QueueServiceTest {
         } catch (IllegalArgumentException exc) {
             errorMessages.add(exc.getMessage());
         }
-        try {
-            queueService.resizePool(queueId, DEFAULT_SHARD.getShardId(), 1);
-        } catch (IllegalArgumentException exc) {
-            errorMessages.add(exc.getMessage());
-        }
 
         verifyZeroInteractions(queueExecutionPool);
         assertThat(errorMessages.toString(), equalTo(
@@ -113,8 +116,7 @@ public class QueueServiceTest {
                         "cannot invoke isShutdown, queue is not registered: queueId=test, " +
                         "cannot invoke isTerminated, queue is not registered: queueId=test, " +
                         "cannot invoke awaitTermination, queue is not registered: queueId=test, " +
-                        "cannot invoke wakeup, queue is not registered: queueId=test, " +
-                        "cannot invoke resizePool, queue is not registered: queueId=test" +
+                        "cannot invoke wakeup, queue is not registered: queueId=test" +
                         "]"));
     }
 
@@ -125,10 +127,7 @@ public class QueueServiceTest {
         when(consumer.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
                         .withQueueId(new QueueId("queue1")).build(),
-                QueueSettings.builder()
-                        .withNoTaskTimeout(Duration.ZERO)
-                        .withThreadCount(1)
-                        .withBetweenTaskTimeout(Duration.ZERO).build()));
+                TestFixtures.createQueueSettings().build()));
 
         QueueService queueService = new QueueService(Collections.singletonList(DEFAULT_SHARD),
                 mock(ThreadLifecycleListener.class), mock(TaskLifecycleListener.class));
@@ -143,19 +142,13 @@ public class QueueServiceTest {
         when(consumer1.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
                         .withQueueId(queueId1).build(),
-                QueueSettings.builder()
-                        .withNoTaskTimeout(Duration.ZERO)
-                        .withThreadCount(1)
-                        .withBetweenTaskTimeout(Duration.ZERO).build()));
+                TestFixtures.createQueueSettings().build()));
         QueueConsumer<?> consumer2 = mock(QueueConsumer.class);
         QueueId queueId2 = new QueueId("queue2");
         when(consumer2.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
                         .withQueueId(queueId2).build(),
-                QueueSettings.builder()
-                        .withNoTaskTimeout(Duration.ZERO)
-                        .withThreadCount(1)
-                        .withBetweenTaskTimeout(Duration.ZERO).build()));
+                TestFixtures.createQueueSettings().build()));
         QueueExecutionPool queueExecutionPool1 = mock(QueueExecutionPool.class);
         when(queueExecutionPool1.isPaused()).thenReturn(true);
         when(queueExecutionPool1.isShutdown()).thenReturn(true);
@@ -216,10 +209,7 @@ public class QueueServiceTest {
         when(consumer1.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
                         .withQueueId(queueId1).build(),
-                QueueSettings.builder()
-                        .withNoTaskTimeout(Duration.ZERO)
-                        .withThreadCount(1)
-                        .withBetweenTaskTimeout(Duration.ZERO).build()));
+                TestFixtures.createQueueSettings().build()));
 
         QueueExecutionPool queueExecutionPool1 = mock(QueueExecutionPool.class);
         when(queueExecutionPool1.isPaused()).thenReturn(true);
@@ -279,10 +269,7 @@ public class QueueServiceTest {
         when(consumer.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
                         .withQueueId(queueId).build(),
-                QueueSettings.builder()
-                        .withNoTaskTimeout(Duration.ZERO)
-                        .withThreadCount(1)
-                        .withBetweenTaskTimeout(Duration.ZERO).build()));
+                TestFixtures.createQueueSettings().build()));
         QueueExecutionPool queueExecutionPool = mock(QueueExecutionPool.class);
         when(queueExecutionPool.isTerminated()).thenReturn(false);
         when(queueExecutionPool.getQueueShardId()).thenReturn(DEFAULT_SHARD.getShardId());
@@ -297,16 +284,77 @@ public class QueueServiceTest {
     }
 
     @Test
+    public void should_update_queue_configs() {
+        QueueConsumer<?> consumer = mock(QueueConsumer.class);
+        QueueId queueId = new QueueId("queue1");
+        QueueConfig oldConfig = new QueueConfig(
+                QueueLocation.builder().withTableName("testTable")
+                        .withQueueId(queueId).build(),
+                QueueSettings.builder()
+                        .withProcessingSettings(ProcessingSettings.builder()
+                                .withProcessingMode(ProcessingMode.SEPARATE_TRANSACTIONS)
+                                .withThreadCount(1).build())
+                        .withPollSettings(PollSettings.builder()
+                                .withBetweenTaskTimeout(Duration.ofMillis(0))
+                                .withNoTaskTimeout(Duration.ofMillis(0))
+                                .withFatalCrashTimeout(Duration.ofSeconds(0)).build())
+                        .withFailureSettings(FailureSettings.builder()
+                                .withRetryType(FailRetryType.GEOMETRIC_BACKOFF)
+                                .withRetryInterval(Duration.ofMinutes(1)).build())
+                        .withReenqueueSettings(ReenqueueSettings.builder()
+                                .withRetryType(ReenqueueRetryType.MANUAL).build())
+                        .withExtSettings(ExtSettings.builder().withSettings(new HashMap<String, String>() {{
+                            put("one", "1");
+                        }}).build())
+                        .build());
+        when(consumer.getQueueConfig()).thenReturn(oldConfig);
+        QueueExecutionPool queueExecutionPool = mock(QueueExecutionPool.class);
+        QueueService queueService = new QueueService(Arrays.asList(DEFAULT_SHARD),
+                (shard, queueConsumer) -> queueExecutionPool);
+
+        assertTrue(queueService.registerQueue(consumer));
+
+        QueueConfig newConfig = new QueueConfig(
+                QueueLocation.builder().withTableName("testTable")
+                        .withQueueId(queueId).build(),
+                QueueSettings.builder()
+                        .withProcessingSettings(ProcessingSettings.builder()
+                                .withProcessingMode(ProcessingMode.WRAP_IN_TRANSACTION)
+                                .withThreadCount(0).build())
+                        .withPollSettings(PollSettings.builder()
+                                .withBetweenTaskTimeout(Duration.ofMillis(1))
+                                .withNoTaskTimeout(Duration.ofMillis(2))
+                                .withFatalCrashTimeout(Duration.ofSeconds(3)).build())
+                        .withFailureSettings(FailureSettings.builder()
+                                .withRetryType(FailRetryType.ARITHMETIC_BACKOFF)
+                                .withRetryInterval(Duration.ofMinutes(2)).build())
+                        .withReenqueueSettings(ReenqueueSettings.builder()
+                                .withRetryType(ReenqueueRetryType.FIXED)
+                                .withFixedDelay(Duration.ofMinutes(1)).build())
+                        .withExtSettings(ExtSettings.builder().withSettings(new HashMap<String, String>() {{
+                            put("two", "2");
+                        }}).build())
+                        .build());
+
+        Map<QueueId, String> diff = queueService.updateQueueConfigs(Arrays.asList(newConfig));
+        assertThat(diff.size(), equalTo(1));
+        assertThat(diff.get(queueId), equalTo("" +
+                "processingSettings(threadCount=0<1,processingMode=WRAP_IN_TRANSACTION<SEPARATE_TRANSACTIONS)," +
+                "pollSettings(betweenTaskTimeout=PT0.001S<PT0S,noTaskTimeout=PT0.002S<PT0S,fatalCrashTimeout=PT3S<PT0S)," +
+                "failureSettings(retryType=ARITHMETIC_BACKOFF<GEOMETRIC_BACKOFF,retryInterval=PT2M<PT1M)," +
+                "reenqueueSettings(type=FIXED<MANUAL,fixedDelay=PT1M<null)," +
+                "extSettings(two=2<null,one=null<1)"));
+        assertThat(consumer.getQueueConfig(), equalTo(newConfig));
+    }
+
+    @Test
     public void should_await_termination() {
         QueueConsumer<?> consumer = mock(QueueConsumer.class);
         QueueId queueId = new QueueId("queue1");
         when(consumer.getQueueConfig()).thenReturn(new QueueConfig(
                 QueueLocation.builder().withTableName("testTable")
                         .withQueueId(queueId).build(),
-                QueueSettings.builder()
-                        .withNoTaskTimeout(Duration.ZERO)
-                        .withThreadCount(1)
-                        .withBetweenTaskTimeout(Duration.ZERO).build()));
+                TestFixtures.createQueueSettings().build()));
         QueueExecutionPool queueExecutionPool = mock(QueueExecutionPool.class);
         when(queueExecutionPool.isTerminated()).thenReturn(false);
         when(queueExecutionPool.getQueueShardId()).thenReturn(DEFAULT_SHARD.getShardId());

@@ -14,7 +14,6 @@ import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -48,7 +47,7 @@ class QueueExecutionPool {
     @Nonnull
     private final List<QueueWorker> queueWorkers = new ArrayList<>();
 
-    private boolean started = false;
+    private boolean started;
 
     QueueExecutionPool(@Nonnull QueueConsumer<?> queueConsumer,
                        @Nonnull QueueShard<?> queueShard,
@@ -58,7 +57,7 @@ class QueueExecutionPool {
                 new QueueTaskPoller(threadLifecycleListener,
                         new MillisTimeProvider.SystemMillisTimeProvider()),
                 new ThreadPoolExecutor(
-                        queueConsumer.getQueueConfig().getSettings().getThreadCount(),
+                        queueConsumer.getQueueConfig().getSettings().getProcessingSettings().getThreadCount(),
                         Integer.MAX_VALUE,
                         1L, TimeUnit.MILLISECONDS,
                         new LinkedBlockingQueue<>(),
@@ -80,6 +79,8 @@ class QueueExecutionPool {
         this.executor = requireNonNull(executor);
         this.queueRunner = requireNonNull(queueRunner);
         this.queueLoopFactory = requireNonNull(queueLoopFactory);
+        queueConsumer.getQueueConfig().getSettings().getProcessingSettings().registerObserver(
+                (oldValue, newValue) -> resizePool(newValue.getThreadCount()));
     }
 
     private QueueId getQueueId() {
@@ -100,7 +101,7 @@ class QueueExecutionPool {
      */
     void start() {
         if (!started && !isShutdown()) {
-            int threadCount = queueConsumer.getQueueConfig().getSettings().getThreadCount();
+            int threadCount = queueConsumer.getQueueConfig().getSettings().getProcessingSettings().getThreadCount();
             log.info("starting queue: queueId={}, shardId={}, threadCount={}", getQueueId(), queueShard.getShardId(),
                     threadCount);
             for (int i = 0; i < threadCount; i++) {
@@ -120,6 +121,9 @@ class QueueExecutionPool {
      */
     void resizePool(int newThreadCount) {
         int oldThreadCount = queueWorkers.size();
+        if (newThreadCount == oldThreadCount) {
+            return;
+        }
         log.info("resizing queue execution pool: queueId={}, shardId={}, oldThreadCount={}, " +
                         "newThreadCount={}",
                 queueConsumer.getQueueConfig().getLocation().getQueueId(),
@@ -128,7 +132,7 @@ class QueueExecutionPool {
             for (int i = oldThreadCount; i < newThreadCount; i++) {
                 startThread(!isPaused());
             }
-        } else if (newThreadCount < oldThreadCount) {
+        } else {
             for (int i = oldThreadCount; i > newThreadCount; i--) {
                 disposeThread();
             }
@@ -256,8 +260,8 @@ class QueueExecutionPool {
         private final QueueLoop loop;
 
         private QueueWorker(@Nonnull Future<?> future, @Nonnull QueueLoop loop) {
-            this.future = Objects.requireNonNull(future);
-            this.loop = Objects.requireNonNull(loop);
+            this.future = requireNonNull(future);
+            this.loop = requireNonNull(loop);
         }
 
         @Nonnull

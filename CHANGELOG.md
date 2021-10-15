@@ -1,12 +1,48 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=MAJOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+
+This release brings dynamic configuration of almost all queue settings. There are many breaking changes related to queue
+configuration.
+
+**new features**
+
+* Added method `QueueService#updateQueueConfigs`. Use this method to change queue settings in runtime.
+* Added class `QueueConfigsReloader`. Configure this class to track queue properties changes and reload queue
+  configuration in runtime.
+
+**breaking changes**
+
+1. Settings in `QueueSettings` class are moved into several classes:
+
+* `ProcessingSettings` - contains `threadCount` and `processingMode`
+* `PollSettings` - contains `betweenTaskTimeout`, `noTaskTimeout` and `fatalCrashTimeout`
+* `FailureSettings` - contains`retryType` and `retryInterval`
+* `ReenqueueSettings` - renamed from `ReenqueueRetrySettings`
+* `ExtSettings` - wrapper for `additionalSettings` map
+
+2. Default values are removed from all settings classes. In order to maintain backward compatibility in your code, use
+   next settings:
+
+* `ProcessingSettings` - `.withProcessingMode(ProcessingMode.SEPARATE_TRANSACTIONS).withThreadCount(1)`
+* `PollSettings` - `.withFatalCrashTimeout(Duration.ofSeconds(1))`
+* `FailureSettings` - `.withRetryInterval(Duration.ofMinutes(1)).withRetryType(FailRetryType.GEOMETRIC_BACKOFF)`
+* `ReenqueueSettings` - `.withRetryType(ReenqueueRetryType.MANUAL).withInitialDelay(Duration.ofSeconds(1L)).withArithmeticStep(Duration.ofSeconds(2L)).withGeometricRatio(2L)`
+
+3. `QueueConfigsReader#parse` do not accept arguments. Paths to properties must be specified in constructor. Default
+   values are removed from settings classes, so use special constructor which provides default builders for settings
+   classes.
+
+4. `QueueService#resizePool` is removed and should be replaced by `QueueService#updateQueueConfigs`.
+
 ### NEXT_VERSION_DESCRIPTION_END
+
 ## [14.0.0]() (04-10-2021)
 
 **breaking changes**
-Changed semantic of `QueueService#start`. Now it must be called once at start of application to initialize queues.
-To unpause task processing use `QueueService#unpause` instead of `QueueService#start`.
+Changed semantic of `QueueService#start`. Now it must be called once at start of application to initialize queues. To
+unpause task processing use `QueueService#unpause` instead of `QueueService#start`.
 **new features**
+
 * Added method `QueueService#resizePool` to dynamically allocate or dispose threads for particular queue.
 * Added method `QueueService#unpause` and `QueueService#unpause(QueueId)` to continue tasks processing which
 have been paused by `QueueService#pause` method.

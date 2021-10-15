@@ -10,8 +10,8 @@ import ru.yoomoney.tech.dbqueue.internal.processing.TaskProcessor;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
-import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
 import ru.yoomoney.tech.dbqueue.stub.StubDatabaseAccessLayer;
+import ru.yoomoney.tech.dbqueue.stub.TestFixtures;
 
 import java.time.Duration;
 
@@ -39,19 +39,20 @@ public class QueueRunnerInTransactionTest {
 
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
         TaskPicker taskPicker = mock(TaskPicker.class);
-        when(taskPicker.pickTask(queueConsumer)).thenReturn(null);
+        when(taskPicker.pickTask()).thenReturn(null);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);
         QueueShard queueShard = mock(QueueShard.class);
         when(queueShard.getDatabaseAccessLayer()).thenReturn(new StubDatabaseAccessLayer());
 
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
-                QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
+                TestFixtures.createQueueSettings().withPollSettings(TestFixtures.createPollSettings()
+                        .withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()).build()));
         QueueProcessingStatus status = new QueueRunnerInTransaction(taskPicker, taskProcessor, queueShard).runQueue(queueConsumer);
 
         assertThat(status, equalTo(QueueProcessingStatus.SKIPPED));
 
         verify(queueShard).getDatabaseAccessLayer();
-        verify(taskPicker).pickTask(queueConsumer);
+        verify(taskPicker).pickTask();
         verifyNoInteractions(taskProcessor);
     }
 
@@ -63,20 +64,21 @@ public class QueueRunnerInTransactionTest {
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
         TaskPicker taskPicker = mock(TaskPicker.class);
         TaskRecord taskRecord = TaskRecord.builder().build();
-        when(taskPicker.pickTask(queueConsumer)).thenReturn(taskRecord);
+        when(taskPicker.pickTask()).thenReturn(taskRecord);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);
         QueueShard queueShard = mock(QueueShard.class);
         when(queueShard.getDatabaseAccessLayer()).thenReturn(new StubDatabaseAccessLayer());
 
 
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
-                QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
+                TestFixtures.createQueueSettings().withPollSettings(TestFixtures.createPollSettings()
+                        .withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()).build()));
         QueueProcessingStatus queueProcessingStatus = new QueueRunnerInTransaction(taskPicker, taskProcessor, queueShard).runQueue(queueConsumer);
 
         assertThat(queueProcessingStatus, equalTo(QueueProcessingStatus.PROCESSED));
 
         verify(queueShard).getDatabaseAccessLayer();
-        verify(taskPicker).pickTask(queueConsumer);
+        verify(taskPicker).pickTask();
         verify(taskProcessor).processTask(queueConsumer, taskRecord);
     }
 }

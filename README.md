@@ -2,14 +2,18 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Javadoc](https://img.shields.io/badge/javadoc-latest-blue.svg)](https://yoomoney.github.io/db-queue/)
 [![Download](https://img.shields.io/badge/Download-latest)](https://search.maven.org/artifact/ru.yoomoney.tech/db-queue)
+
 # Database Queue
 
-Library provides worker-queue implementation on top of Java and database.  
+Library provides worker-queue implementation on top of Java and database.
+
+Fintech company [YooMoney](https://yoomoney.ru/) uses db-queue in cases where reliability is a must-have requirement.
+
 Project uses [Semantic Versioning](http://semver.org/).  
-Library is available on [Maven Central](https://search.maven.org/) 
+Library is available on [Maven Central](https://search.maven.org/)
 
 ```
-implementation 'ru.yoomoney.tech:db-queue:13.0.0'
+implementation 'ru.yoomoney.tech:db-queue:15.0.0'
 ```
 
 ## Why?
@@ -17,67 +21,96 @@ implementation 'ru.yoomoney.tech:db-queue:13.0.0'
 There are several reasons:
 
 * You need simple, efficient and flexible task processing tool which supports delayed job execution.
-* You already have a database and don't want to introduce additional tools 
-in your infrastructure (for example ActiveMq or RabbitMq) 
-* You have somewhat small load. This worker queue mechanism can handle 
-more than 1000 rps on single database and table. Moreover you can shard your database and get horizontal scalability. 
-However we cannot guarantee that it would be easy to auto scale or handle more than 1000 rps.
-* You require strong guaranties for task delivery or processing. Library offers at-least-once delivery semantic. 
-
-## How it works?
-
-1. You have a task that you want to process later. 
-2. You tell [QueueProducer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) to schedule the task. 
-3. [QueueProducer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) optionally chooses a database shard.
-4. [QueueProducer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) converts the task payload to string representation through [TaskPayloadTransformer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.java). 
-5. [QueueProducer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) inserts the task in the database through [QueueDao](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/dao/QueueDao.java).
-6. ... the task has been selected from database at specified time according to queue settings ... 
-7. The task payload is converted to typed representation through [TaskPayloadTransformer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.java).
-8. The task is passed to the [QueueConsumer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueConsumer.java) instance in order to be processed. 
-9. You process the task and return processing result. 
-10. ... the task is updated according to processing result and queue settings ...
+* You already have a database and don't want to introduce additional tools in your infrastructure.
+* You have somewhat small load. Db-queue can handle more than 1000 rps on a single table. Moreover, you can shard your
+  database and get horizontal scalability.
+* You require strong guaranties for task delivery, processing and consistency.
 
 ## Features
 
 * Persistent working-queue
-* Support for PostgreSQL, MSSQL, Oracle, H2.
-* Storing queue tasks in a separate tables or in the same table ([QueueLocation](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueLocation.java)).
-* Storing queue tasks in a separate databases for horizontal scaling ([QueueShard](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/QueueShard.java)).
-* Delayed task execution.
+* Support for PostgreSQL, Oracle, MSSQL, H2.
 * At-least-once task processing semantic.
-* Tracing support via [Brave](https://github.com/openzipkin/brave)
-* Several retry strategies in case of a task processing error ([TaskRetryType](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/TaskRetryType.java)).
-* Task event listeners ([TaskLifecycleListener](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/TaskLifecycleListener.java), [ThreadLifecycleListener](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/ThreadLifecycleListener.java)).
-* Strong-typed api for task processing and enqueuing ([TaskPayloadTransformer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.java)).
-* Several task processing modes ([ProcessingMode](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/ProcessingMode.java)).
-* And many other features, look at [Settings package](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings). 
-
-## Database support
-
-As of now the library supports PostgreSQL, MSSQL, Oracle and H2 as backing database, however library architecture
-makes it easy to add other relational databases which has support for transactions and "for update skip locked" feature,  
-for example MySql.  
-Feel free to add support for other databases via pull request.
-
-## Modularity
-
-The library is divided into several modules.
-Each module contains minimal set of dependencies to easily integrate in any project.
-
-* `db-queue-core` module provides base logic and requires `org.slf4j:slf4j-api` library
-* `db-queue-spring` module provides access to database and requires Spring Framework: spring-jdbc and spring-tx.
-Other features of Spring ecosystem are not in use.
-* `db-queue-brave` module provides tracing support with help of [Brave](https://github.com/openzipkin/brave)
-* `db-queue-test` module provides integration testing across all modules. 
-It might help to figure out how to use the library in your code.
+* Delayed task execution.
+* Strong-typed
+  api ([TaskPayloadTransformer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.java))
+* Task processing
+  modes ([ProcessingSettings](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/ProcessingSettings.java))
+* Task polling
+  settings ([PollSettings](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/PollSettings.java))
+* Retry strategies in case of
+  errors ([FailureSettings](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/FailureSettings.java))
+* Retry strategies when you need postpone
+  tasks ([ReenqueueSettings](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/ReenqueueSettings.java))
+* Tracing support
+  via [Brave](https://github.com/openzipkin/brave) ([ExampleTracingConfiguration](db-queue-test/src/test/java/ru/yoomoney/tech/dbqueue/test/ExampleTracingConfiguration.java))
+* Task event listeners to build up
+  monitoring ([TaskLifecycleListener](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/TaskLifecycleListener.java)
+  ,
+  [ThreadLifecycleListener](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/ThreadLifecycleListener.java))
+* Configuration reload in
+  runtime ([QueueService#updateQueueConfigs](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/QueueService.java))
+* Reading queue configuration from file and dynamic reloading when file changed
+  ([QueueConfigsReader](src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfigsReader.java),
+  [QueueConfigsReloader](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfigsReloader.java)).
+* Storing queue tasks in a separate
+  tables ([QueueLocation](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueLocation.java)).
+* Storing queue tasks in a separate
+  databases ([QueueShard](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/QueueShard.java)).
+* And many other features
 
 # Usage
 
-## Configuration
+## How it works?
+
+1. You have a task that you want to process later.
+2. You tell [QueueProducer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) to schedule the
+   task.
+3. QueueProducer chooses a database shard.
+4. QueueProducer converts the task payload to string representation
+   through [TaskPayloadTransformer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.java)
+   .
+5. QueueProducer inserts the task in the database
+   through [QueueDao](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/dao/QueueDao.java).
+6. ... the task has been selected from database at specified time according to queue settings ...
+7. The task payload is converted to typed representation
+   through [TaskPayloadTransformer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/TaskPayloadTransformer.java)
+   .
+8. The task is passed to
+   the [QueueConsumer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueConsumer.java) instance in order to
+   be processed.
+9. You process the task and return processing result.
+10. ... the task is updated according to processing result and queue settings ...
+
+## Code configuration
+
+* Simple
+  configuration: [ExampleBasicConfiguration](db-queue-test/src/test/java/ru/yoomoney/tech/dbqueue/test/ExampleBasicConfiguration.java)
+  .
+* Tracing
+  configuration: [ExampleTracingConfiguration](db-queue-test/src/test/java/ru/yoomoney/tech/dbqueue/test/ExampleTracingConfiguration.java)
+
+The main steps to configure the library:
+
+* Specify a queue configuration
+  through [QueueConfig](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfig.java).
+* Implement [QueueProducer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) interface.
+* Implement [QueueConsumer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueConsumer.java) interface.
+* Create [QueueService](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/QueueService.java).
+* Register `QueueConsumer` in `QueueService`
+* Start queues through `QueueService`
+
+## Database configuration
+
+As of now the library supports PostgreSQL, MSSQL, Oracle and H2 as backing database, however library architecture makes
+it easy to add other relational databases which has support for transactions and "for update skip locked" feature,  
+for example MySql.  
+Feel free to add support for other databases via pull request.
 
 ### PostgreSQL
 
 Create table (with index) where tasks will be stored.
+
 ```sql
 CREATE TABLE queue_tasks (
   id                BIGSERIAL PRIMARY KEY,
@@ -187,18 +220,17 @@ CREATE INDEX queue_tasks_name_time_desc_idx
   ON queue_tasks (queue_name, next_process_at, id DESC);
 ```
 
-### Code
+## Modularity
 
-Simple configuration: [ExampleBasicConfiguration](db-queue-test/src/test/java/ru/yoomoney/tech/dbqueue/test/ExampleBasicConfiguration.java).
-Tracing configuration: [ExampleTracingConfiguration](db-queue-test/src/test/java/ru/yoomoney/tech/dbqueue/test/ExampleTracingConfiguration.java)
+The library is divided into several modules. Each module contains minimal set of dependencies to easily integrate in any
+project.
 
-The main steps to configure the library:
-* Specify a queue configuration through [QueueConfig](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfig.java) instance (or use [QueueConfigsReader](src/main/java/ru/yoomoney/tech/dbqueue/settings/QueueConfigsReader.java)).
-* Implement [QueueProducer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueProducer.java) interface.
-* Implement [QueueConsumer](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/api/QueueConsumer.java) interface.
-* Create [QueueService](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/QueueService.java).
-* Register `QueueConsumer` in `QueueService`
-* Start queues through `QueueService`
+* `db-queue-core` module provides base logic and requires `org.slf4j:slf4j-api` library
+* `db-queue-spring` module provides access to database and requires Spring Framework: spring-jdbc and spring-tx. Other
+  features of Spring ecosystem are not in use.
+* `db-queue-brave` module provides tracing support with help of [Brave](https://github.com/openzipkin/brave)
+* `db-queue-test` module provides integration testing across all modules. It might help to figure out how to use the
+  library in your code.
 
 ## Project structure
 
@@ -224,18 +256,3 @@ Registration and configuration.
 Internal classes. **Not for public use**.
 
 *Backward compatibility for classes in that package maybe broken in any release*
-
-# Known Issues
-
-* Uneven load balancing
-
-One of the hosts can consequently process several tasks very quickly while other hosts are sleeping.
-
-* No support for Blue-green deployment
-
-There is no support for blue-green deployment because a task is not bound to a host or to a group of hosts. 
-
-* Hard to write tests.
-
-Task processing is asynchronous. Therefore, it is hard to write tests because you always must think about that fact
-and write code according to it. To ease development of tests you can use `wakeup` method of [QueueService](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/init/QueueService.java)

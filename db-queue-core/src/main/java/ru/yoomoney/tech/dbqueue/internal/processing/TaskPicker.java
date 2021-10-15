@@ -1,10 +1,10 @@
 package ru.yoomoney.tech.dbqueue.internal.processing;
 
-import ru.yoomoney.tech.dbqueue.api.QueueConsumer;
 import ru.yoomoney.tech.dbqueue.api.TaskRecord;
 import ru.yoomoney.tech.dbqueue.config.QueueShard;
 import ru.yoomoney.tech.dbqueue.config.TaskLifecycleListener;
 import ru.yoomoney.tech.dbqueue.dao.QueuePickTaskDao;
+import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -23,6 +23,8 @@ public class TaskPicker {
     @Nonnull
     private final QueueShard<?> queueShard;
     @Nonnull
+    private final QueueLocation queueLocation;
+    @Nonnull
     private final TaskLifecycleListener taskLifecycleListener;
     @Nonnull
     private final MillisTimeProvider millisTimeProvider;
@@ -31,18 +33,21 @@ public class TaskPicker {
 
 
     /**
-     * Конструктор
+     * Constructor
      *
-     * @param queueShard            шард с которого требуется выбрать задачу
-     * @param taskLifecycleListener слушатель жизненного цикла задачи в очереди
-     * @param millisTimeProvider    поставщик текущего времени
-     * @param pickTaskDao           dao для выборки задач
+     * @param queueShard            shard to bound task picker to
+     * @param queueLocation         queue location
+     * @param taskLifecycleListener task listener
+     * @param millisTimeProvider    current time provider
+     * @param pickTaskDao           dao for picking up tasks
      */
     public TaskPicker(@Nonnull QueueShard<?> queueShard,
+                      @Nonnull QueueLocation queueLocation,
                       @Nonnull TaskLifecycleListener taskLifecycleListener,
                       @Nonnull MillisTimeProvider millisTimeProvider,
                       @Nonnull QueuePickTaskDao pickTaskDao) {
         this.queueShard = requireNonNull(queueShard);
+        this.queueLocation = requireNonNull(queueLocation);
         this.taskLifecycleListener = requireNonNull(taskLifecycleListener);
         this.millisTimeProvider = requireNonNull(millisTimeProvider);
         this.pickTaskDao = requireNonNull(pickTaskDao);
@@ -51,20 +56,17 @@ public class TaskPicker {
     /**
      * Выбрать задачу из очереди
      *
-     * @param queueConsumer очередь для выборки
      * @return задача или null если отсутствует
      */
     @Nullable
-    public TaskRecord pickTask(@Nonnull QueueConsumer queueConsumer) {
-        requireNonNull(queueConsumer);
+    public TaskRecord pickTask() {
         long startPickTaskTime = millisTimeProvider.getMillis();
-        TaskRecord taskRecord = queueShard.getDatabaseAccessLayer()
-                .transact(() -> pickTaskDao.pickTask(queueConsumer.getQueueConfig().getLocation()));
+        TaskRecord taskRecord = queueShard.getDatabaseAccessLayer().transact(pickTaskDao::pickTask);
         if (taskRecord == null) {
             return null;
         }
-        taskLifecycleListener.picked(queueShard.getShardId(), queueConsumer.getQueueConfig().getLocation(),
-                taskRecord, millisTimeProvider.getMillis() - startPickTaskTime);
+        taskLifecycleListener.picked(queueShard.getShardId(), queueLocation, taskRecord,
+                millisTimeProvider.getMillis() - startPickTaskTime);
         return taskRecord;
     }
 

@@ -17,8 +17,8 @@ public class CustomMssqlQueuePickTaskDaoTest extends QueuePickTaskDaoTest {
 
     public CustomMssqlQueuePickTaskDaoTest() {
         super(new MssqlQueueDao(MssqlDatabaseInitializer.getJdbcTemplate(), MssqlDatabaseInitializer.CUSTOM_SCHEMA),
-                pickTaskSettings -> new MssqlQueuePickTaskDao(MssqlDatabaseInitializer.getJdbcTemplate(),
-                        MssqlDatabaseInitializer.CUSTOM_SCHEMA, pickTaskSettings),
+                (queueLocation, failureSettings) -> new MssqlQueuePickTaskDao(MssqlDatabaseInitializer.getJdbcTemplate(),
+                        MssqlDatabaseInitializer.CUSTOM_SCHEMA, queueLocation, failureSettings),
                 MssqlDatabaseInitializer.CUSTOM_TABLE_NAME, MssqlDatabaseInitializer.CUSTOM_SCHEMA,
                 MssqlDatabaseInitializer.getJdbcTemplate(), MssqlDatabaseInitializer.getTransactionTemplate());
     }

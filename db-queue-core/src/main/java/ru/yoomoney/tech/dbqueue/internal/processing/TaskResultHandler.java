@@ -4,6 +4,7 @@ import ru.yoomoney.tech.dbqueue.api.TaskExecutionResult;
 import ru.yoomoney.tech.dbqueue.api.TaskRecord;
 import ru.yoomoney.tech.dbqueue.config.QueueShard;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
+import ru.yoomoney.tech.dbqueue.settings.ReenqueueSettings;
 
 import javax.annotation.Nonnull;
 
@@ -22,21 +23,23 @@ public class TaskResultHandler {
     @Nonnull
     private final QueueShard<?> queueShard;
     @Nonnull
-    private final ReenqueueRetryStrategy reenqueueRetryStrategy;
+    private ReenqueueRetryStrategy reenqueueRetryStrategy;
 
     /**
      * Конструктор
      *
-     * @param location               местоположение очереди
-     * @param queueShard             шард на котором происходит обработка задачи
-     * @param reenqueueRetryStrategy стратегия для переоткладывания задач
+     * @param location          местоположение очереди
+     * @param queueShard        шард на котором происходит обработка задачи
+     * @param reenqueueSettings настройки переоткладывания задач
      */
     public TaskResultHandler(@Nonnull QueueLocation location,
                              @Nonnull QueueShard<?> queueShard,
-                             @Nonnull ReenqueueRetryStrategy reenqueueRetryStrategy) {
+                             @Nonnull ReenqueueSettings reenqueueSettings) {
         this.location = requireNonNull(location);
         this.queueShard = requireNonNull(queueShard);
-        this.reenqueueRetryStrategy = requireNonNull(reenqueueRetryStrategy);
+        this.reenqueueRetryStrategy = ReenqueueRetryStrategy.Factory.create(reenqueueSettings);
+        reenqueueSettings.registerObserver((oldValue, newValue) ->
+                reenqueueRetryStrategy = ReenqueueRetryStrategy.Factory.create(newValue));
     }
 
     /**

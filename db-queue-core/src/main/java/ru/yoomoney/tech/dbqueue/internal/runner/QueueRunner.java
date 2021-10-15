@@ -3,14 +3,14 @@ package ru.yoomoney.tech.dbqueue.internal.runner;
 import ru.yoomoney.tech.dbqueue.api.QueueConsumer;
 import ru.yoomoney.tech.dbqueue.config.QueueShard;
 import ru.yoomoney.tech.dbqueue.config.TaskLifecycleListener;
-import ru.yoomoney.tech.dbqueue.dao.PickTaskSettings;
+import ru.yoomoney.tech.dbqueue.dao.QueuePickTaskDao;
 import ru.yoomoney.tech.dbqueue.internal.processing.MillisTimeProvider;
 import ru.yoomoney.tech.dbqueue.internal.processing.QueueProcessingStatus;
-import ru.yoomoney.tech.dbqueue.internal.processing.ReenqueueRetryStrategy;
 import ru.yoomoney.tech.dbqueue.internal.processing.TaskPicker;
 import ru.yoomoney.tech.dbqueue.internal.processing.TaskProcessor;
 import ru.yoomoney.tech.dbqueue.internal.processing.TaskResultHandler;
 import ru.yoomoney.tech.dbqueue.settings.ProcessingMode;
+import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
 import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
 
 import javax.annotation.Nonnull;
@@ -63,25 +63,23 @@ public interface QueueRunner {
             requireNonNull(taskLifecycleListener);
 
             QueueSettings queueSettings = queueConsumer.getQueueConfig().getSettings();
+            QueueLocation queueLocation = queueConsumer.getQueueConfig().getLocation();
 
-            ReenqueueRetryStrategy reenqueueRetryStrategy = ReenqueueRetryStrategy.Factory
-                    .create(queueSettings.getReenqueueRetrySettings());
+            QueuePickTaskDao queuePickTaskDao = queueShard.getDatabaseAccessLayer().createQueuePickTaskDao(
+                    queueLocation,
+                    queueSettings.getFailureSettings());
 
-            PickTaskSettings pickTaskSettings = new PickTaskSettings(
-                    queueSettings.getRetryType(),
-                    queueSettings.getRetryInterval());
-            TaskPicker taskPicker = new TaskPicker(queueShard, taskLifecycleListener,
-                    new MillisTimeProvider.SystemMillisTimeProvider(),
-                    queueShard.getDatabaseAccessLayer().createQueuePickTaskDao(pickTaskSettings));
+            TaskPicker taskPicker = new TaskPicker(queueShard, queueLocation, taskLifecycleListener,
+                    new MillisTimeProvider.SystemMillisTimeProvider(), queuePickTaskDao);
 
             TaskResultHandler taskResultHandler = new TaskResultHandler(
-                    queueConsumer.getQueueConfig().getLocation(),
-                    queueShard, reenqueueRetryStrategy);
+                    queueLocation,
+                    queueShard, queueSettings.getReenqueueSettings());
 
             TaskProcessor taskProcessor = new TaskProcessor(queueShard, taskLifecycleListener,
                     new MillisTimeProvider.SystemMillisTimeProvider(), taskResultHandler);
 
-            ProcessingMode processingMode = queueSettings.getProcessingMode();
+            ProcessingMode processingMode = queueSettings.getProcessingSettings().getProcessingMode();
             switch (processingMode) {
                 case SEPARATE_TRANSACTIONS:
                     return new QueueRunnerInSeparateTransactions(taskPicker, taskProcessor);

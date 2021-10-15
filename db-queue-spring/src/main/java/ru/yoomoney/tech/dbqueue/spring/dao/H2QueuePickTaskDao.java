@@ -6,10 +6,10 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import ru.yoomoney.tech.dbqueue.api.TaskRecord;
 import ru.yoomoney.tech.dbqueue.config.QueueTableSchema;
-import ru.yoomoney.tech.dbqueue.dao.PickTaskSettings;
 import ru.yoomoney.tech.dbqueue.dao.QueuePickTaskDao;
+import ru.yoomoney.tech.dbqueue.settings.FailRetryType;
+import ru.yoomoney.tech.dbqueue.settings.FailureSettings;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
-import ru.yoomoney.tech.dbqueue.settings.TaskRetryType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,32 +34,40 @@ import java.util.stream.Collectors;
 public class H2QueuePickTaskDao implements QueuePickTaskDao {
     private final RowIdLocker rowIdLocker = new RowIdLocker();
 
+    @Nonnull
+    private String pickTaskSql;
+
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final QueueTableSchema queueTableSchema;
-    private final PickTaskSettings pickTaskSettings;
+    @Nonnull
+    private final QueueLocation queueLocation;
+    private final FailureSettings failureSettings;
+
 
     public H2QueuePickTaskDao(@Nonnull JdbcOperations jdbcOperations,
                               @Nonnull QueueTableSchema queueTableSchema,
-                              @Nonnull PickTaskSettings pickTaskSettings) {
-        this.jdbcTemplate = new NamedParameterJdbcTemplate(Objects.requireNonNull(jdbcOperations, "jdbc template can't be null"));
-        this.queueTableSchema = Objects.requireNonNull(queueTableSchema, "table schema can't be null");
-        this.pickTaskSettings = Objects.requireNonNull(pickTaskSettings, "settings can't be null");
+                              @Nonnull QueueLocation queueLocation,
+                              @Nonnull FailureSettings failureSettings) {
+        this.jdbcTemplate = new NamedParameterJdbcTemplate(Objects.requireNonNull(jdbcOperations));
+        this.queueTableSchema = Objects.requireNonNull(queueTableSchema);
+        this.queueLocation = Objects.requireNonNull(queueLocation);
+        this.failureSettings = Objects.requireNonNull(failureSettings);
+        this.pickTaskSql = createPickTaskSql(queueLocation, failureSettings, queueTableSchema);
+        failureSettings.registerObserver((oldValue, newValue) ->
+                pickTaskSql = createPickTaskSql(queueLocation, newValue, queueTableSchema));
     }
 
     @Nullable
     @Override
-    public TaskRecord pickTask(@Nonnull QueueLocation location) {
-        Objects.requireNonNull(location, "location can't be null");
-
-        long retryInterval = pickTaskSettings.getRetryInterval().getSeconds();
-        String queueId = location.getQueueId().asString();
+    public TaskRecord pickTask() {
+        String queueId = queueLocation.getQueueId().asString();
 
         Long taskId = rowIdLocker.lock(
                 queueId,
                 rowIds -> {
                     List<Long> ids = jdbcTemplate
                             .queryForList(
-                                    getSelectSql(location, queueTableSchema),
+                                    getSelectSql(queueLocation, queueTableSchema),
                                     new MapSqlParameterSource()
                                             .addValue("queueId", queueId)
                                             .addValue("rowIds", rowIds),
@@ -72,9 +80,9 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
 
         try {
             int updatedRowCount = jdbcTemplate.update(
-                    getUpdateSql(location, pickTaskSettings, queueTableSchema),
+                    pickTaskSql,
                     new MapSqlParameterSource()
-                            .addValue("retryInterval", retryInterval)
+                            .addValue("retryInterval", failureSettings.getRetryInterval().getSeconds())
                             .addValue("taskId", taskId));
 
             if (updatedRowCount != 1) {
@@ -83,7 +91,7 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
 
 
             return jdbcTemplate.query(
-                    getReturnSql(location, queueTableSchema),
+                    getReturnSql(queueLocation, queueTableSchema),
                     new MapSqlParameterSource("taskId", taskId),
                     (ResultSet rs) -> {
                         if (!rs.next()) {
@@ -137,9 +145,9 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
         );
     }
 
-    private static String getUpdateSql(QueueLocation location,
-                                       PickTaskSettings pickTaskSettings,
-                                       QueueTableSchema queueTableSchema) {
+    private static String createPickTaskSql(QueueLocation location,
+                                            FailureSettings failureSettings,
+                                            QueueTableSchema queueTableSchema) {
         return String.format("" +
                         "UPDATE %s " +
                         "SET " +
@@ -149,7 +157,7 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
                         "WHERE %s = :taskId ",
                 location.getTableName(),
                 queueTableSchema.getNextProcessAtField(),
-                getNextProcessTimeSql(pickTaskSettings.getRetryType(), queueTableSchema),
+                getNextProcessTimeSql(failureSettings.getRetryType(), queueTableSchema),
                 queueTableSchema.getAttemptField(),
                 queueTableSchema.getAttemptField(),
                 queueTableSchema.getTotalAttemptField(),
@@ -225,11 +233,11 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
         return ZonedDateTime.ofInstant(rs.getTimestamp(time).toInstant(), ZoneId.systemDefault());
     }
 
-    private static String getNextProcessTimeSql(@Nonnull TaskRetryType taskRetryType,
+    private static String getNextProcessTimeSql(@Nonnull FailRetryType failRetryType,
                                                 @Nonnull QueueTableSchema queueTableSchema) {
-        Objects.requireNonNull(taskRetryType, "retry type must be not null");
+        Objects.requireNonNull(failRetryType, "retry type must be not null");
         Objects.requireNonNull(queueTableSchema, "queue table schema must be not null");
-        switch (taskRetryType) {
+        switch (failRetryType) {
             case GEOMETRIC_BACKOFF:
                 return String.format("TIMESTAMPADD(SECOND, POWER(2, %s) * :retryInterval , NOW())", queueTableSchema.getAttemptField());
             case ARITHMETIC_BACKOFF:
@@ -237,7 +245,7 @@ public class H2QueuePickTaskDao implements QueuePickTaskDao {
             case LINEAR_BACKOFF:
                 return "TIMESTAMPADD(SECOND, :retryInterval, NOW())";
             default:
-                throw new IllegalStateException("unknown retry type: " + taskRetryType);
+                throw new IllegalStateException("unknown retry type: " + failRetryType);
         }
     }
 }

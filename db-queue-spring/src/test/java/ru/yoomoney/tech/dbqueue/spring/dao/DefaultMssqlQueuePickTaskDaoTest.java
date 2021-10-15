@@ -17,8 +17,8 @@ public class DefaultMssqlQueuePickTaskDaoTest extends QueuePickTaskDaoTest {
 
     public DefaultMssqlQueuePickTaskDaoTest() {
         super(new MssqlQueueDao(MssqlDatabaseInitializer.getJdbcTemplate(), MssqlDatabaseInitializer.DEFAULT_SCHEMA),
-                pickTaskSettings -> new MssqlQueuePickTaskDao(MssqlDatabaseInitializer.getJdbcTemplate(),
-                        MssqlDatabaseInitializer.DEFAULT_SCHEMA, pickTaskSettings),
+                (queueLocation, failureSettings) -> new MssqlQueuePickTaskDao(MssqlDatabaseInitializer.getJdbcTemplate(),
+                        MssqlDatabaseInitializer.DEFAULT_SCHEMA, queueLocation, failureSettings),
                 MssqlDatabaseInitializer.DEFAULT_TABLE_NAME, MssqlDatabaseInitializer.DEFAULT_SCHEMA,
                 MssqlDatabaseInitializer.getJdbcTemplate(), MssqlDatabaseInitializer.getTransactionTemplate());
     }

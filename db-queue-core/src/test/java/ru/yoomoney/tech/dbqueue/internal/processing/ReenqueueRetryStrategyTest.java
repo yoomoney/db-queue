@@ -4,8 +4,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import ru.yoomoney.tech.dbqueue.api.TaskRecord;
-import ru.yoomoney.tech.dbqueue.settings.ReenqueueRetrySettings;
 import ru.yoomoney.tech.dbqueue.settings.ReenqueueRetryType;
+import ru.yoomoney.tech.dbqueue.settings.ReenqueueSettings;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
@@ -24,8 +24,7 @@ public class ReenqueueRetryStrategyTest {
 
     @Test
     public void should_throw_exception_when_calculate_delay_with_manual_strategy() {
-        ReenqueueRetrySettings settings = ReenqueueRetrySettings.builder(ReenqueueRetryType.MANUAL)
-                .build();
+        ReenqueueSettings settings = ReenqueueSettings.builder().withRetryType(ReenqueueRetryType.MANUAL).build();
 
         ReenqueueRetryStrategy strategy = ReenqueueRetryStrategy.Factory.create(settings);
 
@@ -38,7 +37,8 @@ public class ReenqueueRetryStrategyTest {
     @Test
     public void should_calculate_delay_when_using_fixed_delay_strategy() {
         Duration fixedDelay = Duration.ofSeconds(10L);
-        ReenqueueRetrySettings settings = ReenqueueRetrySettings.builder(ReenqueueRetryType.FIXED)
+        ReenqueueSettings settings = ReenqueueSettings.builder()
+                .withRetryType(ReenqueueRetryType.FIXED)
                 .withFixedDelay(fixedDelay)
                 .build();
 
@@ -53,7 +53,7 @@ public class ReenqueueRetryStrategyTest {
 
     @Test
     public void should_calculate_delay_when_using_sequential_strategy() {
-        ReenqueueRetrySettings settings = ReenqueueRetrySettings.builder(ReenqueueRetryType.SEQUENTIAL)
+        ReenqueueSettings settings = ReenqueueSettings.builder().withRetryType(ReenqueueRetryType.SEQUENTIAL)
                 .withSequentialPlan(Arrays.asList(Duration.ofSeconds(1L), Duration.ofSeconds(2L), Duration.ofSeconds(3L)))
                 .build();
 
@@ -74,7 +74,7 @@ public class ReenqueueRetryStrategyTest {
 
     @Test
     public void should_calculate_delay_when_using_arithmetic_strategy() {
-        ReenqueueRetrySettings settings = ReenqueueRetrySettings.builder(ReenqueueRetryType.ARITHMETIC)
+        ReenqueueSettings settings = ReenqueueSettings.builder().withRetryType(ReenqueueRetryType.ARITHMETIC)
                 .withInitialDelay(Duration.ofSeconds(10L))
                 .withArithmeticStep(Duration.ofSeconds(1L))
                 .build();
@@ -96,7 +96,7 @@ public class ReenqueueRetryStrategyTest {
 
     @Test
     public void should_calculate_delay_when_using_geometric_strategy() {
-        ReenqueueRetrySettings settings = ReenqueueRetrySettings.builder(ReenqueueRetryType.GEOMETRIC)
+        ReenqueueSettings settings = ReenqueueSettings.builder().withRetryType(ReenqueueRetryType.GEOMETRIC)
                 .withInitialDelay(Duration.ofSeconds(10L))
                 .withGeometricRatio(3L)
                 .build();

@@ -6,10 +6,10 @@ import org.springframework.jdbc.core.CallableStatementCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 import ru.yoomoney.tech.dbqueue.api.TaskRecord;
 import ru.yoomoney.tech.dbqueue.config.QueueTableSchema;
-import ru.yoomoney.tech.dbqueue.dao.PickTaskSettings;
 import ru.yoomoney.tech.dbqueue.dao.QueuePickTaskDao;
+import ru.yoomoney.tech.dbqueue.settings.FailRetryType;
+import ru.yoomoney.tech.dbqueue.settings.FailureSettings;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
-import ru.yoomoney.tech.dbqueue.settings.TaskRetryType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -22,7 +22,6 @@ import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Database access object to pick tasks in the queue for Oracle database type.
@@ -34,45 +33,47 @@ import java.util.concurrent.ConcurrentHashMap;
         "ISB_INEFFICIENT_STRING_BUFFERING"})
 public class Oracle11QueuePickTaskDao implements QueuePickTaskDao {
 
-    private final Map<QueueLocation, String> pickTaskSqlCache = new ConcurrentHashMap<>();
-
     @Nonnull
     private final JdbcOperations jdbcTemplate;
     @Nonnull
     private final QueueTableSchema queueTableSchema;
-    @Nonnull
-    private final PickTaskSettings pickTaskSettings;
+    private PickTaskCallableStatement pickTaskStatement;
+    private String pickTaskSql;
 
     public Oracle11QueuePickTaskDao(@Nonnull JdbcOperations jdbcTemplate,
                                     @Nonnull QueueTableSchema queueTableSchema,
-                                    @Nonnull PickTaskSettings pickTaskSettings) {
+                                    @Nonnull QueueLocation queueLocation,
+                                    @Nonnull FailureSettings failureSettings) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate);
         this.queueTableSchema = Objects.requireNonNull(queueTableSchema);
-        this.pickTaskSettings = Objects.requireNonNull(pickTaskSettings);
-
+        pickTaskStatement = new PickTaskCallableStatement(queueTableSchema, queueLocation, failureSettings);
+        pickTaskSql = createPickTaskSql(queueLocation, failureSettings);
+        failureSettings.registerObserver((oldValue, newValue) -> {
+            pickTaskSql = createPickTaskSql(queueLocation, newValue);
+            pickTaskStatement = new PickTaskCallableStatement(queueTableSchema, queueLocation, newValue);
+        });
     }
+
 
     @Nullable
     @Override
     @SuppressFBWarnings("SQL_INJECTION_SPRING_JDBC")
-    public TaskRecord pickTask(@Nonnull QueueLocation location) {
-        PickTaskCallableStatement pickTaskStatement = new PickTaskCallableStatement(queueTableSchema, location, pickTaskSettings);
-
-        return jdbcTemplate.execute(pickTaskSqlCache.computeIfAbsent(location, this::createPickTaskSql), pickTaskStatement);
+    public TaskRecord pickTask() {
+        return jdbcTemplate.execute(pickTaskSql, pickTaskStatement);
     }
 
 
     private static class PickTaskCallableStatement implements CallableStatementCallback<TaskRecord> {
 
         private final QueueLocation queueLocation;
-        private final PickTaskSettings pickTaskSettings;
+        private final FailureSettings failureSettings;
         private final QueueTableSchema queueTableSchema;
 
         public PickTaskCallableStatement(QueueTableSchema queueTableSchema,
                                          QueueLocation queueLocation,
-                                         PickTaskSettings pickTaskSettings) {
+                                         FailureSettings failureSettings) {
             this.queueLocation = queueLocation;
-            this.pickTaskSettings = pickTaskSettings;
+            this.failureSettings = failureSettings;
             this.queueTableSchema = queueTableSchema;
         }
 
@@ -80,14 +81,14 @@ public class Oracle11QueuePickTaskDao implements QueuePickTaskDao {
         public TaskRecord doInCallableStatement(CallableStatement cs) throws SQLException, DataAccessException {
             int inputIndex = 1;
             cs.setString(inputIndex++, queueLocation.getQueueId().asString());
-            cs.setLong(inputIndex++, pickTaskSettings.getRetryInterval().getSeconds());
-            cs.registerOutParameter(inputIndex++, java.sql.Types.BIGINT);
-            cs.registerOutParameter(inputIndex++, java.sql.Types.CLOB);
-            cs.registerOutParameter(inputIndex++, java.sql.Types.BIGINT);
-            cs.registerOutParameter(inputIndex++, java.sql.Types.BIGINT);
-            cs.registerOutParameter(inputIndex++, java.sql.Types.BIGINT);
-            cs.registerOutParameter(inputIndex++, java.sql.Types.TIMESTAMP);
-            cs.registerOutParameter(inputIndex++, java.sql.Types.TIMESTAMP);
+            cs.setLong(inputIndex++, failureSettings.getRetryInterval().getSeconds());
+            cs.registerOutParameter(inputIndex++, Types.BIGINT);
+            cs.registerOutParameter(inputIndex++, Types.CLOB);
+            cs.registerOutParameter(inputIndex++, Types.BIGINT);
+            cs.registerOutParameter(inputIndex++, Types.BIGINT);
+            cs.registerOutParameter(inputIndex++, Types.BIGINT);
+            cs.registerOutParameter(inputIndex++, Types.TIMESTAMP);
+            cs.registerOutParameter(inputIndex++, Types.TIMESTAMP);
 
             for (String ignored : queueTableSchema.getExtFields()) {
                 cs.registerOutParameter(inputIndex++, Types.VARCHAR);
@@ -123,9 +124,9 @@ public class Oracle11QueuePickTaskDao implements QueuePickTaskDao {
 
 
     @Nonnull
-    private String getNextProcessTimeSql(@Nonnull TaskRetryType taskRetryType) {
-        Objects.requireNonNull(taskRetryType);
-        switch (taskRetryType) {
+    private String getNextProcessTimeSql(@Nonnull FailRetryType failRetryType) {
+        Objects.requireNonNull(failRetryType);
+        switch (failRetryType) {
             case GEOMETRIC_BACKOFF:
                 return "CURRENT_TIMESTAMP + power(2, " + "rattempt) * ? * (INTERVAL '1' SECOND)";
             case ARITHMETIC_BACKOFF:
@@ -133,11 +134,11 @@ public class Oracle11QueuePickTaskDao implements QueuePickTaskDao {
             case LINEAR_BACKOFF:
                 return "CURRENT_TIMESTAMP + ? * (INTERVAL '1' SECOND)";
             default:
-                throw new IllegalStateException("unknown retry type: " + taskRetryType);
+                throw new IllegalStateException("unknown retry type: " + failRetryType);
         }
     }
 
-    private String createPickTaskSql(QueueLocation queueLocation) {
+    private String createPickTaskSql(QueueLocation queueLocation, FailureSettings failureSettings) {
         StringBuilder declaration = new StringBuilder("DECLARE\n"
                 + " rid " + queueLocation.getTableName() + "." + queueTableSchema.getIdField() + "%TYPE;\n"
                 + " rpayload " + queueLocation.getTableName() + "." + queueTableSchema.getPayloadField() + "%TYPE;\n"
@@ -163,14 +164,6 @@ public class Oracle11QueuePickTaskDao implements QueuePickTaskDao {
         );
         cursorSelect.append(queueTableSchema.getNextProcessAtField()).append(" ");
 
-        final String fetchCursor = " FROM " + queueLocation.getTableName() + " "
-                + " WHERE " + queueTableSchema.getQueueNameField() + " = ? AND "
-                + queueTableSchema.getNextProcessAtField() + " <= CURRENT_TIMESTAMP"
-                + " FOR UPDATE SKIP LOCKED;"
-                + " BEGIN \n"
-                + " OPEN c; \n"
-                + " FETCH c INTO ";
-
         StringBuilder fetchParams = new StringBuilder("rid, " +
                 "rpayload, " +
                 "rattempt, " +
@@ -185,7 +178,7 @@ public class Oracle11QueuePickTaskDao implements QueuePickTaskDao {
                 + " END IF\n;"
                 + " CLOSE c;\n"
                 + " IF (rid > 0) THEN \n"
-                + " rnext_process_at := " + getNextProcessTimeSql(pickTaskSettings.getRetryType()) + ";\n"
+                + " rnext_process_at := " + getNextProcessTimeSql(failureSettings.getRetryType()) + ";\n"
                 + " rattempt := rattempt + 1;\n"
                 + " rtotal_attempt := rtotal_attempt + 1;\n"
                 + "   UPDATE " + queueLocation.getTableName() + " SET " +
@@ -203,6 +196,14 @@ public class Oracle11QueuePickTaskDao implements QueuePickTaskDao {
                 "\n ? := rnext_process_at; ");
         queueTableSchema.getExtFields().forEach(field -> returnParams.append("\n ? := r").append(field).append("; "));
         returnParams.append("\n END; ");
+
+        String fetchCursor = " FROM " + queueLocation.getTableName() + " "
+                + " WHERE " + queueTableSchema.getQueueNameField() + " = ? AND "
+                + queueTableSchema.getNextProcessAtField() + " <= CURRENT_TIMESTAMP"
+                + " FOR UPDATE SKIP LOCKED;"
+                + " BEGIN \n"
+                + " OPEN c; \n"
+                + " FETCH c INTO ";
 
         return declaration.toString() + cursorSelect + fetchCursor + fetchParams + updateSql + returnParams;
     }

@@ -16,8 +16,8 @@ public class CustomPostgresQueuePickTaskDaoTest extends QueuePickTaskDaoTest {
 
     public CustomPostgresQueuePickTaskDaoTest() {
         super(new PostgresQueueDao(PostgresDatabaseInitializer.getJdbcTemplate(), PostgresDatabaseInitializer.CUSTOM_SCHEMA),
-                pickTaskSettings -> new PostgresQueuePickTaskDao(PostgresDatabaseInitializer.getJdbcTemplate(),
-                        PostgresDatabaseInitializer.CUSTOM_SCHEMA, pickTaskSettings),
+                (queueLocation, failureSettings) -> new PostgresQueuePickTaskDao(PostgresDatabaseInitializer.getJdbcTemplate(),
+                        PostgresDatabaseInitializer.CUSTOM_SCHEMA, queueLocation, failureSettings),
                 PostgresDatabaseInitializer.CUSTOM_TABLE_NAME, PostgresDatabaseInitializer.CUSTOM_SCHEMA,
                 PostgresDatabaseInitializer.getJdbcTemplate(), PostgresDatabaseInitializer.getTransactionTemplate());
     }

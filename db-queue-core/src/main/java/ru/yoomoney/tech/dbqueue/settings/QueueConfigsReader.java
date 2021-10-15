@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import javax.annotation.concurrent.ThreadSafe;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -13,18 +13,18 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.function.Function;
+import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * Reads queue configuration from file.
@@ -102,7 +102,7 @@ import java.util.stream.IntStream;
  * queue-prefix.testQueue.processing-mode=use-external-executor
  *
  * # see {@link QueueConfigsReader#SETTING_ADDITIONAL}
- * # see {@link QueueSettings#getAdditionalSettings()}
+ * # see {@link QueueSettings#getExtSettings()}
  * queue-prefix.testQueue.additional-settings.custom-val=custom-key
  *
  * # you can define custom settings to use it in enqueueing or processing
@@ -114,23 +114,26 @@ import java.util.stream.IntStream;
  * @author Oleg Kandaurov
  * @see QueueSettings
  * @see QueueLocation
- * @see TaskRetryType
+ * @see FailRetryType
  * @see ProcessingMode
  * @see QueueConfig
  * @since 22.08.2017
  */
+@ThreadSafe
 public class QueueConfigsReader {
 
+    private static final Logger log = LoggerFactory.getLogger(QueueConfigsReader.class);
+
     /**
-     * Representation of {@link TaskRetryType#GEOMETRIC_BACKOFF}
+     * Representation of {@link FailRetryType#GEOMETRIC_BACKOFF}
      */
     public static final String VALUE_TASK_RETRY_TYPE_GEOMETRIC = "geometric";
     /**
-     * Representation of {@link TaskRetryType#ARITHMETIC_BACKOFF}
+     * Representation of {@link FailRetryType#ARITHMETIC_BACKOFF}
      */
     public static final String VALUE_TASK_RETRY_TYPE_ARITHMETIC = "arithmetic";
     /**
-     * Representation of {@link TaskRetryType#LINEAR_BACKOFF}
+     * Representation of {@link FailRetryType#LINEAR_BACKOFF}
      */
     public static final String VALUE_TASK_RETRY_TYPE_LINEAR = "linear";
     /**
@@ -166,56 +169,55 @@ public class QueueConfigsReader {
      */
     public static final String VALUE_PROCESSING_MODE_SEPARATE_TRANSACTIONS = "separate-transactions";
     /**
-     * Representation of {@link QueueSettings#getProcessingMode()}
+     * Representation of {@link ProcessingSettings#getProcessingMode()}
      */
     public static final String SETTING_PROCESSING_MODE = "processing-mode";
     /**
-     * Representation of {@link QueueSettings#getRetryType()}
+     * Representation of {@link FailureSettings#getRetryType()}
      */
     public static final String SETTING_RETRY_TYPE = "retry-type";
     /**
-     * Representation of {@link QueueSettings#getRetryInterval()}
+     * Representation of {@link FailureSettings#getRetryInterval()}
      */
     public static final String SETTING_RETRY_INTERVAL = "retry-interval";
-    private static final String REENQUEUE_RETRY_PREFIX = "reenqueue-retry";
     /**
-     * Representation of {@link ReenqueueRetrySettings#getType()}
+     * Representation of {@link ReenqueueSettings#getRetryType()}
      */
-    public static final String SETTING_REENQUEUE_RETRY_TYPE = REENQUEUE_RETRY_PREFIX + "-type";
+    public static final String SETTING_REENQUEUE_RETRY_TYPE = "reenqueue-retry-type";
     /**
-     * Representation of {@link ReenqueueRetrySettings#getSequentialPlanOrThrow()}
+     * Representation of {@link ReenqueueSettings#getSequentialPlanOrThrow()}
      */
-    public static final String SETTING_REENQUEUE_RETRY_PLAN = REENQUEUE_RETRY_PREFIX + "-plan";
+    public static final String SETTING_REENQUEUE_RETRY_PLAN = "reenqueue-retry-plan";
     /**
-     * Representation of {@link ReenqueueRetrySettings#getFixedDelayOrThrow()}
+     * Representation of {@link ReenqueueSettings#getFixedDelayOrThrow()}
      */
-    public static final String SETTING_REENQUEUE_RETRY_DELAY = REENQUEUE_RETRY_PREFIX + "-delay";
+    public static final String SETTING_REENQUEUE_RETRY_DELAY = "reenqueue-retry-delay";
     /**
-     * Representation of {@link ReenqueueRetrySettings#getInitialDelay()}
+     * Representation of {@link ReenqueueSettings#getInitialDelayOrThrow()}
      */
-    public static final String SETTING_REENQUEUE_RETRY_INITIAL_DELAY = REENQUEUE_RETRY_PREFIX + "-initial-delay";
+    public static final String SETTING_REENQUEUE_RETRY_INITIAL_DELAY = "reenqueue-retry-initial-delay";
     /**
-     * Representation of {@link ReenqueueRetrySettings#getArithmeticStep()}
+     * Representation of {@link ReenqueueSettings#getArithmeticStepOrThrow()}
      */
-    public static final String SETTING_REENQUEUE_RETRY_STEP = REENQUEUE_RETRY_PREFIX + "-step";
+    public static final String SETTING_REENQUEUE_RETRY_STEP = "reenqueue-retry-step";
     /**
-     * Representation of {@link ReenqueueRetrySettings#getGeometricRatio()}
+     * Representation of {@link ReenqueueSettings#getGeometricRatioOrThrow()}
      */
-    public static final String SETTING_REENQUEUE_RETRY_RATIO = REENQUEUE_RETRY_PREFIX + "-ratio";
+    public static final String SETTING_REENQUEUE_RETRY_RATIO = "reenqueue-retry-ratio";
     /**
-     * Representation of {@link QueueSettings#getThreadCount()}
+     * Representation of {@link ProcessingSettings#getThreadCount()}
      */
     public static final String SETTING_THREAD_COUNT = "thread-count";
     /**
-     * Representation of {@link QueueSettings#getFatalCrashTimeout()}
+     * Representation of {@link PollSettings#getFatalCrashTimeout()}
      */
     public static final String SETTING_FATAL_CRASH_TIMEOUT = "fatal-crash-timeout";
     /**
-     * Representation of {@link QueueSettings#getBetweenTaskTimeout()}
+     * Representation of {@link PollSettings#getBetweenTaskTimeout()}
      */
     public static final String SETTING_BETWEEN_TASK_TIMEOUT = "between-task-timeout";
     /**
-     * Representation of {@link QueueSettings#getNoTaskTimeout()}
+     * Representation of {@link PollSettings#getNoTaskTimeout()}
      */
     public static final String SETTING_NO_TASK_TIMEOUT = "no-task-timeout";
     /**
@@ -227,56 +229,134 @@ public class QueueConfigsReader {
      */
     public static final String SETTING_ID_SEQUENCE = "id-sequence";
     /**
-     * Representation of {@link QueueSettings#getAdditionalSettings()}
+     * Representation of {@link QueueSettings#getExtSettings()}
      */
     public static final String SETTING_ADDITIONAL = "additional-settings";
-    private static final Logger log = LoggerFactory.getLogger(QueueConfigsReader.class);
+
     private final List<String> errorMessages = new ArrayList<>();
 
+    private static final Set<String> ALLOWED_SETTINGS = new HashSet<>(Arrays.asList(
+            SETTING_PROCESSING_MODE, SETTING_BETWEEN_TASK_TIMEOUT, SETTING_TABLE,
+            SETTING_NO_TASK_TIMEOUT, SETTING_ID_SEQUENCE, SETTING_FATAL_CRASH_TIMEOUT,
+            SETTING_REENQUEUE_RETRY_DELAY, SETTING_REENQUEUE_RETRY_PLAN, SETTING_REENQUEUE_RETRY_INITIAL_DELAY,
+            SETTING_REENQUEUE_RETRY_RATIO, SETTING_REENQUEUE_RETRY_TYPE, SETTING_REENQUEUE_RETRY_STEP,
+            SETTING_RETRY_TYPE, SETTING_RETRY_INTERVAL, SETTING_THREAD_COUNT, SETTING_THREAD_COUNT));
+
+    @Nonnull
+    private final List<Path> configPaths;
     @Nonnull
     private final String settingsPrefix;
+    @Nonnull
+    private final Supplier<ProcessingSettings.Builder> defaultProcessingSettings;
+    @Nonnull
+    private final Supplier<PollSettings.Builder> defaultPollSettings;
+    @Nonnull
+    private final Supplier<FailureSettings.Builder> defaultFailureSettings;
+    @Nonnull
+    private final Supplier<ReenqueueSettings.Builder> defaultReenqueueSettings;
 
     /**
      * Constructor
      *
+     * @param configPaths    files to read configuration from.
      * @param settingsPrefix prefix that will be used for queue settings.
      */
-    public QueueConfigsReader(@Nonnull String settingsPrefix) {
+    public QueueConfigsReader(@Nonnull List<Path> configPaths, @Nonnull String settingsPrefix) {
+        this(configPaths, settingsPrefix, ProcessingSettings::builder, PollSettings::builder,
+                FailureSettings::builder, ReenqueueSettings::builder);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param configPaths               files to read configuration from.
+     * @param settingsPrefix            prefix that will be used for queue settings.
+     * @param defaultProcessingSettings default {@link ProcessingSettings}
+     * @param defaultPollSettings       default {@link PollSettings}
+     * @param defaultFailureSettings    default {@link FailureSettings}
+     * @param defaultReenqueueSettings  default {@link ReenqueueSettings}
+     */
+    public QueueConfigsReader(@Nonnull List<Path> configPaths,
+                              @Nonnull String settingsPrefix,
+                              @Nonnull Supplier<ProcessingSettings.Builder> defaultProcessingSettings,
+                              @Nonnull Supplier<PollSettings.Builder> defaultPollSettings,
+                              @Nonnull Supplier<FailureSettings.Builder> defaultFailureSettings,
+                              @Nonnull Supplier<ReenqueueSettings.Builder> defaultReenqueueSettings) {
+        this.configPaths = Objects.requireNonNull(configPaths);
         this.settingsPrefix = Objects.requireNonNull(settingsPrefix);
+        this.defaultProcessingSettings = Objects.requireNonNull(defaultProcessingSettings);
+        this.defaultPollSettings = Objects.requireNonNull(defaultPollSettings);
+        this.defaultFailureSettings = Objects.requireNonNull(defaultFailureSettings);
+        this.defaultReenqueueSettings = Objects.requireNonNull(defaultReenqueueSettings);
+        if (configPaths.isEmpty()) {
+            throw new IllegalArgumentException("config paths must not be empty");
+        }
+        List<Path> illegalConfigs = configPaths.stream().filter(path -> !path.toFile().isFile()).collect(Collectors.toList());
+        if (!illegalConfigs.isEmpty()) {
+            throw new IllegalArgumentException("config path must be a file: files=" + illegalConfigs);
+        }
+    }
+
+    /**
+     * Get paths to queue configs
+     *
+     * @return paths to queue configs
+     */
+    @Nonnull
+    public List<Path> getConfigPaths() {
+        return new ArrayList<>(configPaths);
     }
 
     /**
      * Try to parse queues configurations.
      *
-     * @param configPath         file to read configuration from.
-     * @param overrideConfigPath files that override main configuration.
-     *                           They can be useful when you work with queues in test environment.
      * @return parsed queue configurations
      */
     @Nonnull
-    public Collection<QueueConfig> parse(@Nonnull Path configPath, @Nullable Path... overrideConfigPath) {
-        Objects.requireNonNull(configPath, "config path is empty");
+    public List<QueueConfig> parse() {
+        log.info("loading queue configuration: paths={}", configPaths);
+        Path configPath = configPaths.get(0);
         Map<String, String> rawSettings = readRawSettings(configPath);
-        if (overrideConfigPath != null) {
-            Arrays.stream(overrideConfigPath).filter(Objects::nonNull).forEach(path ->
+        if (configPaths.size() > 1) {
+            List<Path> overrideConfigPaths = configPaths.subList(1, configPaths.size());
+            overrideConfigPaths.stream().filter(Objects::nonNull).forEach(path ->
                     overrideExistingSettings(rawSettings, readRawSettings(path)));
         }
 
         Map<String, Map<String, String>> queues = splitRawSettingsByQueueId(rawSettings);
 
-        List<QueueLocation> queueLocations = new ArrayList<>();
-        List<QueueSettings.Builder> queueSettings = new ArrayList<>();
+        QueueLocationParser queueLocationParser = new QueueLocationParser(errorMessages);
+        ProcessingSettingsParser processingSettingsParser = new ProcessingSettingsParser(defaultProcessingSettings,
+                errorMessages);
+        PollSettingsParser pollSettingsParser = new PollSettingsParser(defaultPollSettings,
+                errorMessages);
+        ReenqueueSettingsParser reenqueueSettingsParser = new ReenqueueSettingsParser(defaultReenqueueSettings,
+                errorMessages);
+        FailureSettingsParser failureSettingsParser = new FailureSettingsParser(defaultFailureSettings,
+                errorMessages);
+
+        List<QueueConfig> queueConfigs = new ArrayList<>();
         queues.forEach((queueId, settings) -> {
-            queueLocations.add(buildQueueLocation(queueId, settings));
-            queueSettings.add(buildQueueSettings(settings)
-                    .withAdditionalSettings(buildAdditionalSettings(settings))
-                    .withReenqueueRetrySettings(buildReenqueueRetrySettings(settings)));
+            Optional<QueueLocation> queueLocation = queueLocationParser.parseQueueLocation(queueId, settings);
+
+            Optional<ProcessingSettings> processingSettings = processingSettingsParser.parseSettings(queueId, settings);
+            Optional<PollSettings> pollSettings = pollSettingsParser.parseSettings(queueId, settings);
+            Optional<FailureSettings> failureSettings = failureSettingsParser.parseSettings(queueId, settings);
+            Optional<ReenqueueSettings> reenqueueSettings = reenqueueSettingsParser.parseSettings(queueId, settings);
+
+            if (queueLocation.isPresent() && processingSettings.isPresent() && pollSettings.isPresent() &&
+                    failureSettings.isPresent() && reenqueueSettings.isPresent()) {
+                QueueSettings queueSettings = QueueSettings.builder()
+                        .withProcessingSettings(processingSettings.get())
+                        .withPollSettings(pollSettings.get())
+                        .withFailureSettings(failureSettings.get())
+                        .withReenqueueSettings(reenqueueSettings.get())
+                        .withExtSettings(parseExtSettings(settings)).build();
+                queueConfigs.add(new QueueConfig(queueLocation.get(), queueSettings));
+            }
         });
         checkErrors();
-        return IntStream.range(0, Integer.max(queueLocations.size(), queueSettings.size()))
-                .mapToObj(counter -> new QueueConfig(queueLocations.get(counter),
-                        queueSettings.get(counter).build()))
-                .collect(Collectors.toList());
+        return queueConfigs;
     }
 
 
@@ -285,24 +365,27 @@ public class QueueConfigsReader {
         try (InputStream is = Files.newInputStream(filePath)) {
             Properties props = new Properties();
             props.load(is);
-            return cleanupProperties(props.stringPropertyNames().stream()
-                    .collect(Collectors.toMap(Function.identity(), props::getProperty)));
+            Map<String, String> map = new LinkedHashMap<>();
+            for (String name : props.stringPropertyNames()) {
+                map.put(name, props.getProperty(name));
+            }
+            return cleanupProperties(map);
         } catch (IOException ioe) {
             throw new IllegalArgumentException("cannot read queue properties: file=" + filePath, ioe);
         }
     }
 
     private Map<String, Map<String, String>> splitRawSettingsByQueueId(Map<String, String> rawSettings) {
-        Map<String, Map<String, String>> result = new HashMap<>();
+        Map<String, Map<String, String>> result = new LinkedHashMap<>();
         Pattern settingPattern = Pattern.compile(settingsPrefix + "\\.([A-Za-z0-9\\-_]+)\\.(.*)");
         rawSettings.forEach((setting, value) -> {
             Matcher matcher = settingPattern.matcher(setting);
             if (!matcher.matches()) {
-                errorMessages.add(String.format("unrecognized setting name: setting=%s", setting));
+                errorMessages.add(String.format("invalid format for setting name: setting=%s", setting));
             } else {
                 String queueId = matcher.group(1);
                 String settingName = matcher.group(2);
-                result.computeIfAbsent(queueId, s -> new HashMap<>());
+                result.computeIfAbsent(queueId, s -> new LinkedHashMap<>());
                 result.get(queueId).put(settingName, value);
             }
         });
@@ -311,86 +394,18 @@ public class QueueConfigsReader {
         return result;
     }
 
-
     @Nonnull
-    private QueueLocation buildQueueLocation(String queueId, Map<String, String> settings) {
-        QueueLocation.Builder builder = QueueLocation.builder().withQueueId(new QueueId(queueId));
-        settings.entrySet().stream()
-                .filter(property -> SETTING_TABLE.equals(property.getKey()))
-                .findFirst()
-                .ifPresent(property -> builder.withTableName(property.getValue()).build());
-        settings.entrySet().stream()
-                .filter(property -> SETTING_ID_SEQUENCE.equals(property.getKey()))
-                .findFirst()
-                .ifPresent(property -> builder.withIdSequence(property.getValue()).build());
-        return builder.build();
-    }
-
-    private QueueSettings.Builder buildQueueSettings(Map<String, String> settings) {
-        QueueSettings.Builder builder = QueueSettings.builder();
-        settings.entrySet().stream()
-                .filter(property -> !property.getKey().startsWith(SETTING_ADDITIONAL + "."))
-                .filter(property -> !property.getKey().startsWith(REENQUEUE_RETRY_PREFIX))
-                .filter(property -> !SETTING_TABLE.equals(property.getKey()))
-                .filter(property -> !SETTING_ID_SEQUENCE.equals(property.getKey()))
-                .forEach(property -> tryFillSetting(builder, property.getKey(), property.getValue()));
-        return builder;
-    }
-
-    @Nonnull
-    private Map<String, String> buildAdditionalSettings(Map<String, String> settings) {
-        String additionalSettingsName = SETTING_ADDITIONAL + ".";
-        return settings.entrySet().stream()
-                .filter(property -> property.getKey().startsWith(additionalSettingsName))
-                .collect(Collectors.toMap(
-                        entry -> entry.getKey().substring(additionalSettingsName.length()),
-                        Map.Entry::getValue));
-    }
-
-    @Nonnull
-    private ReenqueueRetrySettings buildReenqueueRetrySettings(Map<String, String> settings) {
-        if (!settings.containsKey(SETTING_REENQUEUE_RETRY_TYPE)) {
-            return ReenqueueRetrySettings.createDefault();
-        }
-        Optional<ReenqueueRetryType> optionalRetryType = parseReenqueueRetryType(settings.get(SETTING_REENQUEUE_RETRY_TYPE));
-        if (!optionalRetryType.isPresent()) {
-            return ReenqueueRetrySettings.createDefault();
-        }
-        ReenqueueRetrySettings.Builder builder = ReenqueueRetrySettings.builder(optionalRetryType.get());
-        settings.entrySet().stream()
-                .filter(property -> property.getKey().startsWith(REENQUEUE_RETRY_PREFIX))
-                .filter(property -> !SETTING_REENQUEUE_RETRY_TYPE.equals(property.getKey()))
-                .forEach(property -> tryFillReenqueueSetting(builder, property.getKey(), property.getValue()));
-        return builder.build();
-    }
-
-    private void tryFillReenqueueSetting(ReenqueueRetrySettings.Builder builder, String name, String value) {
-        try {
-            switch (name) {
-                case SETTING_REENQUEUE_RETRY_PLAN:
-                    builder.withSequentialPlan(parseReenqueueRetryPlan(value));
-                    return;
-                case SETTING_REENQUEUE_RETRY_DELAY:
-                    builder.withFixedDelay(Duration.parse(value));
-                    return;
-                case SETTING_REENQUEUE_RETRY_INITIAL_DELAY:
-                    builder.withInitialDelay(Duration.parse(value));
-                    return;
-                case SETTING_REENQUEUE_RETRY_STEP:
-                    builder.withArithmeticStep(Duration.parse(value));
-                    return;
-                case SETTING_REENQUEUE_RETRY_RATIO:
-                    builder.withGeometricRatio(Long.valueOf(value));
-                    return;
-                default:
-                    errorMessages.add(String.format("unknown re-enqueue setting: name=%s, value=%s", name, value));
-                    return;
+    private static ExtSettings parseExtSettings(Map<String, String> settings) {
+        String extSettingsPrefix = SETTING_ADDITIONAL + '.';
+        Map<String, String> map = new LinkedHashMap<>();
+        for (Map.Entry<String, String> property : settings.entrySet()) {
+            if (property.getKey().startsWith(extSettingsPrefix)) {
+                map.put(property.getKey().substring(extSettingsPrefix.length()), property.getValue());
             }
-        } catch (RuntimeException exc) {
-            log.warn("cannot parse setting", exc);
-            errorMessages.add(String.format("cannot parse re-enqueue setting: name=%s, value=%s", name, value));
         }
+        return ExtSettings.builder().withSettings(map).build();
     }
+
 
     private void checkErrors() {
         if (!errorMessages.isEmpty()) {
@@ -399,8 +414,8 @@ public class QueueConfigsReader {
         }
     }
 
-    private void overrideExistingSettings(Map<String, String> existingSettings,
-                                          Map<String, String> newSettings) {
+    private static void overrideExistingSettings(Map<String, String> existingSettings,
+                                                 Map<String, String> newSettings) {
         newSettings.forEach((key, newValue) -> {
             String existingValue = existingSettings.get(key);
             if (existingValue != null) {
@@ -419,100 +434,14 @@ public class QueueConfigsReader {
     }
 
     private void validateSettings(Map<String, Map<String, String>> queuesSettings) {
-        List<String> requiredSettings = Arrays.asList(SETTING_NO_TASK_TIMEOUT, SETTING_BETWEEN_TASK_TIMEOUT,
-                SETTING_TABLE);
-        queuesSettings.forEach((queueId, settings) -> requiredSettings.stream()
-                .filter(requiredSetting -> !settings.containsKey(requiredSetting))
-                .forEach(requiredSetting -> errorMessages.add(
-                        String.format("%s setting is required: queueId=%s", requiredSetting, queueId))));
-    }
-
-    private void tryFillSetting(QueueSettings.Builder queueSetting, String name, String value) {
-        try {
-            switch (name) {
-                case SETTING_NO_TASK_TIMEOUT:
-                    queueSetting.withNoTaskTimeout(Duration.parse(value));
-                    return;
-                case SETTING_BETWEEN_TASK_TIMEOUT:
-                    queueSetting.withBetweenTaskTimeout(Duration.parse(value));
-                    return;
-                case SETTING_FATAL_CRASH_TIMEOUT:
-                    queueSetting.withFatalCrashTimeout(Duration.parse(value));
-                    return;
-                case SETTING_THREAD_COUNT:
-                    queueSetting.withThreadCount(Integer.valueOf(value));
-                    return;
-                case SETTING_RETRY_TYPE:
-                    queueSetting.withRetryType(parseRetryType(value).orElse(null));
-                    return;
-                case SETTING_RETRY_INTERVAL:
-                    queueSetting.withRetryInterval(Duration.parse(value));
-                    return;
-                case SETTING_PROCESSING_MODE:
-                    queueSetting.withProcessingMode(parseProcessingMode(value).orElse(null));
-                    return;
-                default:
-                    errorMessages.add(String.format("unknown setting: name=%s, value=%s", name, value));
-                    return;
-
+        queuesSettings.forEach((queueId, settings) -> {
+            for (String setting : settings.keySet()) {
+                if (!ALLOWED_SETTINGS.contains(setting) && !setting.startsWith(SETTING_ADDITIONAL + ".")) {
+                    errorMessages.add(
+                            String.format("%s setting is unknown: queueId=%s", setting, queueId));
+                }
             }
-        } catch (RuntimeException exc) {
-            log.warn("cannot parse setting", exc);
-            errorMessages.add(String.format("cannot parse setting: name=%s, value=%s", name, value));
-        }
-    }
-
-    private Optional<ProcessingMode> parseProcessingMode(String name) {
-        switch (name) {
-            case VALUE_PROCESSING_MODE_SEPARATE_TRANSACTIONS:
-                return Optional.of(ProcessingMode.SEPARATE_TRANSACTIONS);
-            case VALUE_PROCESSING_MODE_WRAP_IN_TRANSACTION:
-                return Optional.of(ProcessingMode.WRAP_IN_TRANSACTION);
-            case VALUE_PROCESSING_MODE_USE_EXTERNAL_EXECUTOR:
-                return Optional.of(ProcessingMode.USE_EXTERNAL_EXECUTOR);
-            default:
-                errorMessages.add(String.format("unknown processing mode: name=%s", name));
-                return Optional.empty();
-        }
-    }
-
-    private Optional<TaskRetryType> parseRetryType(String name) {
-        switch (name) {
-            case VALUE_TASK_RETRY_TYPE_GEOMETRIC:
-                return Optional.of(TaskRetryType.GEOMETRIC_BACKOFF);
-            case VALUE_TASK_RETRY_TYPE_ARITHMETIC:
-                return Optional.of(TaskRetryType.ARITHMETIC_BACKOFF);
-            case VALUE_TASK_RETRY_TYPE_LINEAR:
-                return Optional.of(TaskRetryType.LINEAR_BACKOFF);
-            default:
-                errorMessages.add(String.format("unknown retry type: name=%s", name));
-                return Optional.empty();
-        }
-    }
-
-    private Optional<ReenqueueRetryType> parseReenqueueRetryType(String type) {
-        switch (type) {
-            case VALUE_REENQUEUE_RETRY_TYPE_MANUAL:
-                return Optional.of(ReenqueueRetryType.MANUAL);
-            case VALUE_REENQUEUE_RETRY_TYPE_FIXED:
-                return Optional.of(ReenqueueRetryType.FIXED);
-            case VALUE_REENQUEUE_RETRY_TYPE_SEQUENTIAL:
-                return Optional.of(ReenqueueRetryType.SEQUENTIAL);
-            case VALUE_REENQUEUE_RETRY_TYPE_ARITHMETIC:
-                return Optional.of(ReenqueueRetryType.ARITHMETIC);
-            case VALUE_REENQUEUE_RETRY_TYPE_GEOMETRIC:
-                return Optional.of(ReenqueueRetryType.GEOMETRIC);
-            default:
-                errorMessages.add(String.format("unknown re-enqueue retry type: type=%s", type));
-                return Optional.empty();
-        }
-    }
-
-    private List<Duration> parseReenqueueRetryPlan(String plan) {
-        String[] values = plan.split(",");
-        return Arrays.stream(values)
-                .map(Duration::parse)
-                .collect(Collectors.toList());
+        });
     }
 
 }

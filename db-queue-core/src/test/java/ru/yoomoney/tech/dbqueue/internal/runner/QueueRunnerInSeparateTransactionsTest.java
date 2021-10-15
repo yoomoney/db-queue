@@ -9,7 +9,7 @@ import ru.yoomoney.tech.dbqueue.internal.processing.TaskProcessor;
 import ru.yoomoney.tech.dbqueue.settings.QueueConfig;
 import ru.yoomoney.tech.dbqueue.settings.QueueId;
 import ru.yoomoney.tech.dbqueue.settings.QueueLocation;
-import ru.yoomoney.tech.dbqueue.settings.QueueSettings;
+import ru.yoomoney.tech.dbqueue.stub.TestFixtures;
 
 import java.time.Duration;
 
@@ -37,16 +37,17 @@ public class QueueRunnerInSeparateTransactionsTest {
 
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
         TaskPicker taskPicker = mock(TaskPicker.class);
-        when(taskPicker.pickTask(queueConsumer)).thenReturn(null);
+        when(taskPicker.pickTask()).thenReturn(null);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);
 
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
-                QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
+                TestFixtures.createQueueSettings().withPollSettings(TestFixtures.createPollSettings()
+                        .withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()).build()));
         QueueProcessingStatus status = new QueueRunnerInSeparateTransactions(taskPicker, taskProcessor).runQueue(queueConsumer);
 
         assertThat(status, equalTo(QueueProcessingStatus.SKIPPED));
 
-        verify(taskPicker).pickTask(queueConsumer);
+        verify(taskPicker).pickTask();
         verifyZeroInteractions(taskProcessor);
     }
 
@@ -58,17 +59,18 @@ public class QueueRunnerInSeparateTransactionsTest {
         QueueConsumer queueConsumer = mock(QueueConsumer.class);
         TaskPicker taskPicker = mock(TaskPicker.class);
         TaskRecord taskRecord = TaskRecord.builder().build();
-        when(taskPicker.pickTask(queueConsumer)).thenReturn(taskRecord);
+        when(taskPicker.pickTask()).thenReturn(taskRecord);
         TaskProcessor taskProcessor = mock(TaskProcessor.class);
 
 
         when(queueConsumer.getQueueConfig()).thenReturn(new QueueConfig(testLocation1,
-                QueueSettings.builder().withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()));
+                TestFixtures.createQueueSettings().withPollSettings(TestFixtures.createPollSettings()
+                        .withBetweenTaskTimeout(betweenTaskTimeout).withNoTaskTimeout(noTaskTimeout).build()).build()));
         QueueProcessingStatus status = new QueueRunnerInSeparateTransactions(taskPicker, taskProcessor).runQueue(queueConsumer);
 
         assertThat(status, equalTo(QueueProcessingStatus.PROCESSED));
 
-        verify(taskPicker).pickTask(queueConsumer);
+        verify(taskPicker).pickTask();
         verify(taskProcessor).processTask(queueConsumer, taskRecord);
     }
 

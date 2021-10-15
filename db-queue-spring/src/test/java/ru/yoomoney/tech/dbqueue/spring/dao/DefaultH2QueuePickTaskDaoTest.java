@@ -13,11 +13,11 @@ public class DefaultH2QueuePickTaskDaoTest extends QueuePickTaskDaoTest {
     public DefaultH2QueuePickTaskDaoTest() {
         super(
                 new H2QueueDao(H2DatabaseInitializer.getJdbcTemplate(), H2DatabaseInitializer.DEFAULT_SCHEMA),
-                pickTaskSettings ->
+                (queueLocation, failureSettings) ->
                         new H2QueuePickTaskDao(
                                 H2DatabaseInitializer.getJdbcTemplate(),
                                 H2DatabaseInitializer.DEFAULT_SCHEMA,
-                                pickTaskSettings),
+                                queueLocation, failureSettings),
                 H2DatabaseInitializer.DEFAULT_TABLE_NAME, H2DatabaseInitializer.DEFAULT_SCHEMA,
                 H2DatabaseInitializer.getJdbcTemplate(), H2DatabaseInitializer.getTransactionTemplate());
     }
