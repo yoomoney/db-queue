@@ -59,6 +59,10 @@ There are several reasons:
   databases ([QueueShard](db-queue-core/src/main/java/ru/yoomoney/tech/dbqueue/config/QueueShard.java)).
 * And many other features
 
+The library provides one-time tasks - tasks that are executed once.
+If you need (recurring tasks)/(periodic tasks) - tasks that are executed periodically, look at 
+[db-queue-scheduler](https://github.com/yoomoney/db-queue-scheduler) library, please.
+
 # Usage
 
 ## How it works?
