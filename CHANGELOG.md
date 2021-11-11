@@ -1,5 +1,6 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=PATCH
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+* `db-queue-scheduler` library link added into the `README.md` file
 ### NEXT_VERSION_DESCRIPTION_END
 ## [15.0.0]() (15-10-2021)
 
