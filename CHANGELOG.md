@@ -1,7 +1,7 @@
-### NEXT_VERSION_TYPE=PATCH
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [15.0.1]() (11-11-2021)
+
 * `db-queue-scheduler` library link added into the `README.md` file
-### NEXT_VERSION_DESCRIPTION_END
+
 ## [15.0.0]() (15-10-2021)
 
 This release brings dynamic configuration of almost all queue settings. There are many breaking changes related to queue
