@@ -1,5 +1,6 @@
-### NEXT_VERSION_TYPE=MAJOR|MINOR|PATCH
+### NEXT_VERSION_TYPE=MINOR
 ### NEXT_VERSION_DESCRIPTION_BEGIN
+Обновление версии library-project-plugin до 7.3.1 (Обновлена версия java-plugin 4.1.0 -> 4.3.0)
 ### NEXT_VERSION_DESCRIPTION_END
 ## [15.0.0]() (15-10-2021)
 
