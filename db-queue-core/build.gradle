@@ -4,17 +4,17 @@ buildscript {
 
 dependencies {
 
-    compile 'org.slf4j:slf4j-api:1.7.30'
+    compile 'org.slf4j:slf4j-api:1.7.36'
 
     compileOnly 'com.google.code.findbugs:jsr305:3.0.1',
             'com.google.code.findbugs:annotations:3.0.1'
 
-    testCompile 'junit:junit:4.12',
-            'org.apache.logging.log4j:log4j-core:2.13.3',
-            'org.apache.logging.log4j:log4j-slf4j-impl:2.13.3',
-            'org.mockito:mockito-core:3.6.28',
+    testCompile 'junit:junit:4.13.2',
+            'org.apache.logging.log4j:log4j-core:2.17.1',
+            'org.apache.logging.log4j:log4j-slf4j-impl:2.17.1',
+            'org.mockito:mockito-core:4.0.0',
             'com.tngtech.archunit:archunit:0.9.1',
-            'nl.jqno.equalsverifier:equalsverifier:3.3'
+            'nl.jqno.equalsverifier:equalsverifier:3.9'
 
 
     testCompileOnly 'com.google.code.findbugs:jsr305:3.0.1',

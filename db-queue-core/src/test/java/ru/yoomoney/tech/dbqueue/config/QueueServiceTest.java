@@ -32,8 +32,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -107,7 +107,7 @@ public class QueueServiceTest {
             errorMessages.add(exc.getMessage());
         }
 
-        verifyZeroInteractions(queueExecutionPool);
+        verifyNoInteractions(queueExecutionPool);
         assertThat(errorMessages.toString(), equalTo(
                 "[cannot invoke start, queue is not registered: queueId=test, " +
                         "cannot invoke pause, queue is not registered: queueId=test, " +

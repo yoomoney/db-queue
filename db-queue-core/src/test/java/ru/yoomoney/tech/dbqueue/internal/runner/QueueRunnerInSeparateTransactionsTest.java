@@ -17,7 +17,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -48,7 +48,7 @@ public class QueueRunnerInSeparateTransactionsTest {
         assertThat(status, equalTo(QueueProcessingStatus.SKIPPED));
 
         verify(taskPicker).pickTask();
-        verifyZeroInteractions(taskProcessor);
+        verifyNoInteractions(taskProcessor);
     }
 
     @Test

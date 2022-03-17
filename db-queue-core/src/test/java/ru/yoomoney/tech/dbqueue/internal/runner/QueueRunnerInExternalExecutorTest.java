@@ -21,7 +21,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -52,9 +52,9 @@ public class QueueRunnerInExternalExecutorTest {
 
         assertThat(status, equalTo(QueueProcessingStatus.SKIPPED));
 
-        verifyZeroInteractions(executor);
+        verifyNoInteractions(executor);
         verify(taskPicker).pickTask();
-        verifyZeroInteractions(taskProcessor);
+        verifyNoInteractions(taskProcessor);
     }
 
     @Test
