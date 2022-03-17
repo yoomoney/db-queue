@@ -1,10 +1,10 @@
-### NEXT_VERSION_TYPE=MINOR
-### NEXT_VERSION_DESCRIPTION_BEGIN
+## [15.1.0]() (17-03-2022)
+
 * Upgrade dependency versions:
-  * org.springframework:spring-jdbc: 5.3.2 -> 5.3.16
-  * org.springframework:spring-tx: 5.3.2 -> 5.3.16
-  * org.slf4j:slf4j-api:1.7.30 -> 1.7.36
-### NEXT_VERSION_DESCRIPTION_END
+* org.springframework:spring-jdbc: 5.3.2 -> 5.3.16
+* org.springframework:spring-tx: 5.3.2 -> 5.3.16
+* org.slf4j:slf4j-api:1.7.30 -> 1.7.36
+
 ## [15.0.1]() (11-11-2021)
 
 * `db-queue-scheduler` library link added into the `README.md` file
